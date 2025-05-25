@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Maintenance Tracker</title>
+    <script>
+        // Error handler to catch and display JavaScript errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('JavaScript Error:', message, source, lineno, colno, error);
+            alert('JavaScript Error: ' + message + '\nAt: ' + source + ':' + lineno);
+            return true;
+        };
+        
+        // Check if IndexedDB is supported
+        if (!window.indexedDB) {
+            alert('Your browser doesn\'t support IndexedDB, which is required for this application.');
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="app-container">
+    <!-- Navigation Sidebar -->
+    <nav class="app-sidebar">
+        <div class="sidebar-header">
+            <h1><i class="fas fa-car"></i> CarTracker</h1>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item active" data-section="overview">
+                <i class="fas fa-chart-line"></i>
+                <span>Overview</span>
+            </li>
+            <li class="nav-item" data-section="expenses">
+                <i class="fas fa-wallet"></i>
+                <span>Expenses</span>
+            </li>
+            <li class="nav-item" data-section="fuel">
+                <i class="fas fa-gas-pump"></i>
+                <span>Fuel Log</span>
+            </li>
+            <li class="nav-item" data-section="maintenance">
+                <i class="fas fa-tools"></i>
+                <span>Maintenance</span>
+            </li>
+            <li class="nav-item" data-section="suppliers">
+                <i class="fas fa-store"></i>
+                <span>Suppliers</span>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Sections -->
+        <div class="content-sections">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Car Savings</h3>
+                            <p class="stat-value" id="carSavings">EGP 0.00</p>
+                            <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#updateSavingsModal">
+                                <i class="fas fa-plus"></i> Update Savings
+                            </button>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-gas-pump"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Fuel Cost</h3>
+                            <p class="stat-value" id="totalFuelCost">EGP 0.00</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Maintenance Cost</h3>
+                            <p class="stat-value" id="totalMaintenanceCost">EGP 0.00</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Remaining Balance</h3>
+                            <p class="stat-value" id="remainingBalance">EGP 0.00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="recent-activity">
+                    <h2>Recent Activity</h2>
+                    <div class="activity-list" id="recentActivityList">
+                        <!-- Activity items will be added here dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Update Savings Modal -->
+            <div class="modal fade" id="updateSavingsModal" tabindex="-1" aria-labelledby="updateSavingsModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="updateSavingsModalLabel">Update Car Savings</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="savingsForm">
+                                <div class="mb-3">
+                                    <label for="savingsAmount" class="form-label">Amount to Add</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">EGP</span>
+                                        <input type="number" class="form-control" id="savingsAmount" step="0.01" required>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveSavingsBtn">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Section -->
+            <section id="expenses" class="content-section">
+                <div class="section-header">
+                    <h2>Expenses</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTableBody">
+                            <tr class="empty-state">
+                                <td colspan="4">
+                                    <div>
+                                        <i class="fas fa-receipt"></i>
+                                        <p>No expenses recorded yet</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Fuel Log Section -->
+            <section id="fuel" class="content-section">
+                <div class="section-header">
+                    <h2>Fuel Log</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFuelModal">
+                        <i class="fas fa-plus"></i> Add Entry
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Odometer</th>
+                                <th>Liters</th>
+                                <th>Price/Liter</th>
+                                <th>Total Cost</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fuelTableBody">
+                            <!-- Fuel logs will be displayed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Maintenance Section -->
+            <section id="maintenance" class="content-section">
+                <div class="section-header">
+                    <h2>Maintenance</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMaintenanceModal">
+                        <i class="fas fa-plus"></i> Add Record
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Service</th>
+                                <th>Description</th>
+                                <th>Mileage</th>
+                                <th>Cost</th>
+                                <th>Parts</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenanceTableBody">
+                            <!-- Maintenance records will be displayed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Suppliers Section -->
+            <section id="suppliers" class="content-section">
+                <div class="section-header">
+                    <h2>Suppliers</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                        <i class="fas fa-plus"></i> Add Supplier
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Rating</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliersTableBody">
+                            <!-- Suppliers will be displayed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Maintenance Modal -->
+    <div class="modal fade" id="addMaintenanceModal" tabindex="-1" aria-labelledby="addMaintenanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addMaintenanceModalLabel">Add Maintenance Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="maintenanceForm">
+                        <div class="mb-3">
+                            <label for="maintenanceDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="maintenanceDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceType" class="form-label">Service Type</label>
+                            <select class="form-select" id="serviceType" required>
+                                <option value="">Select Service Type</option>
+                                <option value="Oil Change">Oil Change</option>
+                                <option value="Tire Rotation">Tire Rotation</option>
+                                <option value="Brake Service">Brake Service</option>
+                                <option value="Air Filter">Air Filter</option>
+                                <option value="Battery Replacement">Battery Replacement</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="customServiceTypeContainer">
+                            <label for="customServiceType" class="form-label">Custom Service Type</label>
+                            <input type="text" class="form-control" id="customServiceType" placeholder="Enter custom service type">
+                        </div>
+                        <div class="mb-3">
+                            <label for="maintenanceDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="maintenanceDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="maintenanceMileage" class="form-label">Odometer Reading (km)</label>
+                            <input type="number" class="form-control" id="maintenanceMileage" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="maintenanceCost" class="form-label">Total Cost</label>
+                            <div class="input-group">
+                                <span class="input-group-text currency">EGP</span>
+                                <input type="number" class="form-control" id="maintenanceCost" step="0.01" required>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="createExpenseEntry" checked>
+                                <label class="form-check-label" for="createExpenseEntry">
+                                    Add to Expenses
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Parts Section -->
+                        <div class="mt-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Parts</h5>
+                                <button type="button" class="btn btn-sm btn-primary" id="addPartBtn">
+                                    <i class="fas fa-plus"></i> Add Part
+                                </button>
+                            </div>
+                            <div id="partsContainer" class="mt-3">
+                                <!-- Parts will be added here dynamically -->
+                                <div class="text-center text-muted py-3" id="noPartsMessage">
+                                    No parts added yet. Click "Add Part" to add parts to this maintenance record.
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveMaintenanceBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Part Template (hidden) -->
+    <template id="partTemplate">
+        <div class="part-item border p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="card-title mb-0">Part Details</h6>
+                <button type="button" class="btn btn-sm btn-danger remove-part-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Part Name</label>
+                    <input type="text" class="form-control part-name" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Part Number/SKU (optional)</label>
+                    <input type="text" class="form-control part-number">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Cost</label>
+                    <div class="input-group">
+                        <span class="input-group-text currency">EGP</span>
+                        <input type="number" class="form-control part-cost" step="0.01" required>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Supplier</label>
+                    <select class="form-select part-supplier">
+                        <option value="">Select Supplier (optional)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="part-rating-container">
+                <label class="form-label">Part Quality Rating</label>
+                <div class="rating-container">
+                    <div class="star-rating part-rating">
+                        <input type="radio" name="partRating_NEW" value="5"><label></label>
+                        <input type="radio" name="partRating_NEW" value="4"><label></label>
+                        <input type="radio" name="partRating_NEW" value="3" checked><label></label>
+                        <input type="radio" name="partRating_NEW" value="2"><label></label>
+                        <input type="radio" name="partRating_NEW" value="1"><label></label>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">Part Notes/Review</label>
+                    <textarea class="form-control part-notes" rows="2" placeholder="Add any notes about the part quality, performance, or issues..."></textarea>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Fuel Log Modal -->
+    <div class="modal fade" id="addFuelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Fuel Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="fuelForm">
+                        <div class="mb-3">
+                            <label for="fuelDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="fuelDate" name="fuelDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="odometer" class="form-label">Odometer Reading (km)</label>
+                            <input type="number" class="form-control" id="odometer" name="odometer" step="0.1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="liters" class="form-label">Liters</label>
+                            <input type="number" class="form-control" id="liters" name="liters" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pricePerLiter" class="form-label">Price per Liter (EGP)</label>
+                            <input type="number" class="form-control" id="pricePerLiter" name="pricePerLiter" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="totalCost" class="form-label">Total Cost (EGP)</label>
+                            <input type="number" class="form-control" id="totalCost" name="totalCost" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveFuelBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Modal -->
+    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="supplierForm">
+                        <div class="mb-3">
+                            <label for="supplierName" class="form-label">Supplier Name</label>
+                            <input type="text" class="form-control" id="supplierName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierAddress" class="form-label">Address (optional)</label>
+                            <textarea class="form-control" id="supplierAddress" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierRating" class="form-label">Rating</label>
+                            <div class="rating-container">
+                                <div class="star-rating">
+                                    <input type="radio" id="supplierStar5" name="supplierRating" value="5"><label for="supplierStar5"></label>
+                                    <input type="radio" id="supplierStar4" name="supplierRating" value="4"><label for="supplierStar4"></label>
+                                    <input type="radio" id="supplierStar3" name="supplierRating" value="3" checked><label for="supplierStar3"></label>
+                                    <input type="radio" id="supplierStar2" name="supplierRating" value="2"><label for="supplierStar2"></label>
+                                    <input type="radio" id="supplierStar1" name="supplierRating" value="1"><label for="supplierStar1"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierDescription" class="form-label">Description/Notes (optional)</label>
+                            <textarea class="form-control" id="supplierDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSupplierBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addExpenseModalLabel">Add Car Expense</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="expenseForm">
+                        <div class="mb-3">
+                            <label for="expenseDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="expenseDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="expenseDescription" class="form-label">Description (optional)</label>
+                            <textarea class="form-control" id="expenseDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="expenseAmount" class="form-label">Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">EGP</span>
+                                <input type="number" class="form-control" id="expenseAmount" step="0.01" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveExpenseBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Maintenance Record Modal -->
+    <div class="modal fade" id="viewMaintenanceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Maintenance Record Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewMaintenanceBody">
+                    <!-- Content will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        // Initialize jsPDF
+        window.jspdf = window.jspdf || {};
+        window.jspdf.jsPDF = window.jspdf.jsPDF || window.jspdf;
+    </script>
+    <script src="js/db.js"></script>
+    <script src="js/parts.js"></script>
+    <script src="js/maintenance.js"></script>
+    <script src="js/suppliers.js"></script>
+    <script src="js/fuel-log.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/pdf-export.js"></script>
+    <script src="js/car-savings.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Make sure Bootstrap is fully loaded before initializing app
+        window.addEventListener('load', function() {
+            // Only load index.js after everything else is ready
+            const script = document.createElement('script');
+            script.src = 'js/index.js';
+            document.body.appendChild(script);
+        });
+    </script>
+</body>
+</html>
