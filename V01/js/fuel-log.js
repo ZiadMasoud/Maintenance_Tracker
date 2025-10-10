@@ -4,23 +4,13 @@
  */
 
 // DOM Elements
-let fuelLogForm;
-let fuelDate;
-let fuelAmount;
-let fuelCost;
-let fuelMileage;
-let fuelType;
-let saveFuelLogBtn;
 let fuelLogTableBody;
-let addFuelLogModal;
-let fuelStation;
-let stationRating;
-let stationNotes;
+let fuelForm;
+let saveFuelBtn;
+let fuelDateInput; // Renamed for clarity
 
-// Add new DOM elements
-let customStationContainer;
-let customStation;
-let saveStationBtn;
+// State to track current fuel log being edited
+let currentFuelLogId = null;
 
 // Module state
 const fuelLogModule = {
@@ -31,11 +21,9 @@ const fuelLogModule = {
 async function initFuelLog() {
     try {
         // Get form elements
-        const fuelForm = document.getElementById('fuelForm');
-        const saveFuelBtn = document.getElementById('saveFuelBtn');
-        
+        fuelForm = document.getElementById('fuelForm');
+        saveFuelBtn = document.getElementById('saveFuelBtn');
         if (fuelForm && saveFuelBtn) {
-            // Add event listener to save button
             saveFuelBtn.addEventListener('click', handleSaveFuel);
             
             // Set default date to today
@@ -57,7 +45,6 @@ async function initFuelLog() {
 async function handleSaveFuel() {
     try {
         const fuelForm = document.getElementById('fuelForm');
-        if (!fuelForm) return;
         
         // Get form data
         const formData = new FormData(fuelForm);
@@ -78,7 +65,15 @@ async function handleSaveFuel() {
         }
         
         // Save to database
-        await window.dbManager.addRecord(window.dbManager.STORES.FUEL_LOG, fuelLog);
+        let message;
+        if (currentFuelLogId !== null) {
+ fuelLog.id = currentFuelLogId; // Include the ID for update operation
+            await window.dbManager.updateRecord(window.dbManager.STORES.FUEL_LOG, fuelLog);
+            message = 'Fuel log updated successfully';
+        } else {
+            await window.dbManager.addRecord(window.dbManager.STORES.FUEL_LOG, fuelLog);
+            message = 'Fuel log added successfully';
+        }
         
         // Reset form
         fuelForm.reset();
@@ -92,8 +87,11 @@ async function handleSaveFuel() {
         // Update display
         await displayFuelLogs();
         
+        // Reset state
+        currentFuelLogId = null;
+        
         // Show success message
-        showToast('Fuel log added successfully', 'success');
+        showToast(message, 'success');
     } catch (error) {
         console.error('Error saving fuel log:', error);
         showToast('Failed to save fuel log', 'error');
@@ -103,7 +101,7 @@ async function handleSaveFuel() {
 // Display fuel logs
 async function displayFuelLogs() {
     try {
-        const fuelTableBody = document.getElementById('fuelTableBody');
+ fuelLogTableBody = document.getElementById('fuelTableBody');
         if (!fuelTableBody) return;
         
         // Get all fuel logs
@@ -112,7 +110,7 @@ async function displayFuelLogs() {
         // Sort by date (newest first)
         fuelLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
         
-        // Update table
+ // Build and update the table HTML
         fuelTableBody.innerHTML = fuelLogs.length > 0 ? 
             fuelLogs.map(log => `
                 <tr>
@@ -149,6 +147,8 @@ async function displayFuelLogs() {
 // Edit fuel log
 async function editFuelLog(id) {
     try {
+        // Retrieve the fuel log record by ID
+ id = parseInt(id); // Ensure ID is an integer
         const fuelLog = await window.dbManager.getRecordById(window.dbManager.STORES.FUEL_LOG, id);
         if (!fuelLog) {
             showToast('Fuel log not found', 'error');
@@ -156,15 +156,19 @@ async function editFuelLog(id) {
         }
         
         // Populate form
-        const fuelForm = document.getElementById('fuelForm');
+ fuelForm = document.getElementById('fuelForm');
         if (fuelForm) {
-            document.getElementById('fuelDate').value = fuelLog.date;
-            document.getElementById('odometer').value = fuelLog.odometer;
-            document.getElementById('liters').value = fuelLog.liters;
-            document.getElementById('pricePerLiter').value = fuelLog.pricePerLiter;
-            document.getElementById('totalCost').value = fuelLog.totalCost;
-            document.getElementById('notes').value = fuelLog.notes || '';
+ // Use specific element IDs for clarity
+ document.getElementById('fuelDate').value = fuelLog.date;
+ document.getElementById('odometer').value = fuelLog.odometer;
+ document.getElementById('liters').value = fuelLog.liters;
+ document.getElementById('pricePerLiter').value = fuelLog.pricePerLiter;
+ document.getElementById('totalCost').value = fuelLog.totalCost;
+ document.getElementById('notes').value = fuelLog.notes || '';
         }
+
+        // Set the current ID to indicate editing mode
+        currentFuelLogId = id;
         
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('addFuelModal'));
@@ -178,6 +182,7 @@ async function editFuelLog(id) {
 // Delete fuel log
 async function deleteFuelLog(id) {
     try {
+ id = parseInt(id); // Ensure ID is an integer
         if (!confirm('Are you sure you want to delete this fuel log?')) {
             return;
         }
@@ -188,68 +193,6 @@ async function deleteFuelLog(id) {
     } catch (error) {
         console.error('Error deleting fuel log:', error);
         showToast('Failed to delete fuel log', 'error');
-    }
-}
-
-// Load saved stations
-async function loadSavedStations() {
-    try {
-        const stations = await window.dbManager.getAllRecords(window.dbManager.STORES.FUEL_STATIONS);
-        
-        if (stations.length === 0) return;
-        
-        // Add to select element
-        if (fuelStation) {
-            const otherOption = fuelStation.querySelector('option[value="Other"]');
-            
-            stations.forEach(station => {
-                if (!fuelStation.querySelector(`option[value="${station.name}"]`)) {
-                    const option = document.createElement('option');
-                    option.value = station.name;
-                    option.textContent = station.name;
-                    fuelStation.insertBefore(option, otherOption);
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error loading saved stations:', error);
-    }
-}
-
-// Handle save station
-async function handleSaveStation() {
-    try {
-        const stationName = customStation.value.trim();
-        
-        if (!stationName) {
-            showError('Please enter a station name');
-            return;
-        }
-        
-        // Save station
-        await window.dbManager.addRecord(window.dbManager.STORES.FUEL_STATIONS, {
-            name: stationName
-        });
-        
-        // Add to select element
-        const option = document.createElement('option');
-        option.value = stationName;
-        option.textContent = stationName;
-        const otherOption = fuelStation.querySelector('option[value="Other"]');
-        fuelStation.insertBefore(option, otherOption);
-        
-        // Select the new option
-        fuelStation.value = stationName;
-        
-        // Hide custom station input
-        customStationContainer.classList.add('d-none');
-        customStation.removeAttribute('required');
-        customStation.value = '';
-        
-        showSuccess('Station added successfully');
-    } catch (error) {
-        console.error('Error saving station:', error);
-        showError('Failed to save station');
     }
 }
 
@@ -273,7 +216,7 @@ function calculateFuelEfficiency(entries) {
         
         if (distanceTraveled <= 0 || fuelUsed <= 0) {
             continue; // Skip invalid data
-        }
+ }
         
         // Calculate MPG (miles per gallon)
         const mpg = distanceTraveled / (fuelUsed * 0.264172); // Convert liters to gallons
@@ -288,69 +231,8 @@ function calculateFuelEfficiency(entries) {
         });
     }
     
+ // Returns an array of efficiency results
     return results;
-}
-
-// Show success message
-function showSuccess(message) {
-    // Create toast element
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    // Initialize and show toast
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-    toast.show();
-    
-    // Remove toast after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
-}
-
-// Show error message
-function showError(message) {
-    // Create toast element
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-exclamation-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    // Initialize and show toast
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-    toast.show();
-    
-    // Remove toast after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
 }
 
 // Export fuel log functions

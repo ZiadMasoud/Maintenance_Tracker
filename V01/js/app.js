@@ -112,20 +112,6 @@ function initializeTables() {
     const tables = document.querySelectorAll('.table');
     
     tables.forEach(table => {
-        // Add hover effects
-        table.addEventListener('mouseover', (e) => {
-            const row = e.target.closest('tr');
-            if (row && !row.classList.contains('empty-state')) {
-                row.style.backgroundColor = 'var(--background-color)';
-            }
-        });
-        
-        table.addEventListener('mouseout', (e) => {
-            const row = e.target.closest('tr');
-            if (row && !row.classList.contains('empty-state')) {
-                row.style.backgroundColor = '';
-            }
-        });
         
         // Add responsive behavior
         const container = table.closest('.table-responsive');
@@ -148,40 +134,6 @@ function initializeTables() {
             });
         }
     });
-}
-
-// Initialize modals
-function initializeModals() {
-    // Add event listener for "Add New" button
-    const addNewBtn = document.getElementById('addNewBtn');
-    if (addNewBtn) {
-        addNewBtn.addEventListener('click', () => {
-            const activeSection = document.querySelector('.content-section.active');
-            if (activeSection) {
-                const sectionId = activeSection.id;
-                switch (sectionId) {
-                    case 'expenses':
-                        const expenseModal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
-                        expenseModal.show();
-                        break;
-                    case 'fuel':
-                        const fuelModal = new bootstrap.Modal(document.getElementById('addFuelModal'));
-                        fuelModal.show();
-                        break;
-                    case 'maintenance':
-                        const maintenanceModal = new bootstrap.Modal(document.getElementById('addMaintenanceModal'));
-                        maintenanceModal.show();
-                        break;
-                    case 'suppliers':
-                        const supplierModal = new bootstrap.Modal(document.getElementById('addSupplierModal'));
-                        supplierModal.show();
-                        break;
-                    default:
-                        showToast('Please select a section to add new items', 'warning');
-                }
-            }
-        });
-    }
 }
 
 // Update tables

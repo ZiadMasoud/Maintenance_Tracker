@@ -1,0 +1,66 @@
+/* Settings & Tools Styles */
+.tools-section .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tools-section .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+}
+
+.tools-section .btn {
+    transition: all 0.2s;
+}
+
+.tools-section .btn:hover {
+    transform: translateY(-1px);
+}
+
+.tools-section .btn:active {
+    transform: translateY(0);
+}
+
+/* Export/Import section */
+.export-section .btn {
+    min-width: 140px;
+}
+
+/* Alert customization */
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Card hover effects */
+.border-primary {
+    transition: border-color 0.3s;
+}
+
+.border-primary:hover {
+    border-color: #0d6efd !important;
+}
+
+.border-danger {
+    transition: border-color 0.3s;
+}
+
+.border-danger:hover {
+    border-color: #dc3545 !important;
+}
+
+/* Icon animations */
+.fa-exclamation-triangle {
+    animation: shake 5s infinite;
+    animation-delay: 2s;
+}
+
+@keyframes shake {
+    0%, 90%, 94%, 98%, 100% {
+        transform: translateX(0);
+    }
+    92%, 96% {
+        transform: translateX(-2px);
+    }
+    93%, 97% {
+        transform: translateX(2px);
+    }
+}

@@ -1,6 +1,6 @@
 /**
  * PDF Export Functionality
- * This file handles the PDF export functionality for the Car Maintenance Tracker.
+ * This file provides functions to export data to PDF format using jsPDF.
  */
 
 // Initialize PDF export functionality
@@ -10,6 +10,7 @@ function initPDFExport() {
         
         // Initialize jsPDF
         if (typeof window.jspdf === 'undefined') {
+            // jsPDF is loaded via a script tag in index.html, so it should be available
             console.error('jsPDF library not loaded');
             showError('PDF export functionality not available');
             return;
@@ -36,6 +37,11 @@ function initPDFExport() {
 // Export maintenance records to PDF
 async function exportMaintenanceToPDF() {
     try {
+        // Check if jsPDF and autoTable plugin are available
+        if (typeof window.jspdf === 'undefined' || typeof window.jspdf.autoTable === 'undefined') {
+            showError('PDF export library not fully loaded. Please try again.');
+            return;
+        }
         console.log('Exporting maintenance records to PDF...');
         
         // Get all maintenance records
@@ -63,7 +69,7 @@ async function exportMaintenanceToPDF() {
         
         // Prepare table data
         const tableColumn = ["Date", "Service Type", "Description", "Mileage", "Cost", "Parts"];
-        const tableRows = [];
+        const tableRows = []; // Array to hold data rows for the main table
         
         // Add records to table
         for (const record of records) {
@@ -74,7 +80,7 @@ async function exportMaintenanceToPDF() {
             }).format(record.cost);
             
             // Format parts
-            let partsText = 'None';
+            let partsText = 'None'; // Default text if no parts
             if (record.parts && record.parts.length > 0) {
                 partsText = `${record.parts.length} part${record.parts.length > 1 ? 's' : ''}`;
             }
@@ -86,7 +92,7 @@ async function exportMaintenanceToPDF() {
                 record.mileage.toLocaleString(),
                 formattedCost,
                 partsText
-            ];
+            ]; // Data for a single row
             tableRows.push(tableRow);
         }
         
@@ -101,7 +107,7 @@ async function exportMaintenanceToPDF() {
                 1: { cellWidth: 30 },
                 2: { cellWidth: 50 },
                 3: { cellWidth: 25 },
-                4: { cellWidth: 25 },
+                4: { cellWidth: 25 }, // Adjust column widths as needed
                 5: { cellWidth: 25 }
             },
             didDrawPage: function(data) {
@@ -113,8 +119,7 @@ async function exportMaintenanceToPDF() {
         
         // Add detailed parts information
         let yPos = doc.lastAutoTable.finalY + 20;
-        
-        // Check if we need a new page for parts details
+        // Check if we need a new page before adding parts details title
         if (yPos > doc.internal.pageSize.height - 40) {
             doc.addPage();
             yPos = 20;
@@ -127,7 +132,7 @@ async function exportMaintenanceToPDF() {
         
         // Add parts details for each record
         for (const record of records) {
-            if (!record.parts || record.parts.length === 0) continue;
+            if (!record.parts || record.parts.length === 0) continue; // Skip if no parts for this record
             
             // Check if we need a new page
             if (yPos > doc.internal.pageSize.height - 60) {
@@ -140,7 +145,7 @@ async function exportMaintenanceToPDF() {
             doc.setFont(undefined, 'bold');
             const formattedDate = new Date(record.date).toLocaleDateString();
             doc.text(`${formattedDate} - ${record.serviceType}`, 14, yPos);
-            doc.setFont(undefined, 'normal');
+            doc.setFont(undefined, 'normal'); // Reset font style
             yPos += 8;
             
             // Prepare parts table
@@ -155,7 +160,7 @@ async function exportMaintenanceToPDF() {
                 }).format(part.cost);
                 
                 // Get supplier name if available
-                let supplierName = 'None';
+                let supplierName = 'None'; // Default supplier name
                 if (part.supplierId) {
                     try {
                         const supplier = await window.dbManager.getRecordById(window.dbManager.STORES.SUPPLIERS, part.supplierId);
@@ -164,7 +169,7 @@ async function exportMaintenanceToPDF() {
                         }
                     } catch (error) {
                         console.error('Error getting supplier:', error);
-                    }
+                    } // Catch potential errors during supplier lookup
                 }
                 
                 const partRow = [
@@ -173,7 +178,7 @@ async function exportMaintenanceToPDF() {
                     formattedCost,
                     supplierName
                 ];
-                partsRows.push(partRow);
+                partsRows.push(partRow); // Data for a single part row
             }
             
             // Create parts table
@@ -187,7 +192,7 @@ async function exportMaintenanceToPDF() {
                     1: { cellWidth: 40 },
                     2: { cellWidth: 30 },
                     3: { cellWidth: 40 }
-                },
+                }, // Adjust column widths for parts table
                 margin: { left: 20 }
             });
             
@@ -198,7 +203,8 @@ async function exportMaintenanceToPDF() {
         doc.save('car_maintenance_records.pdf');
         
         // Show success message
-        showSuccess('Maintenance records exported to PDF');
+        // Assuming showToast function is available globally or imported
+        window.showToast('Maintenance records exported to PDF', 'success');
         console.log('Maintenance records exported successfully');
     } catch (error) {
         console.error('Error exporting maintenance records to PDF:', error);
@@ -209,6 +215,11 @@ async function exportMaintenanceToPDF() {
 // Export fuel log to PDF
 async function exportFuelLogToPDF() {
     try {
+        // Check if jsPDF and autoTable plugin are available
+        if (typeof window.jspdf === 'undefined' || typeof window.jspdf.autoTable === 'undefined') {
+            showError('PDF export library not fully loaded. Please try again.');
+            return;
+        }
         console.log('Exporting fuel log to PDF...');
         
         // Get all fuel log entries
@@ -256,7 +267,7 @@ async function exportFuelLogToPDF() {
                 formattedCost,
                 entry.mileage.toLocaleString(),
                 entry.fuelType
-            ];
+            ]; // Data for a single row
             tableRows.push(tableRow);
             
             // Update totals
@@ -275,7 +286,7 @@ async function exportFuelLogToPDF() {
                 1: { cellWidth: 30 },
                 2: { cellWidth: 30 },
                 3: { cellWidth: 30 },
-                4: { cellWidth: 30 }
+                4: { cellWidth: 30 } // Adjust column widths as needed
             },
             didDrawPage: function(data) {
                 // Add page number
@@ -287,8 +298,7 @@ async function exportFuelLogToPDF() {
         // Add summary
         let yPos = doc.lastAutoTable.finalY + 20;
         
-        // Check if we need a new page for summary
-        if (yPos > doc.internal.pageSize.height - 60) {
+        if (yPos > doc.internal.pageSize.height - 50) { // Check if we need a new page for summary
             doc.addPage();
             yPos = 20;
         }
@@ -330,76 +340,14 @@ async function exportFuelLogToPDF() {
         doc.save('fuel_log_records.pdf');
         
         // Show success message
-        showSuccess('Fuel log exported to PDF');
+        // Assuming showToast function is available globally or imported
+        window.showToast('Fuel log exported to PDF', 'success');
         console.log('Fuel log exported successfully');
     } catch (error) {
         console.error('Error exporting fuel log to PDF:', error);
         showError('Failed to export fuel log to PDF');
     }
 }
-
-// Show success message
-function showSuccess(message) {
-    // Create toast element
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    // Initialize and show toast
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-    toast.show();
-    
-    // Remove toast after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
-}
-
-// Show error message
-function showError(message) {
-    // Create toast element
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-exclamation-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    // Initialize and show toast
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-    toast.show();
-    
-    // Remove toast after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
-}
-
 // Export PDF export functions for use in other modules
 window.pdfExportManager = {
     initPDFExport,

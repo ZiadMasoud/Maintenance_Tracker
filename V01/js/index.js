@@ -3,15 +3,15 @@
  * This file initializes the application and handles errors
  */
 
-// Wrap all initialization in a function
+/**
+ * Initializes the entire application, including the database and all modules.
+ */
 async function initialize() {
     // Add global error event listener
     window.addEventListener('error', function(event) {
         console.error('Global error:', event.error);
         showErrorModal('Application Error', `An error occurred: ${event.message}<br>Line: ${event.lineno}, Column: ${event.colno}<br>File: ${event.filename}`);
-        return false;
     });
-
     try {
         // Check if all required managers are loaded
         if (!window.dbManager) {
@@ -21,8 +21,7 @@ async function initialize() {
         // Initialize database first
         await window.dbManager.initDatabase().catch(err => {
             throw new Error(`Database initialization failed: ${err.message}`);
-        });
-        console.log('Database initialized');
+    });
         
         try {
             // Initialize all managers in order
@@ -55,13 +54,16 @@ async function initialize() {
                 await window.carSavingsManager.initCarSavings();
             }
             
+            // Initialize UI components
+            initializeUI();
+
             // Initialize overview
             await initializeOverview();
             
-            // Initialize UI components
-            initializeUI();
             console.log('Application initialized successfully');
         } catch (error) {
+            // Catch and display errors during module initialization
+
             console.error('Error initializing managers:', error);
             showErrorModal('Initialization Error', `Failed to initialize application: ${error.message}`);
         }
@@ -71,7 +73,10 @@ async function initialize() {
     }
 }
 
-// Initialize overview
+/**
+ * Initializes the overview section by fetching and displaying key statistics and recent activity.
+ * This function calculates totals from expenses, fuel logs, and maintenance records.
+ */
 async function initializeOverview() {
     try {
         // Get all records
@@ -86,8 +91,8 @@ async function initializeOverview() {
         const totalCost = totalExpenses + totalFuelCost + totalMaintenanceCost;
         
         // Get car savings
-        const carSavingsRecords = await window.dbManager.getAllRecords(window.dbManager.STORES.CAR_SAVINGS);
-        const carSavings = carSavingsRecords.length > 0 ? carSavingsRecords[0].amount : 0;
+        const carSavingsRecords = await window.dbManager.getAllRecords(window.dbManager.STORES.CAR_SAVINGS); // Assuming only one car savings record
+        const carSavings = carSavingsRecords.length > 0 ? carSavingsRecords[0].amount : 0; // Default to 0 if no record exists
         
         // Update overview cards
         // Only update elements that exist
@@ -107,7 +112,7 @@ async function initializeOverview() {
         const recentActivityList = document.getElementById('recentActivityList');
         if (recentActivityList) {
             // Combine all activities
-            const activities = [
+            const activities = [ // Use consistent variable name
                 ...expenses.map(expense => ({
                     type: 'expense',
                     date: expense.date,
@@ -151,13 +156,14 @@ async function initializeOverview() {
     }
 }
 
-// Initialize UI components (navigation, sidebar, etc.)
+/**
+ * Initializes core UI components like navigation and tables.
+ * This function calls specific initialization functions defined in app.js.
+ */
 function initializeUI() {
     // Initialize all UI components from app.js
     if (typeof initializeNavigation === 'function') initializeNavigation();
-    // initializeSidebar is not defined, sidebar initialization is handled in initializeNavigation
     if (typeof initializeStats === 'function') initializeStats();
-    if (typeof initializeTables === 'function') initializeTables();
     if (typeof initializeModals === 'function') initializeModals();
     
     // Update tables with current data
@@ -166,7 +172,11 @@ function initializeUI() {
     }
 }
 
-// Show error modal
+/**
+ * Displays a Bootstrap modal with an error message.
+ * @param {string} title - The title of the error modal.
+ * @param {string} message - The error message to display (can contain HTML).
+ */
 function showErrorModal(title, message) {
     // Create modal element
     const modalHtml = `

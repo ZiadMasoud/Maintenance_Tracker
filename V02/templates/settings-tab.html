@@ -1,0 +1,31 @@
+<!-- Settings Tab Content -->
+<div class="tab-pane fade" id="settings" role="tabpanel">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">Settings & Tools</h2>
+                
+                <!-- Load Settings Template -->
+                <div id="settingsContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this to your script section -->
+<script>
+    // Load settings template
+    fetch('templates/settings.html')
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('settingsContainer').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading settings template:', error);
+            document.getElementById('settingsContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load settings. Please refresh the page.
+                </div>
+            `;
+        });
+</script>

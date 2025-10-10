@@ -10,7 +10,7 @@ async function initCarSavings() {
         await updateCarSavings();
         
         // Set up event listener for the savings button
-        const saveSavingsBtn = document.getElementById('saveSavingsBtn');
+        const saveSavingsBtn = document.getElementById('saveSavingsBtn'); // Assuming this button is within the updateSavingsModal
         if (saveSavingsBtn) {
             saveSavingsBtn.addEventListener('click', handleSaveSavings);
         }
@@ -23,7 +23,7 @@ async function initCarSavings() {
         }
     } catch (error) {
         console.error('Error initializing car savings:', error);
-        showErrorModal('Car Savings Error', 'Failed to initialize car savings functionality.');
+        showToast('Failed to initialize car savings functionality.', 'error');
     }
 }
 
@@ -84,7 +84,7 @@ async function handleSaveSavings() {
         
         const amount = parseFloat(savingsAmount.value);
         if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid amount greater than 0.');
+ showToast('Please enter a valid amount greater than 0.', 'error');
             return;
         }
         
@@ -113,10 +113,10 @@ async function handleSaveSavings() {
         if (modal) modal.hide();
         
         // Show success message
-        alert('Car savings updated successfully!');
+ showToast('Car savings updated successfully!', 'success');
     } catch (error) {
         console.error('Error saving car savings:', error);
-        alert('Failed to update car savings. Please try again.');
+ showToast('Failed to update car savings. Please try again.', 'error');
     }
 }
 

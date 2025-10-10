@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Maintenance Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🚗 Car Maintenance Tracker</h1>
+    <div class="summary">
+      <div class="odometer-section">
+        <label>Current Odometer:</label>
+        <button id="currentOdometerBtn" class="odometer-btn">
+          <span id="odometerValue">0 km</span>
+          <span class="edit-icon">✎</span>
+        </button>
+      </div>
+      <div id="totalCost" class="total-cost">Total: 0 EGP</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="sessions">
+      <h2>Maintenance Sessions</h2>
+      
+      <!-- Search and Filter Controls -->
+      <div class="search-controls">
+        <div class="search-group">
+          <input type="text" id="sessionSearch" placeholder="Search by date or category...">
+          <button id="clearSearchBtn" class="clear-search-btn">✕</button>
+        </div>
+        <div class="filter-group">
+          <select id="categoryFilter">
+            <option value="">All Categories</option>
+          </select>
+          <select id="dateFilter">
+            <option value="">All Time</option>
+            <option value="last30">Last 30 Days</option>
+            <option value="last90">Last 90 Days</option>
+            <option value="thisYear">This Year</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Session List with Pagination -->
+      <div class="sessions-container">
+        <div id="sessionsList"></div>
+        
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" id="paginationControls" style="display: none;">
+          <button id="prevPageBtn" class="pagination-btn">← Previous</button>
+          <span id="pageInfo" class="page-info">Page 1 of 1 (Showing latest 2)</span>
+          <button id="nextPageBtn" class="pagination-btn">Next →</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="upcoming">
+      <h2>Upcoming Maintenance</h2>
+      <div id="upcomingList"></div>
+    </section>
+
+    <section class="spending-chart">
+      <h2>Spending Over Time</h2>
+      <div class="chart-controls">
+        <button id="monthlyView" class="chart-btn active">Monthly</button>
+        <button id="yearlyView" class="chart-btn">Yearly</button>
+      </div>
+      <canvas id="spendingChart"></canvas>
+    </section>
+
+    <section class="category-chart">
+      <h2>Spending by Category</h2>
+      <div class="chart-controls">
+        <button id="categoryMonthlyView" class="chart-btn active">Monthly</button>
+        <button id="categoryYearlyView" class="chart-btn">Yearly</button>
+      </div>
+      <canvas id="categoryChart"></canvas>
+    </section>
+  </main>
+
+  <button id="newSessionBtn" class="floating-btn">＋</button>
+  <button id="settingsBtn" class="floating-btn secondary" style="right: 90px;">⚙</button>
+
+
+  <!-- Odometer Edit Modal -->
+  <div id="odometerModal" class="modal">
+    <div class="modal-content small-modal">
+      <span id="closeOdometerModal" class="close">&times;</span>
+      <h2>Update Current Odometer</h2>
+      <div class="form-group">
+        <label for="odometerInput">Current Odometer (km):</label>
+        <input type="number" id="odometerInput" placeholder="Enter current odometer reading" />
+      </div>
+      <div class="actions">
+        <button id="saveOdometerBtn" class="primary-btn">Save</button>
+        <button id="cancelOdometerBtn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content large-modal">
+      <span id="closeSettingsModal" class="close">&times;</span>
+      <h2>Settings</h2>
+      
+      <!-- Category Management Section -->
+      <div class="settings-section">
+        <h3>Category Management</h3>
+        <div class="settings-group">
+          <div class="form-group">
+            <label for="newCategoryName">Category Name:</label>
+            <input type="text" id="newCategoryName" placeholder="Enter category name">
+          </div>
+          
+          <div class="form-group">
+            <label for="newCategoryColor">Category Color:</label>
+            <input type="color" id="newCategoryColor" value="#87CEEB">
+          </div>
+          
+          <button id="addCategoryBtn" class="primary-btn">Add Category</button>
+        </div>
+        
+        <div id="categoriesList" class="categories-list"></div>
+      </div>
+      
+      <!-- Data Management Section -->
+      <div class="settings-section">
+        <h3>Data Management</h3>
+        <div class="settings-group">
+          <button id="exportDataBtn" class="primary-btn">Export Data (JSON)</button>
+          <button id="importDataBtn" class="primary-btn">Import Data (JSON)</button>
+          <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+      </div>
+      
+      <!-- Danger Zone Section -->
+      <div class="settings-section">
+        <h3>Danger Zone</h3>
+        <div class="settings-group">
+          <button id="resetAllDataBtn" class="danger-btn">Reset All Data</button>
+          <p class="warning-text">⚠️ This will permanently delete all sessions, items, and categories. This action cannot be undone!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="sessionModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>New Maintenance Session</h2>
+
+      <div class="form-group">
+        <label>Date:</label>
+        <input type="text" id="sessionDate" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+      </div>
+
+      <div class="form-group">
+        <label>Odometer (km):</label>
+        <input type="number" id="sessionOdometer">
+      </div>
+
+      <div class="form-group">
+        <label>Merchant/Place:</label>
+        <input type="text" id="sessionMerchant" placeholder="Optional">
+      </div>
+
+      <div class="form-group">
+        <label>Notes:</label>
+        <textarea id="sessionNotes" placeholder="Optional"></textarea>
+      </div>
+
+      <h3>Items / Services</h3>
+      <div id="itemsContainer"></div>
+      <button id="addItemBtn" class="small-btn">Add Item</button>
+
+      <div class="actions">
+        <button id="saveSessionBtn" class="primary-btn">Save Session</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

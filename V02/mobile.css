@@ -1,0 +1,147 @@
+/* Mobile & Touch Optimizations */
+@media (max-width: 768px) {
+    :root {
+        --space-md: 12px;
+        --space-lg: 20px;
+        --font-base: 15px;
+    }
+
+    .topbar {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .brand {
+        font-size: var(--font-base);
+    }
+
+    .tabs {
+        padding: var(--space-sm);
+    }
+
+    .page-head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-sm);
+    }
+
+    .quick-actions {
+        justify-content: flex-start;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+    }
+
+    .cards > div {
+        padding: var(--space-md);
+    }
+
+    .panel {
+        padding: var(--space-md);
+        margin-bottom: var(--space-md);
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+    }
+
+    .input-base, 
+    select,
+    .btn {
+        min-height: 44px; /* Touch target size */
+    }
+
+    .table th,
+    .table td {
+        padding: var(--space-sm);
+    }
+
+    .list-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-sm);
+    }
+
+    .list-item-amount {
+        align-self: flex-end;
+    }
+
+    /* Touch-friendly chart size */
+    .chart-container {
+        height: 250px !important;
+    }
+}
+
+/* Chart Styles */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: var(--space-md) 0;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    height: 100%;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Focus Styles */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+    .topbar,
+    .tabs,
+    .quick-actions,
+    button:not([type="submit"]) {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+
+    .panel {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+    }
+
+    .table {
+        border: 1px solid #ccc;
+    }
+
+    .table th {
+        background: #f0f0f0 !important;
+    }
+}

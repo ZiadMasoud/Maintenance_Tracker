@@ -1,6 +1,6 @@
 /**
  * Suppliers Functionality
- * This file handles the suppliers section of the Car Maintenance Tracker.
+ * This file handles the display, adding, editing, and deleting of supplier records.
  */
 
 // DOM Elements
@@ -21,7 +21,7 @@ const suppliersModule = {
 
 // Initialize suppliers display
 async function initSuppliers() {
-    console.log('Initializing suppliers...');
+    // console.log('Initializing suppliers...'); // Removed console log
     
     try {
         // Initialize DOM elements
@@ -45,8 +45,6 @@ async function initSuppliers() {
         }
         
         await displaySuppliers();
-        
-        console.log('Suppliers initialized successfully');
     } catch (error) {
         console.error('Error initializing suppliers:', error);
         showError('Failed to initialize suppliers');
@@ -93,13 +91,20 @@ async function handleSaveSupplier() {
         
         // Validate data
         if (!supplier.name) {
-            showError('Please enter a supplier name');
+            showToast('Please enter a supplier name', 'error');
             suppliersModule.isSubmitting = false;
             return;
         }
         
         // Save to database
-        await window.dbManager.addRecord(window.dbManager.STORES.SUPPLIERS, supplier);
+        if (currentSupplierId) {
+            // Update existing record
+            supplier.id = currentSupplierId; // Add the ID to the object for update
+            await window.dbManager.updateRecord(window.dbManager.STORES.SUPPLIERS, supplier);
+        } else {
+            // Add new record
+            await window.dbManager.addRecord(window.dbManager.STORES.SUPPLIERS, supplier);
+        }
         
         // Reset form
         resetSupplierForm();
@@ -111,12 +116,9 @@ async function handleSaveSupplier() {
         
         // Update display
         await displaySuppliers();
-        
-        // Show success message
-        showSuccess('Supplier added successfully');
-    } catch (error) {
-        console.error('Error saving supplier:', error);
-        showError('Failed to save supplier: ' + error.message);
+       } catch (error) {
+        console.error('Error saving/updating supplier:', error);
+ showToast('Failed to save supplier: ' + error.message, 'error');
     } finally {
         suppliersModule.isSubmitting = false;
     }
@@ -179,7 +181,7 @@ async function displaySuppliers() {
         });
     } catch (error) {
         console.error('Error displaying suppliers:', error);
-        showError('Failed to display suppliers: ' + error.message);
+        showToast('Failed to display suppliers: ' + error.message, 'error'); // Corrected toast call
     }
 }
 
@@ -187,12 +189,11 @@ async function displaySuppliers() {
 async function handleEditSupplier(event) {
     try {
         const id = parseInt(event.currentTarget.getAttribute('data-id'));
-        console.log(`Editing supplier with ID: ${id}`);
         
         const supplier = await window.dbManager.getRecordById(window.dbManager.STORES.SUPPLIERS, id);
         
         if (!supplier) {
-            showError('Supplier not found');
+            showToast('Supplier not found', 'error'); // Corrected toast call
             return;
         }
         
@@ -221,7 +222,7 @@ async function handleEditSupplier(event) {
         }
     } catch (error) {
         console.error('Error editing supplier:', error);
-        showError('Failed to edit supplier: ' + error.message);
+        showToast('Failed to edit supplier: ' + error.message, 'error'); // Corrected toast call
     }
 }
 
@@ -229,77 +230,18 @@ async function handleEditSupplier(event) {
 async function handleDeleteSupplier(event) {
     try {
         const id = parseInt(event.currentTarget.getAttribute('data-id'));
-        console.log(`Deleting supplier with ID: ${id}`);
-        
+
         if (!confirm('Are you sure you want to delete this supplier?')) {
             return;
         }
-        
+
         await window.dbManager.deleteRecord(window.dbManager.STORES.SUPPLIERS, id);
-        
         await displaySuppliers();
-        
-        showSuccess('Supplier deleted successfully');
+        showToast('Supplier deleted successfully', 'success'); // Using showToast
     } catch (error) {
         console.error('Error deleting supplier:', error);
-        showError('Failed to delete supplier: ' + error.message);
+        showToast('Failed to delete supplier: ' + error.message, 'error'); // Using showToast
     }
-}
-
-// Show success message
-function showSuccess(message) {
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
-}
-
-// Show error message
-function showError(message) {
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
-    toastContainer.style.zIndex = '11';
-    
-    toastContainer.innerHTML = `
-        <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-exclamation-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    const toastElement = toastContainer.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        document.body.removeChild(toastContainer);
-    });
 }
 
 // Export suppliers functions for use in other modules

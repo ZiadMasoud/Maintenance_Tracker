@@ -21,7 +21,7 @@ const expensesModule = {
 // Initialize expenses
 async function initExpenses() {
     try {
-        console.log('Initializing expenses...');
+        // console.log('Initializing expenses...'); // Keep console log for debugging during development
         
         // Get form elements
         expenseForm = document.getElementById('expenseForm');
@@ -43,9 +43,9 @@ async function initExpenses() {
         
         // Display existing expenses
         await displayExpenses();
-        console.log('Expenses initialized successfully');
+        // console.log('Expenses initialized successfully'); // Keep console log for debugging during development
     } catch (error) {
-        console.error('Error initializing expenses:', error);
+        console.error('Error initializing expenses:', error); // Keep console error for debugging
         showError('Failed to initialize expenses');
     }
 }
@@ -94,7 +94,13 @@ async function handleSaveExpense() {
         }
         
         // Save to database
-        await window.dbManager.addRecord(window.dbManager.STORES.EXPENSES, expense);
+        if (currentExpenseId) {
+            expense.id = currentExpenseId; // Add ID for update
+            await window.dbManager.updateRecord(window.dbManager.STORES.EXPENSES, expense);
+        } else {
+            await window.dbManager.addRecord(window.dbManager.STORES.EXPENSES, expense);
+        }        
+
         
         // Reset form
         resetExpenseForm();
@@ -108,8 +114,8 @@ async function handleSaveExpense() {
         // Update display
         await displayExpenses();
         
-        // Show success message
-        showSuccess('Expense added successfully');
+        // Show toast notification
+        showToast(currentExpenseId ? 'Expense updated successfully' : 'Expense added successfully', 'success');
     } catch (error) {
         console.error('Error saving expense:', error);
         showError('Failed to save expense: ' + error.message);
@@ -132,7 +138,7 @@ async function displayExpenses() {
         
         // Update table
         expensesTableBody.innerHTML = expenses.length > 0 ? 
-            expenses.map(expense => `
+ expenses.map(expense => `
                 <tr>
                     <td>${new Date(expense.date).toLocaleDateString()}</td>
                     <td>${expense.description || '-'}</td>
@@ -146,9 +152,9 @@ async function displayExpenses() {
                         </button>
                     </td>
                 </tr>
-            `).join('') : `
+ `).join('') : `
             <tr class="empty-state">
-                <td colspan="4">
+                <td colspan="5">
                     <div>
                         <i class="fas fa-receipt"></i>
                         <p>No expenses recorded yet</p>
@@ -157,7 +163,7 @@ async function displayExpenses() {
             </tr>`;
     } catch (error) {
         console.error('Error displaying expenses:', error);
-        showToast('Failed to display expenses', 'error');
+        showError('Failed to display expenses'); // Use showError for consistency
     }
 }
 
@@ -166,7 +172,7 @@ async function editExpense(id) {
     try {
         const expense = await window.dbManager.getRecordById(window.dbManager.STORES.EXPENSES, id);
         if (!expense) {
-            showToast('Expense not found', 'error');
+            showError('Expense not found'); // Use showError for consistency
             return;
         }
         
@@ -177,13 +183,16 @@ async function editExpense(id) {
             document.getElementById('expenseDescription').value = expense.description || '';
             document.getElementById('expenseAmount').value = expense.amount;
         }
+
+        // Set current expense ID
+ currentExpenseId = id;
         
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
         modal.show();
     } catch (error) {
         console.error('Error editing expense:', error);
-        showToast('Failed to edit expense', 'error');
+        showError('Failed to edit expense'); // Use showError for consistency
     }
 }
 
@@ -198,7 +207,7 @@ async function deleteExpense(id) {
         await displayExpenses();
         showToast('Expense deleted successfully', 'success');
     } catch (error) {
-        console.error('Error deleting expense:', error);
+        console.error('Error deleting expense:', error); // Keep console error for debugging
         showToast('Failed to delete expense', 'error');
     }
 }
@@ -265,6 +274,7 @@ function showError(message) {
     });
 }
 
+// The showSuccess and showError functions are now defined globally in app.js
 // Export expenses functions
 window.expensesManager = {
     initExpenses,
