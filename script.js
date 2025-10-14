@@ -59,6 +59,94 @@ function formatDateToISO(britishDate) {
   return britishDate;
 }
 
+function parseDateInput(dateInput) {
+  if (!dateInput) return null;
+  
+  // Remove any extra whitespace
+  dateInput = dateInput.trim();
+  
+  // Try different separators: /, -, .
+  const separators = ['/', '-', '.'];
+  
+  for (const sep of separators) {
+    if (dateInput.includes(sep)) {
+      const parts = dateInput.split(sep);
+      if (parts.length === 3) {
+        let day, month, year;
+        
+        // Try different order formats
+        const formats = [
+          // DD/MM/YYYY format
+          () => {
+            day = parts[0];
+            month = parts[1];
+            year = parts[2];
+            return day.length <= 2 && month.length <= 2 && year.length === 4;
+          },
+          // MM/DD/YYYY format (US format)
+          () => {
+            day = parts[1];
+            month = parts[0];
+            year = parts[2];
+            return day.length <= 2 && month.length <= 2 && year.length === 4;
+          },
+          // YYYY/MM/DD format (ISO-like)
+          () => {
+            day = parts[2];
+            month = parts[1];
+            year = parts[0];
+            return day.length <= 2 && month.length <= 2 && year.length === 4;
+          }
+        ];
+        
+        for (const format of formats) {
+          if (format()) {
+            // Validate the date
+            const dayNum = parseInt(day);
+            const monthNum = parseInt(month);
+            const yearNum = parseInt(year);
+            
+            if (dayNum >= 1 && dayNum <= 31 && 
+                monthNum >= 1 && monthNum <= 12 && 
+                yearNum >= 1900 && yearNum <= 2100) {
+              
+              // Create date object to validate it's a real date
+              const testDate = new Date(yearNum, monthNum - 1, dayNum);
+              if (testDate.getDate() === dayNum && 
+                  testDate.getMonth() === monthNum - 1 && 
+                  testDate.getFullYear() === yearNum) {
+                
+                // Return in ISO format (YYYY-MM-DD)
+                return `${yearNum}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return null;
+}
+
+function autoFormatDateInput(event) {
+  let value = event.target.value;
+  
+  // Remove any non-digit characters
+  value = value.replace(/\D/g, '');
+  
+  // Auto-add separators based on input length
+  if (value.length >= 2 && value.length < 4) {
+    value = value.substring(0, 2) + '/' + value.substring(2);
+  } else if (value.length >= 4 && value.length < 8) {
+    value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4);
+  } else if (value.length > 8) {
+    value = value.substring(0, 8);
+  }
+  
+  event.target.value = value;
+}
+
 // ================================
 // Event Listeners Setup
 // ================================
@@ -76,9 +164,13 @@ function initializeEventListeners() {
   // Settings modal
   settingsBtn.addEventListener('click', () => {
     settingsModal.style.display = 'flex';
+    document.body.classList.add('modal-open');
     loadCategoriesList(); // Load categories when settings modal opens
   });
-  closeSettingsModal.addEventListener('click', () => settingsModal.style.display = 'none');
+  closeSettingsModal.addEventListener('click', () => {
+    settingsModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  });
   
   // Export/Import functionality
   exportDataBtn.addEventListener('click', exportAllData);
@@ -88,6 +180,20 @@ function initializeEventListeners() {
   
   // Load categories for filter
   loadCategoriesForFilter();
+  
+  // View details modal
+  closeViewDetailsModal.addEventListener('click', () => {
+    viewDetailsModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  });
+  closeViewDetailsBtn.addEventListener('click', () => {
+    viewDetailsModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  });
+  
+  // Date input auto-formatting
+  const sessionDateInput = document.getElementById('sessionDate');
+  sessionDateInput.addEventListener('input', autoFormatDateInput);
 }
 
 // ================================
@@ -137,6 +243,12 @@ const importDataBtn = document.getElementById("importDataBtn");
 const importFileInput = document.getElementById("importFileInput");
 const resetAllDataBtn = document.getElementById("resetAllDataBtn");
 
+// View details modal elements
+const viewDetailsModal = document.getElementById("viewDetailsModal");
+const closeViewDetailsModal = document.getElementById("closeViewDetailsModal");
+const closeViewDetailsBtn = document.getElementById("closeViewDetailsBtn");
+const sessionDetailsContent = document.getElementById("sessionDetailsContent");
+
 // ================================
 // State
 // ================================
@@ -161,14 +273,17 @@ let selectedDateFilter = '';
 currentOdometerBtn.addEventListener("click", () => {
   odometerInput.value = currentOdometer;
   odometerModal.style.display = "flex";
+  document.body.classList.add('modal-open');
 });
 
 closeOdometerModal.addEventListener("click", () => {
   odometerModal.style.display = "none";
+  document.body.classList.remove('modal-open');
 });
 
 cancelOdometerBtn.addEventListener("click", () => {
   odometerModal.style.display = "none";
+  document.body.classList.remove('modal-open');
 });
 
 saveOdometerBtn.addEventListener("click", () => {
@@ -177,6 +292,7 @@ saveOdometerBtn.addEventListener("click", () => {
   localStorage.setItem('currentOdometer', newValue.toString());
   odometerValue.textContent = `${newValue.toLocaleString()} km`;
   odometerModal.style.display = "none";
+  document.body.classList.remove('modal-open');
   renderAll();
 });
 
@@ -184,6 +300,7 @@ saveOdometerBtn.addEventListener("click", () => {
 window.addEventListener("click", function(e) {
   if (e.target === odometerModal) {
     odometerModal.style.display = "none";
+    document.body.classList.remove('modal-open');
   }
 });
 
@@ -222,6 +339,7 @@ closeModal.onclick = () => closeSessionModal();
 
 function openModal(session = null) {
   modal.style.display = "flex";
+  document.body.classList.add('modal-open');
   itemsContainer.innerHTML = "";
   editingSessionId = session ? session.id : null;
 
@@ -248,14 +366,25 @@ function openModal(session = null) {
 
 function closeSessionModal() {
   modal.style.display = "none";
+  document.body.classList.remove('modal-open');
   editingSessionId = null;
 }
 
 // Handle clicks outside modals
 window.addEventListener("click", function(e) {
   if (e.target === modal) closeSessionModal();
-  if (e.target === odometerModal) odometerModal.style.display = "none";
-  if (e.target === settingsModal) settingsModal.style.display = "none";
+  if (e.target === odometerModal) {
+    odometerModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  }
+  if (e.target === settingsModal) {
+    settingsModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  }
+  if (e.target === viewDetailsModal) {
+    viewDetailsModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  }
 });
 
 // ================================
@@ -374,12 +503,14 @@ saveSessionBtn.onclick = () => saveSession();
 function saveSession() {
   let date = document.getElementById("sessionDate").value;
   
-  // Handle British date format (DD/MM/YYYY) - convert to ISO format for storage
+  // Parse the date input using multiple format support
   if (date) {
-    if (date.includes('/')) {
-      // Convert DD/MM/YYYY to YYYY-MM-DD for storage
-      const [day, month, year] = date.split('/');
-      date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const parsedDate = parseDateInput(date);
+    if (parsedDate) {
+      date = parsedDate;
+    } else {
+      alert("Invalid date format. Please use DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY format.");
+      return;
     }
   } else {
     // Default to today if no date provided
@@ -391,8 +522,8 @@ function saveSession() {
   const merchant = document.getElementById("sessionMerchant").value.trim();
   const notes = document.getElementById("sessionNotes").value.trim();
 
-  // Auto-update current odometer if session odometer is higher
-  if (odometer > currentOdometer) {
+  // Auto-update current odometer only if session odometer is higher and valid
+  if (odometer && odometer > currentOdometer) {
     currentOdometer = odometer;
     localStorage.setItem('currentOdometer', odometer.toString());
     odometerValue.textContent = `${odometer.toLocaleString()} km`;
@@ -490,6 +621,13 @@ function renderSessionCards(sessions, items, categories) {
 
     const card = document.createElement("div");
     card.classList.add("session-card");
+    card.style.cursor = "pointer";
+    card.onclick = (e) => {
+      // Don't open details if clicking on action buttons
+      if (!e.target.classList.contains('edit-btn') && !e.target.classList.contains('delete-btn')) {
+        viewSessionDetails(session.id);
+      }
+    };
     card.innerHTML = `
       <div class="session-header">
         <h3>${session.date}</h3>
@@ -498,7 +636,7 @@ function renderSessionCards(sessions, items, categories) {
           <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
         </div>
       </div>
-      <p><strong>Odometer:</strong> ${session.odometer} km</p>
+      ${session.odometer && session.odometer > 0 ? `<p><strong>Odometer:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
       <div class="item-list">
@@ -600,6 +738,174 @@ function loadItemsForEdit(sessionId) {
       cursor.continue();
     }
   };
+}
+
+function viewSessionDetails(id) {
+  const tx = db.transaction(["sessions", "items", "categories"], "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const itemStore = tx.objectStore("items");
+  const categoryStore = tx.objectStore("categories");
+  
+  sessionStore.get(id).onsuccess = e => {
+    const session = e.target.result;
+    if (!session) return;
+    
+    // Get items for this session
+    const items = [];
+    itemStore.openCursor().onsuccess = e2 => {
+      const cursor = e2.target.result;
+      if (cursor) {
+        if (cursor.value.sessionId === id) {
+          items.push(cursor.value);
+        }
+        cursor.continue();
+      } else {
+        // Get categories for display
+        const categories = {};
+        categoryStore.openCursor().onsuccess = e3 => {
+          const cursor3 = e3.target.result;
+          if (cursor3) {
+            categories[cursor3.value.id] = cursor3.value;
+            cursor3.continue();
+          } else {
+            displaySessionDetails(session, items, categories);
+          }
+        };
+      }
+    };
+  };
+}
+
+function displaySessionDetails(session, items, categories) {
+  let detailsHTML = `
+    <div class="session-details">
+      <div class="detail-section">
+        <h3>Session Information</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Date:</label>
+            <span>${formatDateToBritish(session.date)}</span>
+          </div>
+  `;
+  
+  // Only show odometer if it exists and is greater than 0
+  if (session.odometer && session.odometer > 0) {
+    detailsHTML += `
+      <div class="detail-item">
+        <label>Odometer:</label>
+        <span>${session.odometer.toLocaleString()} km</span>
+      </div>
+    `;
+  }
+  
+  // Only show merchant if it exists
+  if (session.merchant) {
+    detailsHTML += `
+      <div class="detail-item">
+        <label>Merchant/Place:</label>
+        <span>${session.merchant}</span>
+      </div>
+    `;
+  }
+  
+  // Only show notes if they exist
+  if (session.notes) {
+    detailsHTML += `
+      <div class="detail-item full-width">
+        <label>Notes:</label>
+        <span>${session.notes}</span>
+      </div>
+    `;
+  }
+  
+  detailsHTML += `
+        </div>
+      </div>
+  `;
+  
+  // Add items section
+  if (items.length > 0) {
+    const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
+    detailsHTML += `
+      <div class="detail-section">
+        <h3>Items & Services</h3>
+        <div class="items-list">
+    `;
+    
+    items.forEach(item => {
+      const categoryName = item.categoryId && categories[item.categoryId] 
+        ? categories[item.categoryId].name 
+        : 'No Category';
+      const categoryColor = item.categoryId && categories[item.categoryId] 
+        ? categories[item.categoryId].color 
+        : '#ccc';
+      
+      detailsHTML += `
+        <div class="item-detail-card">
+          <div class="item-header">
+            <h4>${item.name || "Unnamed Item"}</h4>
+            <span class="item-price">${item.price.toLocaleString()} EGP</span>
+          </div>
+          <div class="item-details">
+            <div class="category-badge" style="background-color: ${categoryColor}">${categoryName}</div>
+      `;
+      
+      if (item.interval) {
+        detailsHTML += `
+          <div class="detail-item">
+            <label>Service Interval:</label>
+            <span>${item.interval.toLocaleString()} km</span>
+          </div>
+        `;
+      }
+      
+      if (item.nextDueKm) {
+        detailsHTML += `
+          <div class="detail-item">
+            <label>Next Due:</label>
+            <span>${item.nextDueKm.toLocaleString()} km</span>
+          </div>
+        `;
+      }
+      
+      if (item.merchant) {
+        detailsHTML += `
+          <div class="detail-item">
+            <label>Merchant:</label>
+            <span>${item.merchant}</span>
+          </div>
+        `;
+      }
+      
+      if (item.notes) {
+        detailsHTML += `
+          <div class="detail-item full-width">
+            <label>Notes:</label>
+            <span>${item.notes}</span>
+          </div>
+        `;
+      }
+      
+      detailsHTML += `
+          </div>
+        </div>
+      `;
+    });
+    
+    detailsHTML += `
+        </div>
+        <div class="session-total-details">
+          <strong>Total: ${total.toLocaleString()} EGP</strong>
+        </div>
+      </div>
+    `;
+  }
+  
+  detailsHTML += `</div>`;
+  
+  sessionDetailsContent.innerHTML = detailsHTML;
+  viewDetailsModal.style.display = 'flex';
+  document.body.classList.add('modal-open');
 }
 
 function deleteSession(id) {
@@ -1117,6 +1423,13 @@ function displaySessionsPaginated(sessions, items, categories) {
 
     const card = document.createElement("div");
     card.classList.add("session-card");
+    card.style.cursor = "pointer";
+    card.onclick = (e) => {
+      // Don't open details if clicking on action buttons
+      if (!e.target.classList.contains('edit-btn') && !e.target.classList.contains('delete-btn')) {
+        viewSessionDetails(session.id);
+      }
+    };
     card.innerHTML = `
       <div class="session-header">
         <h3>${formatDateToBritish(session.date)}</h3>
@@ -1125,7 +1438,7 @@ function displaySessionsPaginated(sessions, items, categories) {
           <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
         </div>
       </div>
-      <p><strong>Odometer:</strong> ${session.odometer} km</p>
+      ${session.odometer && session.odometer > 0 ? `<p><strong>Odometer:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
       <div class="item-list">

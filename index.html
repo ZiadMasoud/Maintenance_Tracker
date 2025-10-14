@@ -9,7 +9,7 @@
 </head>
 <body>
   <header>
-    <h1>🚗 Car Maintenance Tracker</h1>
+    <h1>Maintenance Tracker</h1>
     <div class="summary">
       <div class="odometer-section">
         <label>Current Odometer:</label>
@@ -149,6 +149,18 @@
     </div>
   </div>
 
+  <!-- View Details Modal -->
+  <div id="viewDetailsModal" class="modal">
+    <div class="modal-content">
+      <span id="closeViewDetailsModal" class="close">&times;</span>
+      <h2>Session Details</h2>
+      <div id="sessionDetailsContent"></div>
+      <div class="actions">
+        <button id="closeViewDetailsBtn" class="secondary-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal -->
   <div id="sessionModal" class="modal">
     <div class="modal-content">
@@ -157,7 +169,7 @@
 
       <div class="form-group">
         <label>Date:</label>
-        <input type="text" id="sessionDate" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+        <input type="text" id="sessionDate" placeholder="DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY">
       </div>
 
       <div class="form-group">
