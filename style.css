@@ -2,7 +2,7 @@
 
 body {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    background: #dbeafe;
     margin: 0;
     padding: 0;
     color: #4a5568;
@@ -32,10 +32,7 @@ body {
     font-size: 1.8rem;
     font-weight: 700;
     margin: 0;
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1e40af;
   }
   
   .summary {
@@ -57,7 +54,7 @@ body {
   }
 
   .odometer-btn {
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    background: #1e40af;
     color: white;
     border: none;
     border-radius: 12px;
@@ -69,12 +66,13 @@ body {
     font-weight: 600;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(168, 216, 234, 0.25);
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.25);
   }
 
   .odometer-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(168, 216, 234, 0.35);
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+    background: #1d4ed8;
   }
 
   .edit-icon {
@@ -138,7 +136,7 @@ body {
     content: '';
     width: 4px;
     height: 24px;
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    background: #1e40af;
     border-radius: 2px;
   }
   
@@ -194,7 +192,7 @@ body {
     position: fixed;
     right: 24px;
     bottom: 24px;
-    background: linear-gradient(135deg, #81e6d9 0%, #7b9ce6 100%);
+    background: #1e40af;
     color: white;
     border: none;
     border-radius: 16px;
@@ -202,7 +200,7 @@ body {
     height: 60px;
     font-size: 26px;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(168, 216, 234, 0.3);
+    box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
     transition: all 0.3s ease;
     z-index: 1000;
     display: flex;
@@ -218,12 +216,13 @@ body {
 
   .floating-btn:hover {
     transform: translateY(-3px) scale(1.08);
-    box-shadow: 0 12px 32px rgba(168, 216, 234, 0.5);
+    box-shadow: 0 12px 32px rgba(30, 64, 175, 0.5);
+    background: #1d4ed8;
   }
 
   .floating-btn.secondary {
-    background: linear-gradient(135deg, #81e6d9 0%, #7b9ce6 100%);
-    box-shadow: 0 8px 24px rgba(168, 216, 234, 0.3);
+    background: #1e40af;
+    box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
     width: 56px;
     height: 56px;
     font-size: 22px;
@@ -231,7 +230,8 @@ body {
 
   .floating-btn.secondary:hover {
     transform: translateY(-3px) scale(1.08);
-    box-shadow: 0 12px 32px rgba(168, 216, 234, 0.5);
+    box-shadow: 0 12px 32px rgba(30, 64, 175, 0.5);
+    background: #1d4ed8;
   }
   
   .modal {
@@ -303,8 +303,8 @@ body {
 
   input:focus, textarea:focus, select:focus {
     outline: none;
-    border-color: #a8d8ea;
-    box-shadow: 0 0 0 3px rgba(168, 216, 234, 0.15);
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
     background: white;
   }
 
@@ -321,30 +321,30 @@ body {
 
   select {
     cursor: pointer;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(168, 216, 234, 0.08) 100%);
-    border: 2px solid rgba(168, 216, 234, 0.25);
-    color: #7b9ce6;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(30, 64, 175, 0.25);
+    color: #1e40af;
     font-weight: 500;
   }
 
   select:hover {
-    border-color: rgba(168, 216, 234, 0.4);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(168, 216, 234, 0.12) 100%);
+    border-color: rgba(30, 64, 175, 0.4);
+    background: rgba(255, 255, 255, 0.95);
   }
 
   select option {
     background: white;
-    color: #7b9ce6;
+    color: #1e40af;
     padding: 8px 12px;
     font-weight: 500;
   }
 
   select option:hover {
-    background: rgba(168, 216, 234, 0.12);
+    background: rgba(30, 64, 175, 0.12);
   }
   
   .primary-btn {
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    background: #1e40af;
     color: white;
     padding: 12px 24px;
     border: none;
@@ -353,12 +353,13 @@ body {
     font-weight: 600;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(168, 216, 234, 0.25);
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.25);
   }
 
   .primary-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(168, 216, 234, 0.35);
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+    background: #1d4ed8;
   }
 
   .secondary-btn {
@@ -392,8 +393,8 @@ body {
 
   .small-btn:hover {
     background: white;
-    border-color: #87CEEB;
-    color: #87CEEB;
+    border-color: #1e40af;
+    color: #1e40af;
   }
   
   .edit-btn, .delete-btn {
@@ -491,13 +492,9 @@ body {
   .session-total {
     margin-top: 12px;
     font-weight: 700;
-    color: #4a5568;
+    color: #1e40af;
     text-align: right;
     font-size: 1.1rem;
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   .upcoming-item {
@@ -575,55 +572,79 @@ body {
   }
 
   .mark-done-btn {
-    background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+    background: #16a34a;
     color: white;
-    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
   }
 
   .mark-done-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+    background: #15803d;
   }
 
   .edit-upcoming-btn {
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    background: #1e40af;
     color: white;
-    box-shadow: 0 2px 8px rgba(168, 216, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
   }
 
   .edit-upcoming-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(168, 216, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+    background: #1d4ed8;
   }
 
   .progress-container {
-    height: 6px;
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: 3px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: 12px;
+    position: relative;
   }
 
   .progress-bar {
     height: 100%;
-    border-radius: 3px;
+    border-radius: 4px;
     transition: width 0.5s ease;
+    position: relative;
+  }
+
+  .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .upcoming-item.status-ok {
-    border-left: 4px solid #68d391;
+    border-left: 4px solid #16a34a;
+    background: rgba(22, 163, 74, 0.05);
   }
 
   .upcoming-item.status-caution {
-    border-left: 4px solid #ecc94b;
+    border-left: 4px solid #eab308;
+    background: rgba(234, 179, 8, 0.05);
   }
 
   .upcoming-item.status-warning {
-    border-left: 4px solid #ed8936;
+    border-left: 4px solid #ea580c;
+    background: rgba(234, 88, 12, 0.05);
   }
 
   .upcoming-item.status-danger {
-    border-left: 4px solid #f56565;
+    border-left: 4px solid #dc2626;
+    background: rgba(220, 38, 38, 0.05);
   }
 
   /* Completed Items Styles */
@@ -678,15 +699,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+    background: #6b7280;
     color: white;
-    box-shadow: 0 2px 6px rgba(160, 174, 192, 0.3);
+    box-shadow: 0 2px 6px rgba(107, 114, 128, 0.3);
   }
 
   .restore-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(160, 174, 192, 0.4);
-    background: linear-gradient(135deg, #a8d8ea 0%, #7b9ce6 100%);
+    box-shadow: 0 3px 8px rgba(107, 114, 128, 0.4);
+    background: #1e40af;
   }
 
   #completedList h3 {
@@ -786,31 +807,31 @@ body {
   }
 
   .chart-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(135, 206, 235, 0.1) 100%);
-    border: 1px solid rgba(135, 206, 235, 0.3);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(30, 64, 175, 0.3);
     padding: 10px 18px;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.3s ease;
-    color: #4169E1;
-    box-shadow: 0 2px 8px rgba(135, 206, 235, 0.2);
+    color: #1e40af;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
   }
 
   .chart-btn:hover {
-    background: linear-gradient(182deg, #87CEEB 0%, rgba(65, 105, 225, 0.8) 100%);
-    border-color: #87CEEB;
+    background: #1e40af;
+    border-color: #1e40af;
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(135, 206, 235, 0.4);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
   }
 
   .chart-btn.active {
-    background: linear-gradient(135deg, #87CEEB 0%, #4169E1 100%);
+    background: #1e40af;
     color: white;
     border-color: transparent;
-    box-shadow: 0 2px 15px rgba(135, 206, 235, 0.4);
+    box-shadow: 0 2px 15px rgba(30, 64, 175, 0.4);
     transform: translateY(-1px);
   }
 
@@ -982,7 +1003,7 @@ body {
   }
 
   .pagination-btn {
-    background: linear-gradient(135deg, #87CEEB 0%, #4169E1 100%);
+    background: #1e40af;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -991,19 +1012,20 @@ body {
     font-weight: 500;
     font-size: 0.9rem;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(135, 206, 235, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
   }
 
   .pagination-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(135, 206, 235, 0.4);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+    background: #1d4ed8;
   }
 
   .pagination-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 2px 8px rgba(135, 206, 235, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
   }
 
   .page-info {
@@ -1037,7 +1059,7 @@ body {
   }
 
   .danger-btn {
-    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    background: #dc2626;
     color: white;
     padding: 12px 24px;
     border: none;
@@ -1046,12 +1068,13 @@ body {
     font-weight: 600;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
   }
 
   .danger-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+    background: #b91c1c;
   }
 
   .warning-text {
@@ -1095,7 +1118,7 @@ body {
     content: '';
     width: 4px;
     height: 20px;
-    background: linear-gradient(135deg, #87CEEB 0%, #4169E1 100%);
+    background: #1e40af;
     border-radius: 2px;
   }
 
@@ -1163,12 +1186,8 @@ body {
 
   .item-price {
     font-weight: 700;
-    color: #2d3748;
+    color: #1e40af;
     font-size: 1.1rem;
-    background: linear-gradient(135deg, #87CEEB 0%, #4169E1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   .item-details {
@@ -1180,11 +1199,11 @@ body {
   .session-total-details {
     margin-top: 20px;
     padding: 16px;
-    background: linear-gradient(135deg, rgba(135, 206, 235, 0.1) 0%, rgba(65, 105, 225, 0.1) 100%);
+    background: rgba(30, 64, 175, 0.1);
     border-radius: 12px;
     text-align: center;
     font-size: 1.2rem;
-    color: #2d3748;
+    color: #1e40af;
   }
 
   /* Mobile Responsive for New Components */

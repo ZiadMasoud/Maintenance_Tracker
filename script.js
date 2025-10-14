@@ -733,26 +733,26 @@ function displayUpcoming(items) {
     
     // Calculate status and color based on progress
     let status = "status-ok";
-    let progressColor = "#48bb78"; // Green
+    let progressColor = "#16a34a"; // Green
     
     if (progressPercent >= 100) {
       status = "status-danger";
-      progressColor = "#f56565"; // Red
+      progressColor = "#dc2626"; // Red
     } else if (progressPercent >= 80) {
       status = "status-warning";
-      progressColor = "#ed8936"; // Orange
+      progressColor = "#ea580c"; // Orange
     } else if (progressPercent >= 60) {
       status = "status-caution";
-      progressColor = "#ecc94b"; // Yellow
+      progressColor = "#eab308"; // Yellow
     }
 
     const div = document.createElement("div");
     div.classList.add("upcoming-item", status);
     
-    // Create progress bar
+    // Create progress bar with solid color
     const progressBar = `
       <div class="progress-container">
-        <div class="progress-bar" style="width: ${progressPercent}%; background: linear-gradient(90deg, #48bb78 0%, #ecc94b 50%, #f56565 100%);"></div>
+        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};"></div>
       </div>
     `;
     
@@ -1037,24 +1037,39 @@ function editUpcomingItem(itemId) {
 }
 
 function restoreUpcomingItem(itemId) {
-  const tx = db.transaction("items", "readwrite");
-  const store = tx.objectStore("items");
+  const tx = db.transaction(["items", "sessions"], "readwrite");
+  const itemStore = tx.objectStore("items");
+  const sessionStore = tx.objectStore("sessions");
   
-  store.get(itemId).onsuccess = e => {
+  itemStore.get(itemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
-      // Restore the nextDueKm based on current odometer + interval
-      const updatedItem = { 
-        ...item, 
-        nextDueKm: currentOdometer + item.interval
-      };
-      
-      store.put(updatedItem);
-      
-      tx.oncomplete = () => {
-        renderAll();
+      // Find the session where this item was performed to get the session odometer
+      sessionStore.get(item.sessionId).onsuccess = sessionEvent => {
+        const session = sessionEvent.target.result;
+        let nextDueKm;
+        
+        if (session && session.odometer) {
+          // Calculate next due based on the session odometer where item was performed
+          nextDueKm = session.odometer + item.interval;
+        } else {
+          // Fallback to current odometer if session not found or no odometer
+          nextDueKm = currentOdometer + item.interval;
+        }
+        
+        // Update the item with the calculated next due km
+        const updatedItem = { 
+          ...item, 
+          nextDueKm: nextDueKm
+        };
+        
+        itemStore.put(updatedItem);
       };
     }
+  };
+  
+  tx.oncomplete = () => {
+    renderAll();
   };
 }
 
@@ -1078,29 +1093,42 @@ function deleteSession(id) {
 // ================================
 function initializeCharts() {
   // Chart button event listeners
-  document.getElementById('monthlyView').addEventListener('click', () => {
-    currentSpendingView = 'monthly';
-    updateChartButtons('monthlyView', 'yearlyView');
-    updateSpendingChart();
-  });
+  const monthlyViewBtn = document.getElementById('monthlyView');
+  const yearlyViewBtn = document.getElementById('yearlyView');
+  const categoryMonthlyViewBtn = document.getElementById('categoryMonthlyView');
+  const categoryYearlyViewBtn = document.getElementById('categoryYearlyView');
+  
+  if (monthlyViewBtn) {
+    monthlyViewBtn.addEventListener('click', () => {
+      currentSpendingView = 'monthly';
+      updateChartButtons('monthlyView', 'yearlyView');
+      updateSpendingChart();
+    });
+  }
 
-  document.getElementById('yearlyView').addEventListener('click', () => {
-    currentSpendingView = 'yearly';
-    updateChartButtons('yearlyView', 'monthlyView');
-    updateSpendingChart();
-  });
+  if (yearlyViewBtn) {
+    yearlyViewBtn.addEventListener('click', () => {
+      currentSpendingView = 'yearly';
+      updateChartButtons('yearlyView', 'monthlyView');
+      updateSpendingChart();
+    });
+  }
 
-  document.getElementById('categoryMonthlyView').addEventListener('click', () => {
-    currentCategoryView = 'monthly';
-    updateChartButtons('categoryMonthlyView', 'categoryYearlyView');
-    updateCategoryChart();
-  });
+  if (categoryMonthlyViewBtn) {
+    categoryMonthlyViewBtn.addEventListener('click', () => {
+      currentCategoryView = 'monthly';
+      updateChartButtons('categoryMonthlyView', 'categoryYearlyView');
+      updateCategoryChart();
+    });
+  }
 
-  document.getElementById('categoryYearlyView').addEventListener('click', () => {
-    currentCategoryView = 'yearly';
-    updateChartButtons('categoryYearlyView', 'categoryMonthlyView');
-    updateCategoryChart();
-  });
+  if (categoryYearlyViewBtn) {
+    categoryYearlyViewBtn.addEventListener('click', () => {
+      currentCategoryView = 'yearly';
+      updateChartButtons('categoryYearlyView', 'categoryMonthlyView');
+      updateCategoryChart();
+    });
+  }
 
   // Initialize charts
   updateSpendingChart();
