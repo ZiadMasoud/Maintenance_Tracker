@@ -194,6 +194,9 @@ function initializeEventListeners() {
   // Date input auto-formatting
   const sessionDateInput = document.getElementById('sessionDate');
   sessionDateInput.addEventListener('input', autoFormatDateInput);
+  
+  // Toggle completed items
+  toggleCompletedBtn.addEventListener('click', toggleCompletedItems);
 }
 
 // ================================
@@ -207,6 +210,9 @@ const saveSessionBtn = document.getElementById("saveSessionBtn");
 const itemsContainer = document.getElementById("itemsContainer");
 const sessionsList = document.getElementById("sessionsList");
 const upcomingList = document.getElementById("upcomingList");
+const completedList = document.getElementById("completedList");
+const completedItems = document.getElementById("completedItems");
+const toggleCompletedBtn = document.getElementById("toggleCompletedBtn");
 const currentOdometerBtn = document.getElementById("currentOdometerBtn");
 const odometerValue = document.getElementById("odometerValue");
 const totalCostDisplay = document.getElementById("totalCost");
@@ -675,25 +681,100 @@ function renderUpcoming() {
       cursor.continue();
     } else {
       displayUpcoming(items);
+      displayCompletedItems(items);
     }
   };
 }
 
+function toggleCompletedItems() {
+  const isVisible = completedList.style.display !== 'none';
+  completedList.style.display = isVisible ? 'none' : 'block';
+  toggleCompletedBtn.textContent = isVisible ? 'Show Recently Completed' : 'Hide Recently Completed';
+}
+
+function displayCompletedItems(items) {
+  // Get items that have intervals but no nextDueKm (completed items)
+  const completed = items.filter(i => i.interval && !i.nextDueKm);
+  
+  if (completed.length === 0) {
+    toggleCompletedBtn.style.display = 'none';
+    return;
+  }
+  
+  toggleCompletedBtn.style.display = 'block';
+  completedItems.innerHTML = "";
+  
+  completed.forEach(item => {
+    const div = document.createElement("div");
+    div.classList.add("completed-item");
+    div.innerHTML = `
+      <div class="completed-content">
+        <div class="completed-info">
+          <span class="item-name">${item.name}</span>
+          <span class="interval-info">Interval: ${item.interval.toLocaleString()} km</span>
+        </div>
+        <button class="restore-btn" onclick="restoreUpcomingItem(${item.id})" title="Restore to Upcoming">
+          ↶
+        </button>
+      </div>
+    `;
+    completedItems.appendChild(div);
+  });
+}
+
 function displayUpcoming(items) {
   upcomingList.innerHTML = "";
-  const filtered = items.filter(i => i.nextDueKm);
+  const filtered = items.filter(i => i.nextDueKm && i.interval);
   filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
 
   filtered.forEach(item => {
+    const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
+    const progressPercent = Math.min((kmSinceService / item.interval) * 100, 100);
+    
+    // Calculate status and color based on progress
     let status = "status-ok";
-    if (currentOdometer >= item.nextDueKm) status = "status-danger";
-    else if (currentOdometer >= item.nextDueKm - 500) status = "status-warning";
+    let progressColor = "#48bb78"; // Green
+    
+    if (progressPercent >= 100) {
+      status = "status-danger";
+      progressColor = "#f56565"; // Red
+    } else if (progressPercent >= 80) {
+      status = "status-warning";
+      progressColor = "#ed8936"; // Orange
+    } else if (progressPercent >= 60) {
+      status = "status-caution";
+      progressColor = "#ecc94b"; // Yellow
+    }
 
     const div = document.createElement("div");
     div.classList.add("upcoming-item", status);
+    
+    // Create progress bar
+    const progressBar = `
+      <div class="progress-container">
+        <div class="progress-bar" style="width: ${progressPercent}%; background: linear-gradient(90deg, #48bb78 0%, #ecc94b 50%, #f56565 100%);"></div>
+      </div>
+    `;
+    
     div.innerHTML = `
-      <span>${item.name}</span>
-      <span>${item.nextDueKm} km</span>
+      <div class="upcoming-content">
+        <div class="upcoming-info">
+          <span class="item-name">${item.name}</span>
+          <div class="item-details">
+            <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
+            <span class="next-due">Due at: ${item.nextDueKm.toLocaleString()} km</span>
+          </div>
+        </div>
+        <div class="upcoming-actions">
+          <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
+            ✓
+          </button>
+          <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
+            ✎
+          </button>
+        </div>
+      </div>
+      ${progressBar}
     `;
     upcomingList.appendChild(div);
   });
@@ -906,6 +987,75 @@ function displaySessionDetails(session, items, categories) {
   sessionDetailsContent.innerHTML = detailsHTML;
   viewDetailsModal.style.display = 'flex';
   document.body.classList.add('modal-open');
+}
+
+function markMaintenanceDone(itemId) {
+  if (!confirm("Mark this maintenance as done? It will be removed from upcoming maintenance.")) return;
+  
+  const tx = db.transaction("items", "readwrite");
+  const store = tx.objectStore("items");
+  
+  store.get(itemId).onsuccess = e => {
+    const item = e.target.result;
+    if (item) {
+      // Clear the nextDueKm to remove from upcoming maintenance
+      const updatedItem = { ...item, nextDueKm: null };
+      store.put(updatedItem);
+      
+      tx.oncomplete = () => {
+        renderAll();
+      };
+    }
+  };
+}
+
+function editUpcomingItem(itemId) {
+  const tx = db.transaction("items", "readwrite");
+  const store = tx.objectStore("items");
+  
+  store.get(itemId).onsuccess = e => {
+    const item = e.target.result;
+    if (item) {
+      const newInterval = prompt(`Edit service interval for "${item.name}" (current: ${item.interval} km):`, item.interval);
+      
+      if (newInterval && !isNaN(newInterval) && parseInt(newInterval) > 0) {
+        const updatedInterval = parseInt(newInterval);
+        const updatedItem = { 
+          ...item, 
+          interval: updatedInterval,
+          nextDueKm: currentOdometer + updatedInterval
+        };
+        
+        store.put(updatedItem);
+        
+        tx.oncomplete = () => {
+          renderAll();
+        };
+      }
+    }
+  };
+}
+
+function restoreUpcomingItem(itemId) {
+  const tx = db.transaction("items", "readwrite");
+  const store = tx.objectStore("items");
+  
+  store.get(itemId).onsuccess = e => {
+    const item = e.target.result;
+    if (item) {
+      // Restore the nextDueKm based on current odometer + interval
+      const updatedItem = { 
+        ...item, 
+        nextDueKm: currentOdometer + item.interval
+      };
+      
+      store.put(updatedItem);
+      
+      tx.oncomplete = () => {
+        renderAll();
+      };
+    }
+  };
 }
 
 function deleteSession(id) {
