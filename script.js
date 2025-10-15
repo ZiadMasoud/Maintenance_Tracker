@@ -191,9 +191,7 @@ function initializeEventListeners() {
     document.body.classList.remove('modal-open');
   });
   
-  // Date input auto-formatting
-  const sessionDateInput = document.getElementById('sessionDate');
-  sessionDateInput.addEventListener('input', autoFormatDateInput);
+  // Date input uses native picker; no auto-formatting needed
   
   // Toggle completed items
   toggleCompletedBtn.addEventListener('click', toggleCompletedItems);
@@ -351,19 +349,18 @@ function openModal(session = null) {
 
   if (session) {
     document.querySelector(".modal-content h2").textContent = "Edit Maintenance Session";
-    document.getElementById("sessionDate").value = formatDateToBritish(session.date);
+    // Set value as ISO for native date input
+    document.getElementById("sessionDate").value = session.date;
     document.getElementById("sessionOdometer").value = session.odometer;
     document.getElementById("sessionMerchant").value = session.merchant;
     document.getElementById("sessionNotes").value = session.notes;
     loadItemsForEdit(session.id);
   } else {
     document.querySelector(".modal-content h2").textContent = "New Maintenance Session";
-    // Set default date to today in DD/MM/YYYY format
+    // Set default date to today in ISO (YYYY-MM-DD)
     const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
-    document.getElementById("sessionDate").value = `${day}/${month}/${year}`;
+    const iso = today.toISOString().split("T")[0];
+    document.getElementById("sessionDate").value = iso;
     document.getElementById("sessionOdometer").value = "";
     document.getElementById("sessionMerchant").value = "";
     document.getElementById("sessionNotes").value = "";
@@ -509,17 +506,8 @@ saveSessionBtn.onclick = () => saveSession();
 function saveSession() {
   let date = document.getElementById("sessionDate").value;
   
-  // Parse the date input using multiple format support
-  if (date) {
-    const parsedDate = parseDateInput(date);
-    if (parsedDate) {
-      date = parsedDate;
-    } else {
-      alert("Invalid date format. Please use DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY format.");
-      return;
-    }
-  } else {
-    // Default to today if no date provided
+  // Native date input already provides ISO (YYYY-MM-DD)
+  if (!date) {
     const today = new Date();
     date = today.toISOString().split("T")[0];
   }
@@ -1316,45 +1304,47 @@ function getCategorySpendingData(viewType) {
 }
 
 function processSpendingData(sessions, items, viewType) {
-  const spendingByPeriod = {};
-  
+  const currentYear = new Date().getFullYear();
+
+  if (viewType === 'monthly') {
+    // Show only current year's 12 months, zero-filled
+    const values = new Array(12).fill(0);
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.date);
+      if (sessionDate.getFullYear() !== currentYear) return;
+      const sessionItems = items.filter(item => item.sessionId === session.id);
+      const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
+      if (totalSpending > 0) {
+        const monthIdx = sessionDate.getMonth();
+        values[monthIdx] += totalSpending;
+      }
+    });
+    const labels = Array.from({ length: 12 }, (_, m) => new Date(currentYear, m).toLocaleDateString('en-US', { month: 'short' }));
+    return { labels, values };
+  }
+
+  // Yearly view: aggregate by year across all data
+  const spendingByYear = {};
   sessions.forEach(session => {
     const sessionItems = items.filter(item => item.sessionId === session.id);
     const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
-    
     if (totalSpending > 0) {
-      const date = new Date(session.date);
-      let periodKey;
-      
-      if (viewType === 'monthly') {
-        periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      } else {
-        periodKey = date.getFullYear().toString();
-      }
-      
-      spendingByPeriod[periodKey] = (spendingByPeriod[periodKey] || 0) + totalSpending;
+      const yearKey = new Date(session.date).getFullYear().toString();
+      spendingByYear[yearKey] = (spendingByYear[yearKey] || 0) + totalSpending;
     }
   });
-  
-  const sortedPeriods = Object.keys(spendingByPeriod).sort();
-  const labels = sortedPeriods.map(period => {
-    if (viewType === 'monthly') {
-      const [year, month] = period.split('-');
-      return new Date(year, month - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    } else {
-      return period;
-    }
-  });
-  
-  const values = sortedPeriods.map(period => spendingByPeriod[period]);
-  
+  const labels = Object.keys(spendingByYear).sort();
+  const values = labels.map(year => spendingByYear[year]);
   return { labels, values };
 }
 
 function processCategorySpendingData(sessions, items, categories, viewType) {
   const categorySpending = {};
+  const currentYear = new Date().getFullYear();
   
   sessions.forEach(session => {
+    const sessionDate = new Date(session.date);
+    if (viewType === 'monthly' && sessionDate.getFullYear() !== currentYear) return;
     const sessionItems = items.filter(item => item.sessionId === session.id);
     
     sessionItems.forEach(item => {
@@ -1479,10 +1469,11 @@ function filterSessions(sessions, items, categories) {
           : 'no category';
         return categoryName.includes(searchTerm);
       });
+      const matchesItemName = sessionItems.some(item => (item.name || '').toLowerCase().includes(searchTerm));
       const matchesMerchant = session.merchant && session.merchant.toLowerCase().includes(searchTerm);
       const matchesNotes = session.notes && session.notes.toLowerCase().includes(searchTerm);
       
-      if (!matchesDate && !matchesCategory && !matchesMerchant && !matchesNotes) {
+      if (!matchesDate && !matchesCategory && !matchesItemName && !matchesMerchant && !matchesNotes) {
         return false;
       }
     }
