@@ -12,7 +12,7 @@
     <h1>Maintenance Tracker</h1>
     <div class="summary">
       <div class="odometer-section">
-        <label>Current Odometer:</label>
+        <label>ODO:</label>
         <button id="currentOdometerBtn" class="odometer-btn">
           <span id="odometerValue">0 km</span>
           <span class="edit-icon">✎</span>
@@ -52,20 +52,54 @@
         <!-- Pagination Controls -->
         <div class="pagination-controls" id="paginationControls" style="display: none;">
           <button id="prevPageBtn" class="pagination-btn">← Previous</button>
-          <span id="pageInfo" class="page-info">Page 1 of 1 (Showing latest 2)</span>
+          <span id="pageInfo" class="page-info">Page 1 of 1</span>
           <button id="nextPageBtn" class="pagination-btn">Next →</button>
         </div>
       </div>
     </section>
 
     <section class="upcoming">
-      <h2>Upcoming Maintenance</h2>
-      <div id="upcomingList"></div>
-      <div id="completedList" style="display: none;">
-        <h3>Recently Completed</h3>
-        <div id="completedItems"></div>
+      <h2>Digital ID</h2>
+      <div class="digital-id-content">
+        <div id="carInfoCard" class="car-info-card">
+          <button class="edit-car-info-btn" onclick="openCarInfoModal()" title="Edit Car Info">✎</button>
+          <div class="car-info-header">
+            <div class="live-time" id="liveTime"></div>
+          </div>
+          <div class="car-info-body">
+            <div class="car-info-main">
+              <div class="car-info-item">
+                <span class="car-info-label">Manufacturer</span>
+                <span id="carManufacturer" class="car-info-value">—</span>
+              </div>
+              <div class="car-info-item">
+                <span class="car-info-label">Model</span>
+                <span id="carModel" class="car-info-value">—</span>
+              </div>
+              <div class="car-info-item">
+                <span class="car-info-label">Year</span>
+                <span id="carYear" class="car-info-value">—</span>
+              </div>
+              <div class="car-info-item">
+                <span class="car-info-label">Plate Number</span>
+                <span id="carPlate" class="car-info-value">—</span>
+              </div>
+            </div>
+            <div class="license-expiry-box" id="licenseExpiryBox">
+              <span class="license-label">License Expiry</span>
+              <span id="carLicenseExpiry" class="license-value">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="upcoming-maintenance-container">
+          <div id="upcomingList"></div>
+          <div id="completedList" style="display: none;">
+            <h3>Recently Completed</h3>
+            <div id="completedItems"></div>
+          </div>
+          <button id="toggleCompletedBtn" class="small-btn" style="margin-top: 12px;">Show Recently Completed</button>
+        </div>
       </div>
-      <button id="toggleCompletedBtn" class="small-btn" style="margin-top: 12px;">Show Recently Completed</button>
     </section>
 
     <section class="spending-chart">
@@ -73,6 +107,12 @@
       <div class="chart-controls">
         <button id="monthlyView" class="chart-btn active">Monthly</button>
         <button id="yearlyView" class="chart-btn">Yearly</button>
+        <select id="spendingMonthFilter" class="chart-filter-select" style="display: none;">
+          <option value="">All Months</option>
+        </select>
+        <select id="spendingYearFilter" class="chart-filter-select" style="display: none;">
+          <option value="">All Years</option>
+        </select>
       </div>
       <canvas id="spendingChart"></canvas>
     </section>
@@ -82,6 +122,12 @@
       <div class="chart-controls">
         <button id="categoryMonthlyView" class="chart-btn active">Monthly</button>
         <button id="categoryYearlyView" class="chart-btn">Yearly</button>
+        <select id="categoryMonthFilter" class="chart-filter-select" style="display: none;">
+          <option value="">All Months</option>
+        </select>
+        <select id="categoryYearFilter" class="chart-filter-select" style="display: none;">
+          <option value="">All Years</option>
+        </select>
       </div>
       <canvas id="categoryChart"></canvas>
     </section>
@@ -95,10 +141,10 @@
   <div id="odometerModal" class="modal">
     <div class="modal-content small-modal">
       <span id="closeOdometerModal" class="close">&times;</span>
-      <h2>Update Current Odometer</h2>
+      <h2>Update ODO</h2>
       <div class="form-group">
-        <label for="odometerInput">Current Odometer (km):</label>
-        <input type="number" id="odometerInput" placeholder="Enter current odometer reading" />
+        <label for="odometerInput">ODO (km):</label>
+        <input type="number" id="odometerInput" placeholder="Enter odometer reading" />
       </div>
       <div class="actions">
         <button id="saveOdometerBtn" class="primary-btn">Save</button>
@@ -166,6 +212,42 @@
     </div>
   </div>
 
+  <!-- Car Info Modal -->
+  <div id="carInfoModal" class="modal">
+    <div class="modal-content small-modal">
+      <span id="closeCarInfoModal" class="close">&times;</span>
+      <h2>Car Information</h2>
+      <div class="form-group">
+        <label for="carManufacturerInput">Manufacturer:</label>
+        <input type="text" id="carManufacturerInput" placeholder="e.g., Toyota, Honda, BMW">
+      </div>
+      <div class="form-group">
+        <label for="carModelInput">Model:</label>
+        <input type="text" id="carModelInput" placeholder="e.g., Camry, Civic, 3 Series">
+      </div>
+      <div class="form-group">
+        <label for="carYearInput">Year:</label>
+        <input type="number" id="carYearInput" placeholder="e.g., 2020" min="1900" max="2100">
+      </div>
+      <div class="form-group">
+        <label for="carPlateInput">Plate Number:</label>
+        <input type="text" id="carPlateInput" placeholder="e.g., ABC-1234">
+      </div>
+      <div class="form-group">
+        <label for="carColorInput">Car Color:</label>
+        <input type="color" id="carColorInput" value="#1e40af">
+      </div>
+      <div class="form-group">
+        <label for="carLicenseExpiryInput">License Expiry Date:</label>
+        <input type="date" id="carLicenseExpiryInput">
+      </div>
+      <div class="actions">
+        <button id="saveCarInfoBtn" class="primary-btn">Save</button>
+        <button id="cancelCarInfoBtn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal -->
   <div id="sessionModal" class="modal">
     <div class="modal-content">
@@ -178,7 +260,7 @@
       </div>
 
       <div class="form-group">
-        <label>Odometer (km):</label>
+        <label>ODO (km):</label>
         <input type="number" id="sessionOdometer">
       </div>
 

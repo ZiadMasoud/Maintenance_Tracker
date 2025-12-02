@@ -102,15 +102,15 @@ body {
   }
   
   section {
-    background: rgba(255, 255, 255, 0.92);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%);
     backdrop-filter: blur(15px);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 20px;
+    padding: 28px;
     flex: 1 1 45%;
     min-width: 300px;
     max-width: calc(50% - 12px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(30, 64, 175, 0.1);
     transition: all 0.3s ease;
     box-sizing: border-box;
     overflow-wrap: break-word;
@@ -119,7 +119,35 @@ body {
   section:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-color: rgba(30, 64, 175, 0.2);
   }
+
+  section.upcoming {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.03) 0%, rgba(240, 245, 255, 0.4) 100%);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(30, 64, 175, 0.15);
+    box-shadow: 0 8px 32px rgba(30, 64, 175, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  section.upcoming:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(30, 64, 175, 0.15);
+  }
+
+  section.sessions {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(255, 255, 255, 0.95) 100%);
+  }
+
+  section.spending-chart {
+    background: linear-gradient(135deg, rgba(48, 187, 120, 0.03) 0%, rgba(255, 255, 255, 0.95) 100%);
+  }
+
+  section.category-chart {
+    background: linear-gradient(135deg, rgba(237, 137, 54, 0.03) 0%, rgba(255, 255, 255, 0.95) 100%);
+  }
+
   
   h2 {
     margin-top: 0;
@@ -141,14 +169,14 @@ body {
   }
   
   .session-card {
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(30, 64, 175, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
     position: relative;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
   .session-card:hover {
@@ -223,9 +251,9 @@ body {
   .floating-btn.secondary {
     background: #1e40af;
     box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
-    width: 56px;
-    height: 56px;
-    font-size: 22px;
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
   }
 
   .floating-btn.secondary:hover {
@@ -489,6 +517,37 @@ body {
     border-bottom: 1px dashed #ddd;
   }
 
+  .hidden-item {
+    display: none;
+  }
+
+  .hidden-items-container {
+    margin-top: 8px;
+  }
+
+  .hidden-items-container .item-row {
+    display: flex;
+  }
+
+  .show-more-items {
+    background: rgba(30, 64, 175, 0.1);
+    color: #1e40af;
+    border: 1px solid rgba(30, 64, 175, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 8px;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+
+  .show-more-items:hover {
+    background: rgba(30, 64, 175, 0.2);
+    border-color: #1e40af;
+  }
+
   .session-total {
     margin-top: 12px;
     font-weight: 700;
@@ -497,9 +556,208 @@ body {
     font-size: 1.1rem;
   }
 
+
+  /* Digital ID Content Layout */
+  .digital-id-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: 100%;
+    min-height: 600px;
+  }
+
+  .upcoming-maintenance-container {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Car Info Card - Real ID Card Style (Rectangular) */
+  .car-info-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    padding: 24px 28px;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    width: 100%;
+    height: 25%;
+    min-height: 200px;
+    max-height: 280px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .car-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(30, 64, 175, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .edit-car-info-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    color: #1e40af;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .edit-car-info-btn:hover {
+    background: rgba(30, 64, 175, 0.9);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  }
+
+  .car-info-header {
+    margin-bottom: 18px;
+    padding-bottom: 0;
+    position: relative;
+    padding-right: 42px;
+    min-height: 32px;
+  }
+
+  .car-info-body {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 18px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .car-info-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 22px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .car-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .car-info-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(74, 85, 104, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 5px;
+    display: block;
+  }
+
+  .car-info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a202c;
+    word-break: break-word;
+    line-height: 1.4;
+    min-height: 20px;
+    display: block;
+  }
+
+  /* License Expiry Box */
+  .license-expiry-box {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: all 0.3s ease;
+    min-width: 140px;
+    max-width: 160px;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    align-self: flex-end;
+  }
+
+  .license-expiry-box.license-warning-soon {
+    background: rgba(234, 179, 8, 0.3);
+    border-color: rgba(234, 179, 8, 0.6);
+    box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  }
+
+  .license-expiry-box.license-warning-urgent {
+    background: rgba(234, 88, 12, 0.3);
+    border-color: rgba(234, 88, 12, 0.6);
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    animation: licensePulse 2s infinite;
+  }
+
+  .license-expiry-box.license-warning-expired {
+    background: rgba(220, 38, 38, 0.3);
+    border-color: rgba(220, 38, 38, 0.6);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    animation: licensePulse 1.5s infinite;
+  }
+
+  @keyframes licensePulse {
+    0%, 100% {
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    }
+    50% {
+      box-shadow: 0 4px 16px rgba(220, 38, 38, 0.5);
+    }
+  }
+
+  .license-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(74, 85, 104, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 0;
+    display: block;
+  }
+
+  .license-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a202c;
+    line-height: 1.4;
+    word-break: break-word;
+    display: block;
+  }
+
+  .live-time {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: rgba(74, 85, 104, 0.9);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+  }
+
+
   .upcoming-item {
-    padding: 14px;
-    margin-bottom: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.85);
     border: 1px solid rgba(0, 0, 0, 0.06);
@@ -519,7 +777,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .upcoming-info {
@@ -529,15 +787,16 @@ body {
   .item-name {
     display: block;
     font-weight: 600;
-    font-size: 1.1rem;
-    color: #4a5568;
-    margin-bottom: 8px;
+    font-size: 1.15rem;
+    color: #2d3748;
+    margin-bottom: 0;
   }
 
   .item-details {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .km-info {
@@ -596,9 +855,9 @@ body {
   }
 
   .progress-container {
-    height: 8px;
+    height: 10px;
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
     margin-top: 12px;
     position: relative;
@@ -606,9 +865,80 @@ body {
 
   .progress-bar {
     height: 100%;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: width 0.5s ease;
     position: relative;
+  }
+
+  .progress-label {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  }
+
+  .item-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .urgency-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .urgency-badge.status-ok {
+    background: rgba(22, 163, 74, 0.15);
+    color: #16a34a;
+  }
+
+  .urgency-badge.status-caution {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+  }
+
+  .urgency-badge.status-warning {
+    background: rgba(234, 88, 12, 0.15);
+    color: #ea580c;
+  }
+
+  .urgency-badge.status-danger {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .no-upcoming {
+    text-align: center;
+    padding: 40px 20px;
+    color: #718096;
+  }
+
+  .no-upcoming-icon {
+    font-size: 3rem;
+    color: #16a34a;
+    margin-bottom: 12px;
+  }
+
+  .no-upcoming-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #4a5568;
   }
 
   .progress-bar::after {
@@ -628,23 +958,33 @@ body {
   }
 
   .upcoming-item.status-ok {
-    border-left: 4px solid #16a34a;
-    background: rgba(22, 163, 74, 0.05);
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08);
   }
 
   .upcoming-item.status-caution {
-    border-left: 4px solid #eab308;
-    background: rgba(234, 179, 8, 0.05);
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(234, 179, 8, 0.08);
   }
 
   .upcoming-item.status-warning {
-    border-left: 4px solid #ea580c;
-    background: rgba(234, 88, 12, 0.05);
+    background: linear-gradient(135deg, rgba(234, 88, 12, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);
   }
 
   .upcoming-item.status-danger {
-    border-left: 4px solid #dc2626;
-    background: rgba(220, 38, 38, 0.05);
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+    animation: alertPulse 2s infinite;
+  }
+
+  @keyframes alertPulse {
+    0%, 100% { 
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+    }
+    50% { 
+      box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+    }
   }
 
   /* Completed Items Styles */
@@ -667,6 +1007,12 @@ body {
   .completed-content {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+  }
+
+  .completed-actions {
+    display: flex;
+    gap: 8px;
     align-items: center;
   }
 
@@ -708,6 +1054,29 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(107, 114, 128, 0.4);
     background: #1e40af;
+  }
+
+  .delete-completed-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+  }
+
+  .delete-completed-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.4);
+    background: #b91c1c;
   }
 
   #completedList h3 {
@@ -804,6 +1173,46 @@ body {
     gap: 8px;
     margin-bottom: 20px;
     justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .chart-empty-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #718096;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 2px dashed rgba(30, 64, 175, 0.2);
+  }
+
+  .chart-filter-select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(30, 64, 175, 0.3);
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e40af;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .chart-filter-select:hover {
+    border-color: #1e40af;
+    background: white;
+  }
+
+  .chart-filter-select:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
   }
 
   .chart-btn {
@@ -900,16 +1309,16 @@ body {
     .floating-btn {
       right: 16px;
       bottom: 16px;
-      width: 52px;
-      height: 52px;
-      font-size: 22px;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
     }
 
     .floating-btn.secondary {
-      right: 76px;
-      width: 48px;
-      height: 48px;
-      font-size: 20px;
+      right: 80px;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
     }
 
     .chart-controls {
@@ -1208,6 +1617,42 @@ body {
 
   /* Mobile Responsive for New Components */
   @media (max-width: 768px) {
+    .digital-id-content {
+      min-height: auto;
+    }
+
+    .car-info-card {
+      width: 100%;
+      height: auto;
+      min-height: 200px;
+      max-height: none;
+      padding: 20px 22px;
+    }
+
+    .car-info-header {
+      padding-right: 38px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+    }
+
+    .car-info-body {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .car-info-main {
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+    }
+
+    .license-expiry-box {
+      min-width: auto;
+      max-width: 100%;
+      width: 100%;
+      padding: 16px 20px;
+    }
+
     .filter-group {
       flex-direction: column;
       gap: 8px;

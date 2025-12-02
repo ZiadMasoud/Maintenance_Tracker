@@ -30,11 +30,15 @@ request.onupgradeneeded = function (e) {
 
 request.onsuccess = function (e) {
   db = e.target.result;
-  // Initialize odometer display
+  // Initialize odometer display (currentOdometer variable name kept for code clarity)
   odometerValue.textContent = `${currentOdometer.toLocaleString()} km`;
+  // Load car info from localStorage
+  loadCarInfo();
   initializeEventListeners();
   renderAll();
   initializeCharts();
+  startLiveTime();
+  renderCarInfo();
 };
 
 request.onerror = function () {
@@ -195,6 +199,30 @@ function initializeEventListeners() {
   
   // Toggle completed items
   toggleCompletedBtn.addEventListener('click', toggleCompletedItems);
+  
+  // Car info modal
+  const carInfoModal = document.getElementById('carInfoModal');
+  const closeCarInfoModal = document.getElementById('closeCarInfoModal');
+  const saveCarInfoBtn = document.getElementById('saveCarInfoBtn');
+  const cancelCarInfoBtn = document.getElementById('cancelCarInfoBtn');
+  
+  if (closeCarInfoModal) {
+    closeCarInfoModal.addEventListener('click', () => {
+      carInfoModal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    });
+  }
+  
+  if (cancelCarInfoBtn) {
+    cancelCarInfoBtn.addEventListener('click', () => {
+      carInfoModal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    });
+  }
+  
+  if (saveCarInfoBtn) {
+    saveCarInfoBtn.addEventListener('click', saveCarInfo);
+  }
 }
 
 // ================================
@@ -264,6 +292,20 @@ let spendingChart = null;
 let categoryChart = null;
 let currentSpendingView = 'monthly';
 let currentCategoryView = 'monthly';
+let selectedSpendingMonth = '';
+let selectedSpendingYear = '';
+let selectedCategoryMonth = '';
+let selectedCategoryYear = '';
+
+// Car info state
+let carInfo = {
+  manufacturer: '',
+  model: '',
+  year: '',
+  plate: '',
+  color: '#1e40af',
+  licenseExpiry: ''
+};
 
 // Search and pagination state
 let filteredSessions = [];
@@ -630,7 +672,7 @@ function renderSessionCards(sessions, items, categories) {
           <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
         </div>
       </div>
-      ${session.odometer && session.odometer > 0 ? `<p><strong>Odometer:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
+      ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
       <div class="item-list">
@@ -701,9 +743,14 @@ function displayCompletedItems(items) {
           <span class="item-name">${item.name}</span>
           <span class="interval-info">Interval: ${item.interval.toLocaleString()} km</span>
         </div>
-        <button class="restore-btn" onclick="restoreUpcomingItem(${item.id})" title="Restore to Upcoming">
-          ↶
-        </button>
+        <div class="completed-actions">
+          <button class="restore-btn" onclick="restoreUpcomingItem(${item.id})" title="Restore to Upcoming">
+            ↶
+          </button>
+          <button class="delete-completed-btn" onclick="deleteCompletedItem(${item.id})" title="Delete from History">
+            🗑
+          </button>
+        </div>
       </div>
     `;
     completedItems.appendChild(div);
@@ -715,23 +762,38 @@ function displayUpcoming(items) {
   const filtered = items.filter(i => i.nextDueKm && i.interval);
   filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
 
+  if (filtered.length === 0) {
+    upcomingList.innerHTML = `
+      <div class="no-upcoming">
+        <div class="no-upcoming-icon">✓</div>
+        <div class="no-upcoming-text">All maintenance up to date!</div>
+      </div>
+    `;
+    return;
+  }
+
   filtered.forEach(item => {
     const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
     const progressPercent = Math.min((kmSinceService / item.interval) * 100, 100);
+    const kmRemaining = item.nextDueKm - currentOdometer;
     
     // Calculate status and color based on progress
     let status = "status-ok";
     let progressColor = "#16a34a"; // Green
+    let urgencyText = "Good";
     
     if (progressPercent >= 100) {
       status = "status-danger";
       progressColor = "#dc2626"; // Red
+      urgencyText = "Overdue";
     } else if (progressPercent >= 80) {
       status = "status-warning";
       progressColor = "#ea580c"; // Orange
+      urgencyText = "Urgent";
     } else if (progressPercent >= 60) {
       status = "status-caution";
       progressColor = "#eab308"; // Yellow
+      urgencyText = "Soon";
     }
 
     const div = document.createElement("div");
@@ -741,16 +803,20 @@ function displayUpcoming(items) {
     const progressBar = `
       <div class="progress-container">
         <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};"></div>
+        <div class="progress-label">${progressPercent.toFixed(0)}%</div>
       </div>
     `;
     
     div.innerHTML = `
       <div class="upcoming-content">
         <div class="upcoming-info">
-          <span class="item-name">${item.name}</span>
+          <div class="item-header-row">
+            <span class="item-name">${item.name}</span>
+            <span class="urgency-badge ${status}">${urgencyText}</span>
+          </div>
           <div class="item-details">
             <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
-            <span class="next-due">Due at: ${item.nextDueKm.toLocaleString()} km</span>
+            <span class="next-due">Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})</span>
           </div>
         </div>
         <div class="upcoming-actions">
@@ -860,10 +926,10 @@ function displaySessionDetails(session, items, categories) {
   // Only show odometer if it exists and is greater than 0
   if (session.odometer && session.odometer > 0) {
     detailsHTML += `
-      <div class="detail-item">
-        <label>Odometer:</label>
-        <span>${session.odometer.toLocaleString()} km</span>
-      </div>
+          <div class="detail-item">
+            <label>ODO:</label>
+            <span>${session.odometer.toLocaleString()} km</span>
+          </div>
     `;
   }
   
@@ -1025,6 +1091,11 @@ function editUpcomingItem(itemId) {
 }
 
 function restoreUpcomingItem(itemId) {
+  if (!db) {
+    console.error("Database not initialized");
+    return;
+  }
+  
   const tx = db.transaction(["items", "sessions"], "readwrite");
   const itemStore = tx.objectStore("items");
   const sessionStore = tx.objectStore("sessions");
@@ -1053,13 +1124,51 @@ function restoreUpcomingItem(itemId) {
         
         itemStore.put(updatedItem);
       };
+    } else {
+      console.error("Item not found:", itemId);
     }
   };
   
   tx.oncomplete = () => {
     renderAll();
   };
+  
+  tx.onerror = () => {
+    console.error("Error restoring item:", tx.error);
+    alert("Error restoring item. Please try again.");
+  };
 }
+
+// Make function globally accessible
+window.restoreUpcomingItem = restoreUpcomingItem;
+
+function deleteCompletedItem(itemId) {
+  if (!confirm("Are you sure you want to delete this item from history? This action cannot be undone.")) {
+    return;
+  }
+  
+  if (!db) {
+    console.error("Database not initialized");
+    return;
+  }
+  
+  const tx = db.transaction("items", "readwrite");
+  const itemStore = tx.objectStore("items");
+  
+  itemStore.delete(itemId);
+  
+  tx.oncomplete = () => {
+    renderAll();
+  };
+  
+  tx.onerror = () => {
+    console.error("Error deleting item:", tx.error);
+    alert("Error deleting item. Please try again.");
+  };
+}
+
+// Make functions globally accessible
+window.deleteCompletedItem = deleteCompletedItem;
 
 function deleteSession(id) {
   if (!confirm("Delete this session permanently?")) return;
@@ -1085,11 +1194,17 @@ function initializeCharts() {
   const yearlyViewBtn = document.getElementById('yearlyView');
   const categoryMonthlyViewBtn = document.getElementById('categoryMonthlyView');
   const categoryYearlyViewBtn = document.getElementById('categoryYearlyView');
+  const spendingMonthFilter = document.getElementById('spendingMonthFilter');
+  const spendingYearFilter = document.getElementById('spendingYearFilter');
+  const categoryMonthFilter = document.getElementById('categoryMonthFilter');
+  const categoryYearFilter = document.getElementById('categoryYearFilter');
   
   if (monthlyViewBtn) {
     monthlyViewBtn.addEventListener('click', () => {
       currentSpendingView = 'monthly';
       updateChartButtons('monthlyView', 'yearlyView');
+      if (spendingMonthFilter) spendingMonthFilter.style.display = 'inline-block';
+      if (spendingYearFilter) spendingYearFilter.style.display = 'inline-block';
       updateSpendingChart();
     });
   }
@@ -1098,6 +1213,8 @@ function initializeCharts() {
     yearlyViewBtn.addEventListener('click', () => {
       currentSpendingView = 'yearly';
       updateChartButtons('yearlyView', 'monthlyView');
+      if (spendingMonthFilter) spendingMonthFilter.style.display = 'none';
+      if (spendingYearFilter) spendingYearFilter.style.display = 'inline-block';
       updateSpendingChart();
     });
   }
@@ -1106,6 +1223,8 @@ function initializeCharts() {
     categoryMonthlyViewBtn.addEventListener('click', () => {
       currentCategoryView = 'monthly';
       updateChartButtons('categoryMonthlyView', 'categoryYearlyView');
+      if (categoryMonthFilter) categoryMonthFilter.style.display = 'inline-block';
+      if (categoryYearFilter) categoryYearFilter.style.display = 'inline-block';
       updateCategoryChart();
     });
   }
@@ -1114,11 +1233,64 @@ function initializeCharts() {
     categoryYearlyViewBtn.addEventListener('click', () => {
       currentCategoryView = 'yearly';
       updateChartButtons('categoryYearlyView', 'categoryMonthlyView');
+      if (categoryMonthFilter) categoryMonthFilter.style.display = 'none';
+      if (categoryYearFilter) categoryYearFilter.style.display = 'inline-block';
+      updateCategoryChart();
+    });
+  }
+  
+  // Set initial filter visibility based on default view
+  if (spendingMonthFilter && spendingYearFilter) {
+    if (currentSpendingView === 'monthly') {
+      spendingMonthFilter.style.display = 'inline-block';
+      spendingYearFilter.style.display = 'inline-block';
+    } else {
+      spendingMonthFilter.style.display = 'none';
+      spendingYearFilter.style.display = 'inline-block';
+    }
+  }
+  
+  if (categoryMonthFilter && categoryYearFilter) {
+    if (currentCategoryView === 'monthly') {
+      categoryMonthFilter.style.display = 'inline-block';
+      categoryYearFilter.style.display = 'inline-block';
+    } else {
+      categoryMonthFilter.style.display = 'none';
+      categoryYearFilter.style.display = 'inline-block';
+    }
+  }
+
+  // Filter event listeners
+  if (spendingMonthFilter) {
+    spendingMonthFilter.addEventListener('change', (e) => {
+      selectedSpendingMonth = e.target.value;
+      updateSpendingChart();
+    });
+  }
+
+  if (spendingYearFilter) {
+    spendingYearFilter.addEventListener('change', (e) => {
+      selectedSpendingYear = e.target.value;
+      updateSpendingChart();
+    });
+  }
+
+  if (categoryMonthFilter) {
+    categoryMonthFilter.addEventListener('change', (e) => {
+      selectedCategoryMonth = e.target.value;
       updateCategoryChart();
     });
   }
 
-  // Initialize charts
+  if (categoryYearFilter) {
+    categoryYearFilter.addEventListener('change', (e) => {
+      selectedCategoryYear = e.target.value;
+      updateCategoryChart();
+    });
+  }
+
+  // Initialize charts and populate filters
+  populateChartFilters();
   updateSpendingChart();
   updateCategoryChart();
 }
@@ -1129,13 +1301,40 @@ function updateChartButtons(activeId, inactiveId) {
 }
 
 function updateSpendingChart() {
-  const ctx = document.getElementById('spendingChart').getContext('2d');
+  const canvas = document.getElementById('spendingChart');
+  const ctx = canvas.getContext('2d');
+  const parent = canvas.parentElement;
   
   // Get spending data
   getSpendingData(currentSpendingView).then(data => {
     if (spendingChart) {
       spendingChart.destroy();
     }
+
+    // Check if there's any data - handle both monthly (always 12 values) and yearly (variable length)
+    const hasData = data.values && data.values.length > 0 && data.values.some(v => v > 0);
+    
+    // Get or create empty message element
+    let emptyMsg = parent.querySelector('.chart-empty-message');
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('div');
+      emptyMsg.className = 'chart-empty-message';
+      parent.appendChild(emptyMsg);
+    }
+    
+    if (!hasData) {
+      // Show empty state message
+      const filterText = selectedSpendingYear ? ` for ${selectedSpendingYear}` : '';
+      const monthText = selectedSpendingMonth !== '' && selectedSpendingMonth !== null ? ` in ${new Date(2024, parseInt(selectedSpendingMonth)).toLocaleDateString('en-US', { month: 'long' })}` : '';
+      emptyMsg.textContent = `No spending data${filterText}${monthText}`;
+      emptyMsg.style.display = 'flex';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    // Hide empty message and show canvas
+    emptyMsg.style.display = 'none';
+    canvas.style.display = 'block';
 
     spendingChart = new Chart(ctx, {
       type: 'line',
@@ -1175,13 +1374,40 @@ function updateSpendingChart() {
 }
 
 function updateCategoryChart() {
-  const ctx = document.getElementById('categoryChart').getContext('2d');
+  const canvas = document.getElementById('categoryChart');
+  const ctx = canvas.getContext('2d');
+  const parent = canvas.parentElement;
   
   // Get category spending data
   getCategorySpendingData(currentCategoryView).then(data => {
     if (categoryChart) {
       categoryChart.destroy();
     }
+
+    // Check if there's any data
+    const hasData = data.values && data.values.length > 0 && data.values.some(v => v > 0);
+    
+    // Get or create empty message element
+    let emptyMsg = parent.querySelector('.chart-empty-message');
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('div');
+      emptyMsg.className = 'chart-empty-message';
+      parent.appendChild(emptyMsg);
+    }
+    
+    if (!hasData) {
+      // Show empty state message
+      const filterText = selectedCategoryYear ? ` for ${selectedCategoryYear}` : '';
+      const monthText = selectedCategoryMonth !== '' && selectedCategoryMonth !== null ? ` in ${new Date(2024, parseInt(selectedCategoryMonth)).toLocaleDateString('en-US', { month: 'long' })}` : '';
+      emptyMsg.textContent = `No category spending data${filterText}${monthText}`;
+      emptyMsg.style.display = 'flex';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    // Hide empty message and show canvas
+    emptyMsg.style.display = 'none';
+    canvas.style.display = 'block';
 
     categoryChart = new Chart(ctx, {
       type: 'doughnut',
@@ -1242,7 +1468,7 @@ function getSpendingData(viewType) {
             items.push(cursor2.value);
             cursor2.continue();
           } else {
-            const spendingData = processSpendingData(sessions, items, viewType);
+            const spendingData = processSpendingData(sessions, items, viewType, selectedSpendingMonth, selectedSpendingYear);
             resolve(spendingData);
           }
         };
@@ -1266,7 +1492,7 @@ function getCategorySpendingData(viewType) {
     const checkComplete = () => {
       completed++;
       if (completed === 3) {
-        const categoryData = processCategorySpendingData(sessions, items, categories, viewType);
+        const categoryData = processCategorySpendingData(sessions, items, categories, viewType, selectedCategoryMonth, selectedCategoryYear);
         resolve(categoryData);
       }
     };
@@ -1303,48 +1529,72 @@ function getCategorySpendingData(viewType) {
   });
 }
 
-function processSpendingData(sessions, items, viewType) {
+function processSpendingData(sessions, items, viewType, selectedMonth = '', selectedYear = '') {
   const currentYear = new Date().getFullYear();
+  const filterYear = selectedYear && selectedYear !== '' ? parseInt(selectedYear) : currentYear;
 
   if (viewType === 'monthly') {
-    // Show only current year's 12 months, zero-filled
+    // Show only selected year's 12 months, zero-filled
     const values = new Array(12).fill(0);
     sessions.forEach(session => {
       const sessionDate = new Date(session.date);
-      if (sessionDate.getFullYear() !== currentYear) return;
+      const sessionYear = sessionDate.getFullYear();
+      const sessionMonth = sessionDate.getMonth();
+      
+      // Apply filters - only filter if values are actually set
+      if (selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
+      if (selectedMonth && selectedMonth !== '' && sessionMonth !== parseInt(selectedMonth)) return;
+      
       const sessionItems = items.filter(item => item.sessionId === session.id);
       const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
       if (totalSpending > 0) {
-        const monthIdx = sessionDate.getMonth();
-        values[monthIdx] += totalSpending;
+        values[sessionMonth] += totalSpending;
       }
     });
-    const labels = Array.from({ length: 12 }, (_, m) => new Date(currentYear, m).toLocaleDateString('en-US', { month: 'short' }));
+    const labels = Array.from({ length: 12 }, (_, m) => new Date(filterYear, m).toLocaleDateString('en-US', { month: 'short' }));
     return { labels, values };
   }
 
   // Yearly view: aggregate by year across all data
   const spendingByYear = {};
   sessions.forEach(session => {
+    const sessionDate = new Date(session.date);
+    const sessionYear = sessionDate.getFullYear();
+    
+    // Apply year filter if selected
+    if (selectedYear && sessionYear !== filterYear) return;
+    
     const sessionItems = items.filter(item => item.sessionId === session.id);
     const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
     if (totalSpending > 0) {
-      const yearKey = new Date(session.date).getFullYear().toString();
+      const yearKey = sessionYear.toString();
       spendingByYear[yearKey] = (spendingByYear[yearKey] || 0) + totalSpending;
     }
   });
   const labels = Object.keys(spendingByYear).sort();
   const values = labels.map(year => spendingByYear[year]);
+  // If no data, return empty arrays instead of undefined
+  if (labels.length === 0) {
+    return { labels: [], values: [] };
+  }
   return { labels, values };
 }
 
-function processCategorySpendingData(sessions, items, categories, viewType) {
+function processCategorySpendingData(sessions, items, categories, viewType, selectedMonth = '', selectedYear = '') {
   const categorySpending = {};
   const currentYear = new Date().getFullYear();
+  const filterYear = selectedYear && selectedYear !== '' ? parseInt(selectedYear) : currentYear;
   
   sessions.forEach(session => {
     const sessionDate = new Date(session.date);
-    if (viewType === 'monthly' && sessionDate.getFullYear() !== currentYear) return;
+    const sessionYear = sessionDate.getFullYear();
+    const sessionMonth = sessionDate.getMonth();
+    
+    // Apply filters - only filter if values are actually set
+    if (viewType === 'monthly' && selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
+    if (viewType === 'monthly' && selectedMonth && selectedMonth !== '' && sessionMonth !== parseInt(selectedMonth)) return;
+    if (viewType === 'yearly' && selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
+    
     const sessionItems = items.filter(item => item.sessionId === session.id);
     
     sessionItems.forEach(item => {
@@ -1375,7 +1625,88 @@ function processCategorySpendingData(sessions, items, categories, viewType) {
   const values = sortedCategories.map(([,data]) => data.total);
   const colors = sortedCategories.map(([,data]) => data.color);
   
+  // If no data, return empty arrays instead of undefined
+  if (labels.length === 0) {
+    return { labels: [], values: [], colors: [] };
+  }
+  
   return { labels, values, colors };
+}
+
+function populateChartFilters() {
+  // Get all unique years from sessions
+  const tx = db.transaction("sessions", "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const years = new Set();
+  const currentYear = new Date().getFullYear();
+  
+  sessionStore.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      const year = new Date(cursor.value.date).getFullYear();
+      years.add(year);
+      cursor.continue();
+    } else {
+      // Add current year if no data
+      if (years.size === 0) years.add(currentYear);
+      
+      // Populate year filters
+      const spendingYearFilter = document.getElementById('spendingYearFilter');
+      const categoryYearFilter = document.getElementById('categoryYearFilter');
+      
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      
+      if (spendingYearFilter) {
+        spendingYearFilter.innerHTML = '<option value="">All Years</option>';
+        sortedYears.forEach(year => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          if (year === currentYear) option.selected = true;
+          spendingYearFilter.appendChild(option);
+        });
+      }
+      
+      if (categoryYearFilter) {
+        categoryYearFilter.innerHTML = '<option value="">All Years</option>';
+        sortedYears.forEach(year => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          if (year === currentYear) option.selected = true;
+          categoryYearFilter.appendChild(option);
+        });
+      }
+      
+      // Populate month filters
+      const spendingMonthFilter = document.getElementById('spendingMonthFilter');
+      const categoryMonthFilter = document.getElementById('categoryMonthFilter');
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(currentYear, i);
+        return { value: i, name: date.toLocaleDateString('en-US', { month: 'short' }) };
+      });
+      
+      if (spendingMonthFilter) {
+        spendingMonthFilter.innerHTML = '<option value="">All Months</option>';
+        months.forEach(month => {
+          const option = document.createElement('option');
+          option.value = month.value;
+          option.textContent = month.name;
+          spendingMonthFilter.appendChild(option);
+        });
+      }
+      
+      if (categoryMonthFilter) {
+        categoryMonthFilter.innerHTML = '<option value="">All Months</option>';
+        months.forEach(month => {
+          const option = document.createElement('option');
+          option.value = month.value;
+          option.textContent = month.name;
+          categoryMonthFilter.appendChild(option);
+        });
+      }
+    }
+  };
 }
 
 // ================================
@@ -1531,7 +1862,7 @@ function renderSessionsWithPagination() {
 }
 
 function updatePaginationControls(totalPages) {
-  pageInfo.textContent = `Page ${currentPage} of ${totalPages} (Showing latest ${sessionsPerPage})`;
+  pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
   prevPageBtn.disabled = currentPage === 1;
   nextPageBtn.disabled = currentPage === totalPages;
 }
@@ -1589,16 +1920,46 @@ function displaySessionsPaginated(sessions, items, categories) {
   sessions.forEach(session => {
     const relatedItems = items.filter(i => i.sessionId === session.id);
     const total = relatedItems.reduce((sum, i) => sum + (i.price || 0), 0);
+    const hasMoreItems = relatedItems.length > 2;
+    const visibleItems = hasMoreItems ? relatedItems.slice(0, 2) : relatedItems;
+    const hiddenItems = hasMoreItems ? relatedItems.slice(2) : [];
 
     const card = document.createElement("div");
     card.classList.add("session-card");
     card.style.cursor = "pointer";
+    card.dataset.sessionId = session.id;
     card.onclick = (e) => {
-      // Don't open details if clicking on action buttons
-      if (!e.target.classList.contains('edit-btn') && !e.target.classList.contains('delete-btn')) {
+      // Don't open details if clicking on action buttons or show more button
+      if (!e.target.classList.contains('edit-btn') && 
+          !e.target.classList.contains('delete-btn') &&
+          !e.target.classList.contains('show-more-items') &&
+          !e.target.closest('.show-more-items')) {
         viewSessionDetails(session.id);
       }
     };
+    
+    const itemsHTML = visibleItems.map(item => {
+      const categoryName = item.categoryId && categories[item.categoryId] 
+        ? categories[item.categoryId].name 
+        : 'No Category';
+      return `
+        <div class="item-row">
+          <span>${item.name || "Unnamed"} <span class="category-badge" style="background-color: ${item.categoryId && categories[item.categoryId] ? categories[item.categoryId].color : '#ccc'}">${categoryName}</span></span>
+          <span>${item.price.toLocaleString()} EGP</span>
+        </div>`;
+    }).join("");
+    
+    const hiddenItemsHTML = hiddenItems.map(item => {
+      const categoryName = item.categoryId && categories[item.categoryId] 
+        ? categories[item.categoryId].name 
+        : 'No Category';
+      return `
+        <div class="item-row hidden-item">
+          <span>${item.name || "Unnamed"} <span class="category-badge" style="background-color: ${item.categoryId && categories[item.categoryId] ? categories[item.categoryId].color : '#ccc'}">${categoryName}</span></span>
+          <span>${item.price.toLocaleString()} EGP</span>
+        </div>`;
+    }).join("");
+    
     card.innerHTML = `
       <div class="session-header">
         <h3>${formatDateToBritish(session.date)}</h3>
@@ -1607,29 +1968,37 @@ function displaySessionsPaginated(sessions, items, categories) {
           <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
         </div>
       </div>
-      ${session.odometer && session.odometer > 0 ? `<p><strong>Odometer:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
+      ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
       <div class="item-list">
-        ${relatedItems
-          .map(
-            item => {
-              const categoryName = item.categoryId && categories[item.categoryId] 
-                ? categories[item.categoryId].name 
-                : 'No Category';
-              return `
-          <div class="item-row">
-            <span>${item.name || "Unnamed"} <span class="category-badge" style="background-color: ${item.categoryId && categories[item.categoryId] ? categories[item.categoryId].color : '#ccc'}">${categoryName}</span></span>
-            <span>${item.price.toLocaleString()} EGP</span>
-          </div>`;
-            }
-          )
-          .join("")}
+        ${itemsHTML}
+        <div class="hidden-items-container" style="display: none;">
+          ${hiddenItemsHTML}
+        </div>
       </div>
+      ${hasMoreItems ? `<button class="show-more-items" onclick="toggleSessionItems(event, ${session.id})">Show ${hiddenItems.length} more</button>` : ''}
       <div class="session-total">Total: ${total.toLocaleString()} EGP</div>
     `;
     sessionsList.appendChild(card);
   });
+}
+
+function toggleSessionItems(event, sessionId) {
+  event.stopPropagation();
+  const card = document.querySelector(`[data-session-id="${sessionId}"]`);
+  if (!card) return;
+  
+  const hiddenContainer = card.querySelector('.hidden-items-container');
+  const showMoreBtn = card.querySelector('.show-more-items');
+  
+  if (hiddenContainer.style.display === 'none') {
+    hiddenContainer.style.display = 'block';
+    showMoreBtn.textContent = 'Show less';
+  } else {
+    hiddenContainer.style.display = 'none';
+    showMoreBtn.textContent = `Show ${hiddenContainer.querySelectorAll('.item-row').length} more`;
+  }
 }
 
 function loadCategoriesForFilter() {
@@ -1649,6 +2018,154 @@ function loadCategoriesForFilter() {
       cursor.continue();
     }
   };
+}
+
+// ================================
+// Live Time Display
+// ================================
+function startLiveTime() {
+  const liveTimeElement = document.getElementById('liveTime');
+  if (!liveTimeElement) return;
+  
+  function updateTime() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+    const timeStr = now.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: true 
+    });
+    liveTimeElement.textContent = `${dateStr} | ${timeStr}`;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
+}
+
+// ================================
+// Car Info Management
+// ================================
+function loadCarInfo() {
+  const saved = localStorage.getItem('carInfo');
+  if (saved) {
+    try {
+      carInfo = JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading car info:', e);
+    }
+  }
+}
+
+function saveCarInfo() {
+  const manufacturer = document.getElementById('carManufacturerInput').value.trim();
+  const model = document.getElementById('carModelInput').value.trim();
+  const year = document.getElementById('carYearInput').value.trim();
+  const plate = document.getElementById('carPlateInput').value.trim().toUpperCase();
+  const color = document.getElementById('carColorInput').value;
+  const licenseExpiry = document.getElementById('carLicenseExpiryInput').value;
+  
+  carInfo = {
+    manufacturer: manufacturer || '',
+    model: model || '',
+    year: year || '',
+    plate: plate || '',
+    color: color || '#1e40af',
+    licenseExpiry: licenseExpiry || ''
+  };
+  
+  localStorage.setItem('carInfo', JSON.stringify(carInfo));
+  
+  const carInfoModal = document.getElementById('carInfoModal');
+  if (carInfoModal) {
+    carInfoModal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+  
+  renderCarInfo();
+}
+
+function openCarInfoModal() {
+  const carInfoModal = document.getElementById('carInfoModal');
+  if (!carInfoModal) return;
+  
+  // Populate form with current values
+  document.getElementById('carManufacturerInput').value = carInfo.manufacturer || '';
+  document.getElementById('carModelInput').value = carInfo.model || '';
+  document.getElementById('carYearInput').value = carInfo.year || '';
+  document.getElementById('carPlateInput').value = carInfo.plate || '';
+  document.getElementById('carColorInput').value = carInfo.color || '#1e40af';
+  document.getElementById('carLicenseExpiryInput').value = carInfo.licenseExpiry || '';
+  
+  carInfoModal.style.display = 'flex';
+  document.body.classList.add('modal-open');
+}
+
+function renderCarInfo() {
+  const manufacturerEl = document.getElementById('carManufacturer');
+  const modelEl = document.getElementById('carModel');
+  const yearEl = document.getElementById('carYear');
+  const plateEl = document.getElementById('carPlate');
+  const licenseExpiryEl = document.getElementById('carLicenseExpiry');
+  const licenseExpiryBox = document.getElementById('licenseExpiryBox');
+  const carInfoCard = document.getElementById('carInfoCard');
+  
+  if (manufacturerEl) manufacturerEl.textContent = carInfo.manufacturer || '—';
+  if (modelEl) modelEl.textContent = carInfo.model || '—';
+  if (yearEl) yearEl.textContent = carInfo.year || '—';
+  if (plateEl) plateEl.textContent = carInfo.plate || '—';
+  
+  // Apply car color to background with glassy effect
+  if (carInfoCard && carInfo.color) {
+    // Convert hex to RGB for rgba
+    const hex = carInfo.color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Apply light, transparent color with glassy effect
+    carInfoCard.style.background = `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.15) 0%, rgba(${r}, ${g}, ${b}, 0.08) 100%)`;
+  }
+  
+  if (licenseExpiryEl && licenseExpiryBox) {
+    if (carInfo.licenseExpiry) {
+      const expiryDate = new Date(carInfo.licenseExpiry);
+      const formattedDate = expiryDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      licenseExpiryEl.textContent = formattedDate;
+      
+      // Check if expiry is coming soon and update license box color
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiry = new Date(carInfo.licenseExpiry);
+      expiry.setHours(0, 0, 0, 0);
+      const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+      
+      // Remove all warning classes
+      licenseExpiryBox.classList.remove('license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
+      
+      if (daysUntilExpiry < 0) {
+        // Expired
+        licenseExpiryBox.classList.add('license-warning-expired');
+      } else if (daysUntilExpiry <= 7) {
+        // Urgent - less than 7 days
+        licenseExpiryBox.classList.add('license-warning-urgent');
+      } else if (daysUntilExpiry <= 30) {
+        // Soon - less than 30 days
+        licenseExpiryBox.classList.add('license-warning-soon');
+      }
+    } else {
+      licenseExpiryEl.textContent = '—';
+      licenseExpiryBox.classList.remove('license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
+    }
+  }
 }
 
 // ================================
