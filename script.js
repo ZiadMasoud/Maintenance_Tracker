@@ -799,10 +799,12 @@ function displayUpcoming(items) {
     const div = document.createElement("div");
     div.classList.add("upcoming-item", status);
     
-    // Create progress bar with solid color
+    // Create progress bar with separate track and fill so width percent is applied reliably
     const progressBar = `
       <div class="progress-container">
-        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};"></div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width: ${progressPercent}%; background: ${progressColor};"></div>
+        </div>
         <div class="progress-label">${progressPercent.toFixed(0)}%</div>
       </div>
     `;
@@ -2331,6 +2333,22 @@ function resetAllData() {
     sessionSearch.value = '';
     categoryFilter.value = '';
     dateFilter.value = '';
+    
+    // Clear saved car info (Digital ID / card info)
+    try {
+      localStorage.removeItem('carInfo');
+      carInfo = {
+        manufacturer: '',
+        model: '',
+        year: '',
+        plate: '',
+        color: '#1e40af',
+        licenseExpiry: ''
+      };
+      renderCarInfo();
+    } catch (e) {
+      console.error('Error clearing car info:', e);
+    }
     
     alert('All data has been reset!');
     renderAll();
