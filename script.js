@@ -799,12 +799,10 @@ function displayUpcoming(items) {
     const div = document.createElement("div");
     div.classList.add("upcoming-item", status);
     
-    // Create progress bar with separate track and fill so width percent is applied reliably
+    // Create progress bar with solid color
     const progressBar = `
       <div class="progress-container">
-        <div class="progress-track">
-          <div class="progress-fill" style="width: ${progressPercent}%; background: ${progressColor};"></div>
-        </div>
+        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};"></div>
         <div class="progress-label">${progressPercent.toFixed(0)}%</div>
       </div>
     `;
@@ -1191,56 +1189,36 @@ function deleteSession(id) {
 // Chart Management
 // ================================
 function initializeCharts() {
-  // Chart button event listeners
+  // Chart button event listeners (shared controls for both charts)
   const monthlyViewBtn = document.getElementById('monthlyView');
   const yearlyViewBtn = document.getElementById('yearlyView');
-  const categoryMonthlyViewBtn = document.getElementById('categoryMonthlyView');
-  const categoryYearlyViewBtn = document.getElementById('categoryYearlyView');
   const spendingMonthFilter = document.getElementById('spendingMonthFilter');
   const spendingYearFilter = document.getElementById('spendingYearFilter');
-  const categoryMonthFilter = document.getElementById('categoryMonthFilter');
-  const categoryYearFilter = document.getElementById('categoryYearFilter');
-  
+
   if (monthlyViewBtn) {
     monthlyViewBtn.addEventListener('click', () => {
       currentSpendingView = 'monthly';
+      currentCategoryView = 'monthly';
       updateChartButtons('monthlyView', 'yearlyView');
       if (spendingMonthFilter) spendingMonthFilter.style.display = 'inline-block';
       if (spendingYearFilter) spendingYearFilter.style.display = 'inline-block';
       updateSpendingChart();
+      updateCategoryChart();
     });
   }
 
   if (yearlyViewBtn) {
     yearlyViewBtn.addEventListener('click', () => {
       currentSpendingView = 'yearly';
+      currentCategoryView = 'yearly';
       updateChartButtons('yearlyView', 'monthlyView');
       if (spendingMonthFilter) spendingMonthFilter.style.display = 'none';
       if (spendingYearFilter) spendingYearFilter.style.display = 'inline-block';
       updateSpendingChart();
-    });
-  }
-
-  if (categoryMonthlyViewBtn) {
-    categoryMonthlyViewBtn.addEventListener('click', () => {
-      currentCategoryView = 'monthly';
-      updateChartButtons('categoryMonthlyView', 'categoryYearlyView');
-      if (categoryMonthFilter) categoryMonthFilter.style.display = 'inline-block';
-      if (categoryYearFilter) categoryYearFilter.style.display = 'inline-block';
       updateCategoryChart();
     });
   }
 
-  if (categoryYearlyViewBtn) {
-    categoryYearlyViewBtn.addEventListener('click', () => {
-      currentCategoryView = 'yearly';
-      updateChartButtons('categoryYearlyView', 'categoryMonthlyView');
-      if (categoryMonthFilter) categoryMonthFilter.style.display = 'none';
-      if (categoryYearFilter) categoryYearFilter.style.display = 'inline-block';
-      updateCategoryChart();
-    });
-  }
-  
   // Set initial filter visibility based on default view
   if (spendingMonthFilter && spendingYearFilter) {
     if (currentSpendingView === 'monthly') {
@@ -1251,42 +1229,22 @@ function initializeCharts() {
       spendingYearFilter.style.display = 'inline-block';
     }
   }
-  
-  if (categoryMonthFilter && categoryYearFilter) {
-    if (currentCategoryView === 'monthly') {
-      categoryMonthFilter.style.display = 'inline-block';
-      categoryYearFilter.style.display = 'inline-block';
-    } else {
-      categoryMonthFilter.style.display = 'none';
-      categoryYearFilter.style.display = 'inline-block';
-    }
-  }
 
-  // Filter event listeners
+  // Shared filter event listeners — update both charts
   if (spendingMonthFilter) {
     spendingMonthFilter.addEventListener('change', (e) => {
       selectedSpendingMonth = e.target.value;
+      selectedCategoryMonth = selectedSpendingMonth;
       updateSpendingChart();
+      updateCategoryChart();
     });
   }
 
   if (spendingYearFilter) {
     spendingYearFilter.addEventListener('change', (e) => {
       selectedSpendingYear = e.target.value;
+      selectedCategoryYear = selectedSpendingYear;
       updateSpendingChart();
-    });
-  }
-
-  if (categoryMonthFilter) {
-    categoryMonthFilter.addEventListener('change', (e) => {
-      selectedCategoryMonth = e.target.value;
-      updateCategoryChart();
-    });
-  }
-
-  if (categoryYearFilter) {
-    categoryYearFilter.addEventListener('change', (e) => {
-      selectedCategoryYear = e.target.value;
       updateCategoryChart();
     });
   }
@@ -1379,7 +1337,11 @@ function updateCategoryChart() {
   const canvas = document.getElementById('categoryChart');
   const ctx = canvas.getContext('2d');
   const parent = canvas.parentElement;
-  
+  // Ensure category filters/view mirror the shared chart filters
+  selectedCategoryMonth = selectedSpendingMonth;
+  selectedCategoryYear = selectedSpendingYear;
+  currentCategoryView = currentSpendingView;
+
   // Get category spending data
   getCategorySpendingData(currentCategoryView).then(data => {
     if (categoryChart) {
@@ -2192,6 +2154,7 @@ function exportAllData() {
         items,
         categories,
         currentOdometer,
+        carInfo,
         exportDate: new Date().toISOString()
       };
       
@@ -2292,6 +2255,16 @@ function importAllData(importData) {
       localStorage.setItem('currentOdometer', currentOdometer.toString());
       odometerValue.textContent = `${currentOdometer.toLocaleString()} km`;
     }
+    // Restore car info if present in import
+    if (importData.carInfo) {
+      carInfo = importData.carInfo;
+      try {
+        localStorage.setItem('carInfo', JSON.stringify(carInfo));
+      } catch (e) {
+        console.error('Failed to save imported carInfo to localStorage', e);
+      }
+      renderCarInfo();
+    }
     
     alert('Data imported successfully!');
     renderAll();
@@ -2333,22 +2306,6 @@ function resetAllData() {
     sessionSearch.value = '';
     categoryFilter.value = '';
     dateFilter.value = '';
-    
-    // Clear saved car info (Digital ID / card info)
-    try {
-      localStorage.removeItem('carInfo');
-      carInfo = {
-        manufacturer: '',
-        model: '',
-        year: '',
-        plate: '',
-        color: '#1e40af',
-        licenseExpiry: ''
-      };
-      renderCarInfo();
-    } catch (e) {
-      console.error('Error clearing car info:', e);
-    }
     
     alert('All data has been reset!');
     renderAll();

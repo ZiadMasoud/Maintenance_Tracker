@@ -11,20 +11,20 @@
   <header>
     <h1>Maintenance Tracker</h1>
     <div class="summary">
-      <div class="summary-box">
-        <div class="odometer-area">
-          <label class="odometer-label">ODO</label>
-          <button id="currentOdometerBtn" class="odometer-btn">
-            <span id="odometerValue">0 km</span>
-            <span class="edit-icon">✎</span>
-          </button>
-        </div>
-        <div id="totalCost" class="total-cost">Total: 0 EGP</div>
+      <div class="odometer-section">
+        <label>ODO:</label>
+        <button id="currentOdometerBtn" class="odometer-btn">
+          <span id="odometerValue">0 km</span>
+          <span class="edit-icon">✎</span>
+        </button>
       </div>
+      <div id="totalCost" class="total-cost">Total: 0 EGP</div>
     </div>
   </header>
 
   <main>
+    <!-- Duplicate Digital ID removed -->
+
     <section class="sessions">
       <h2>Maintenance Sessions</h2>
       
@@ -104,8 +104,8 @@
       </div>
     </section>
 
-    <section class="spending-chart">
-      <h2>Spending Over Time</h2>
+    <section class="charts-section">
+      <h2>Spending</h2>
       <div class="chart-controls">
         <button id="monthlyView" class="chart-btn active">Monthly</button>
         <button id="yearlyView" class="chart-btn">Yearly</button>
@@ -116,22 +116,16 @@
           <option value="">All Years</option>
         </select>
       </div>
-      <canvas id="spendingChart"></canvas>
-    </section>
-
-    <section class="category-chart">
-      <h2>Spending by Category</h2>
-      <div class="chart-controls">
-        <button id="categoryMonthlyView" class="chart-btn active">Monthly</button>
-        <button id="categoryYearlyView" class="chart-btn">Yearly</button>
-        <select id="categoryMonthFilter" class="chart-filter-select" style="display: none;">
-          <option value="">All Months</option>
-        </select>
-        <select id="categoryYearFilter" class="chart-filter-select" style="display: none;">
-          <option value="">All Years</option>
-        </select>
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3 class="chart-title">Spending Over Time</h3>
+          <canvas id="spendingChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">Spending by Category</h3>
+          <canvas id="categoryChart"></canvas>
+        </div>
       </div>
-      <canvas id="categoryChart"></canvas>
     </section>
   </main>
 
