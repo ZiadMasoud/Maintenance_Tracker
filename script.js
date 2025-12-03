@@ -802,8 +802,9 @@ function displayUpcoming(items) {
     // Create progress bar with solid color
     const progressBar = `
       <div class="progress-container">
-        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};"></div>
-        <div class="progress-label">${progressPercent.toFixed(0)}%</div>
+        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
+          <div class="progress-label">${progressPercent.toFixed(0)}%</div>
+        </div>
       </div>
     `;
     
@@ -2307,6 +2308,22 @@ function resetAllData() {
     categoryFilter.value = '';
     dateFilter.value = '';
     
+    // Clear car info from memory and localStorage to fully reset user data
+    carInfo = {
+      manufacturer: '',
+      model: '',
+      year: '',
+      plate: '',
+      color: '#1e40af',
+      licenseExpiry: ''
+    };
+    try {
+      localStorage.removeItem('carInfo');
+    } catch (e) {
+      console.error('Failed to remove carInfo from localStorage', e);
+    }
+    renderCarInfo();
+
     alert('All data has been reset!');
     renderAll();
     loadCategoriesForFilter();
