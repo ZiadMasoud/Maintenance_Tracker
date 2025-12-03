@@ -336,7 +336,7 @@ saveOdometerBtn.addEventListener("click", () => {
   const newValue = parseInt(odometerInput.value) || 0;
   currentOdometer = newValue;
   localStorage.setItem('currentOdometer', newValue.toString());
-  odometerValue.textContent = `${newValue.toLocaleString()} km`;
+  odometerValue.textContent = `${newValue.toLocaleString()}`;
   odometerModal.style.display = "none";
   document.body.classList.remove('modal-open');
   renderAll();
@@ -562,7 +562,7 @@ function saveSession() {
   if (odometer && odometer > currentOdometer) {
     currentOdometer = odometer;
     localStorage.setItem('currentOdometer', odometer.toString());
-    odometerValue.textContent = `${odometer.toLocaleString()} km`;
+    odometerValue.textContent = `${odometer.toLocaleString()}`;
   }
 
   const sessionObj = { id: editingSessionId || Date.now(), date, odometer, merchant, notes };
@@ -670,7 +670,7 @@ function renderSessionCards(sessions, items, categories) {
       </div>
       <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
       <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
-      ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
+      ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()}</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
       <div class="item-list">
@@ -927,7 +927,7 @@ function displaySessionDetails(session, items, categories) {
     detailsHTML += `
           <div class="detail-item">
             <label>ODO:</label>
-            <span>${session.odometer.toLocaleString()} km</span>
+            <span>${session.odometer.toLocaleString()}</span>
           </div>
     `;
   }
@@ -2293,7 +2293,7 @@ function resetAllData() {
     // Reset odometer
     currentOdometer = 0;
     localStorage.setItem('currentOdometer', '0');
-    odometerValue.textContent = '0 km';
+    odometerValue.textContent = '0';
     
     // Reset search and filters
     searchTerm = '';
