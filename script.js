@@ -667,11 +667,9 @@ function renderSessionCards(sessions, items, categories) {
     card.innerHTML = `
       <div class="session-header">
         <h3>${session.date}</h3>
-        <div>
-          <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
-          <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
-        </div>
       </div>
+      <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
+      <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
       ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
@@ -810,10 +808,10 @@ function displayUpcoming(items) {
     
     div.innerHTML = `
       <div class="upcoming-content">
+        <span class="urgency-badge ${status}">${urgencyText}</span>
         <div class="upcoming-info">
           <div class="item-header-row">
             <span class="item-name">${item.name}</span>
-            <span class="urgency-badge ${status}">${urgencyText}</span>
           </div>
           <div class="item-details">
             <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
@@ -1928,11 +1926,9 @@ function displaySessionsPaginated(sessions, items, categories) {
     card.innerHTML = `
       <div class="session-header">
         <h3>${formatDateToBritish(session.date)}</h3>
-        <div>
-          <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
-          <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
-        </div>
       </div>
+      <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
+      <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
       ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
