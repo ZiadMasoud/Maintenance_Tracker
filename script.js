@@ -31,7 +31,7 @@ request.onupgradeneeded = function (e) {
 request.onsuccess = function (e) {
   db = e.target.result;
   // Initialize odometer display (currentOdometer variable name kept for code clarity)
-  odometerValue.textContent = `${currentOdometer.toLocaleString()} km`;
+  odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
   // Load car info from localStorage
   loadCarInfo();
   initializeEventListeners();
@@ -846,7 +846,7 @@ function renderTotalCost() {
       total += cursor.value.price || 0;
       cursor.continue();
     } else {
-      totalCostDisplay.textContent = `Total Spent: ${total.toLocaleString()} EGP`;
+      totalCostDisplay.textContent = `Total Spent: ${total.toLocaleString()}`;
     }
   };
 }
