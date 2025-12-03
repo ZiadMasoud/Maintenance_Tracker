@@ -934,7 +934,7 @@ body {
   }
 
   .progress-label {
-    position: relative;
+    position: absolute;
     font-size: 0.85rem;
     font-weight: 600;
     color: #fff;
@@ -942,6 +942,7 @@ body {
     white-space: nowrap;
     z-index: 2;
     letter-spacing: 0.5px;
+    left: 10px;
   }
 
   .item-header-row {
@@ -960,7 +961,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     position: absolute;
-    top: 0;
+    top: 60px;
     right: 0;
   }
 
