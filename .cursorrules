@@ -1,0 +1,129 @@
+# Maintenance Tracker - Cursor Rules
+
+## Project Overview
+This is a Car Maintenance Tracker web application built with vanilla JavaScript, HTML, and CSS. It uses IndexedDB for data persistence and Chart.js for data visualization.
+
+## Technology Stack
+- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
+- **Storage**: IndexedDB (browser database)
+- **Charts**: Chart.js (via CDN)
+- **Fonts**: Inter (Google Fonts)
+- **No frameworks or build tools** - pure vanilla web technologies
+
+## Code Style & Conventions
+
+### JavaScript
+- Use modern ES6+ syntax (arrow functions, const/let, template literals, destructuring)
+- Use `const` by default, `let` when reassignment is needed, avoid `var`
+- Use meaningful variable and function names (camelCase)
+- Organize code with clear section comments using `// ================================`
+- Functions should be concise and focused on a single responsibility
+- Use async/await for asynchronous operations with IndexedDB
+- Handle errors gracefully with try-catch blocks
+- Use template literals for string concatenation
+- Prefer arrow functions for callbacks and event handlers
+
+### HTML
+- Use semantic HTML5 elements
+- Include proper accessibility attributes (labels, ARIA where needed)
+- Use descriptive IDs and classes (kebab-case)
+- Keep HTML structure clean and well-indented
+- Use data attributes for JavaScript hooks when appropriate
+
+### CSS
+- Use modern CSS features (flexbox, grid, CSS variables)
+- Follow BEM-like naming conventions for classes
+- Use kebab-case for class names
+- Organize styles logically (layout, components, utilities)
+- Use CSS custom properties for theming when beneficial
+- Maintain consistent spacing and sizing
+- Use rgba() for transparency effects
+- Prefer modern CSS over JavaScript for animations where possible
+
+## File Organization
+- `index.html` - Main HTML structure
+- `script.js` - All JavaScript functionality
+- `style.css` - All styles
+- Keep files organized with clear sections and comments
+
+## Data Management
+- Use IndexedDB for persistent storage (sessions, items, categories, car info)
+- Use localStorage for simple settings/preferences if needed
+- Always handle database errors gracefully
+- Implement proper data validation before saving
+- Support data export/import functionality (JSON format)
+
+## Date Handling
+- Use British date format (DD/MM/YYYY) for display
+- Store dates in ISO format (YYYY-MM-DD) internally
+- Use helper functions `formatDateToBritish()` and `formatDateToISO()` for conversions
+- Support flexible date input parsing
+
+## UI/UX Guidelines
+- Maintain modern, clean design aesthetic
+- Use consistent color scheme (blue theme: #1e40af, #dbeafe)
+- Implement responsive design for mobile and desktop
+- Use modals for forms and detailed views
+- Provide clear visual feedback for user actions
+- Use floating action buttons for primary actions
+- Implement search and filter functionality where appropriate
+- Show loading states for async operations
+- Display helpful error messages to users
+
+## Features to Maintain
+- Maintenance session tracking with items/services
+- Category management with custom colors
+- Odometer tracking
+- Car information (manufacturer, model, year, plate, license expiry)
+- Upcoming maintenance reminders
+- Spending charts (monthly/yearly views)
+- Search and filter functionality
+- Pagination for large lists
+- Data export/import
+- Live time display
+
+## Code Quality Standards
+- Write self-documenting code with clear variable names
+- Add comments for complex logic or non-obvious behavior
+- Keep functions small and focused
+- Avoid deep nesting (max 3-4 levels)
+- Extract repeated code into reusable functions
+- Validate user input before processing
+- Handle edge cases and empty states
+- Ensure proper cleanup of event listeners and resources
+
+## Performance Considerations
+- Minimize DOM manipulations (batch updates when possible)
+- Use efficient IndexedDB queries
+- Implement pagination for large datasets
+- Lazy load charts and heavy components if needed
+- Optimize re-renders by checking if data actually changed
+
+## Browser Compatibility
+- Target modern browsers (Chrome, Firefox, Safari, Edge)
+- Use feature detection for advanced features
+- Ensure IndexedDB is available before use
+- Test responsive design on various screen sizes
+
+## When Adding New Features
+- Follow existing code patterns and structure
+- Maintain consistency with current UI/UX
+- Add proper error handling
+- Update related sections (e.g., if adding new data, update charts)
+- Test thoroughly before committing
+- Keep the codebase simple - avoid over-engineering
+
+## Common Patterns
+- Modal management: Show/hide with class toggles
+- Form validation: Validate before IndexedDB operations
+- Data rendering: Clear container, then append new elements
+- Event delegation: Use for dynamically created elements
+- Chart updates: Destroy old chart instance before creating new one
+
+## Testing Approach
+- Test all CRUD operations (Create, Read, Update, Delete)
+- Test edge cases (empty data, invalid input, network issues)
+- Verify data persistence across page reloads
+- Test responsive design on different screen sizes
+- Verify chart rendering with various data scenarios
+
