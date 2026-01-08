@@ -31,7 +31,7 @@ request.onupgradeneeded = function (e) {
 request.onsuccess = function (e) {
   db = e.target.result;
   // Initialize odometer display (currentOdometer variable name kept for code clarity)
-  odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
+  if (odometerValue) odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
   // Load car info from localStorage
   loadCarInfo();
   initializeEventListeners();
@@ -50,7 +50,11 @@ request.onerror = function () {
 // ================================
 function formatDateToBritish(isoDate) {
   if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) {
+    return isoDate; // Return original if invalid
+  }
+  const [year, month, day] = parts;
   return `${day}/${month}/${year}`;
 }
 
@@ -156,10 +160,10 @@ function autoFormatDateInput(event) {
 // ================================
 function initializeEventListeners() {
   // Search functionality
-  sessionSearch.addEventListener('input', handleSearch);
-  clearSearchBtn.addEventListener('click', clearSearch);
-  categoryFilter.addEventListener('change', handleCategoryFilter);
-  dateFilter.addEventListener('change', handleDateFilter);
+  if (sessionSearch) sessionSearch.addEventListener('input', handleSearch);
+  if (clearSearchBtn) clearSearchBtn.addEventListener('click', clearSearch);
+  if (categoryFilter) categoryFilter.addEventListener('change', handleCategoryFilter);
+  if (dateFilter) dateFilter.addEventListener('change', handleDateFilter);
   
   // Pagination
   prevPageBtn.addEventListener('click', () => changePage(-1));
@@ -352,18 +356,24 @@ window.addEventListener("click", function(e) {
 
 // Category management functionality (now in settings modal)
 
-addCategoryBtn.addEventListener("click", () => {
-  const name = newCategoryName.value.trim();
-  const color = newCategoryColor.value;
-  
-  if (!name) {
-    alert("Please enter a category name");
-    return;
-  }
-  
-  const category = { name, color };
-  const tx = db.transaction("categories", "readwrite");
-  tx.objectStore("categories").add(category);
+if (addCategoryBtn) {
+  addCategoryBtn.addEventListener("click", () => {
+    const name = newCategoryName.value.trim();
+    const color = newCategoryColor.value;
+    
+    if (!name) {
+      alert("Please enter a category name");
+      return;
+    }
+    
+    if (!db) {
+      alert("Database not initialized. Please refresh the page.");
+      return;
+    }
+    
+    const category = { name, color };
+    const tx = db.transaction("categories", "readwrite");
+    tx.objectStore("categories").add(category);
   
   tx.oncomplete = () => {
     newCategoryName.value = "";
@@ -372,10 +382,11 @@ addCategoryBtn.addEventListener("click", () => {
     loadCategoriesForFilter(); // Also update the filter dropdown
   };
   
-  tx.onerror = () => {
-    alert("Category with this name already exists");
-  };
-});
+    tx.onerror = () => {
+      alert("Category with this name already exists");
+    };
+  });
+}
 
 // ================================
 // Modal Controls
@@ -466,6 +477,7 @@ function addItemField(item = {}) {
 // Category Management
 // ================================
 function loadCategoriesForSelect(selectElement, selectedCategoryId = null) {
+  if (!db || !selectElement) return;
   const tx = db.transaction("categories", "readonly");
   const store = tx.objectStore("categories");
   store.openCursor().onsuccess = e => {
@@ -484,6 +496,7 @@ function loadCategoriesForSelect(selectElement, selectedCategoryId = null) {
 }
 
 function loadCategoriesList() {
+  if (!db || !categoriesList) return;
   categoriesList.innerHTML = "";
   const tx = db.transaction("categories", "readonly");
   const store = tx.objectStore("categories");
@@ -510,6 +523,7 @@ function loadCategoriesList() {
 }
 
 function editCategory(id) {
+  if (!db) return;
   const tx = db.transaction("categories", "readonly");
   tx.objectStore("categories").get(id).onsuccess = e => {
     const category = e.target.result;
@@ -531,7 +545,7 @@ function editCategory(id) {
 
 function deleteCategory(id) {
   if (!confirm("Are you sure you want to delete this category? Items with this category will have no category assigned.")) return;
-  
+  if (!db) return;
   const tx = db.transaction("categories", "readwrite");
   tx.objectStore("categories").delete(id);
   tx.oncomplete = () => {
@@ -546,6 +560,11 @@ function deleteCategory(id) {
 saveSessionBtn.onclick = () => saveSession();
 
 function saveSession() {
+  if (!db) {
+    alert("Database not initialized. Please refresh the page.");
+    return;
+  }
+  
   let date = document.getElementById("sessionDate").value;
   
   // Native date input already provides ISO (YYYY-MM-DD)
@@ -562,7 +581,7 @@ function saveSession() {
   if (odometer && odometer > currentOdometer) {
     currentOdometer = odometer;
     localStorage.setItem('currentOdometer', odometer.toString());
-    odometerValue.textContent = `${odometer.toLocaleString()}`;
+    if (odometerValue) odometerValue.textContent = `${odometer.toLocaleString()}`;
   }
 
   const sessionObj = { id: editingSessionId || Date.now(), date, odometer, merchant, notes };
@@ -632,6 +651,7 @@ function renderSessions() {
 }
 
 function displaySessions(sessions, items) {
+  if (!db || !sessionsList) return;
   sessionsList.innerHTML = "";
   sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -651,6 +671,7 @@ function displaySessions(sessions, items) {
 }
 
 function renderSessionCards(sessions, items, categories) {
+  if (!sessionsList) return;
   sessions.forEach(session => {
     const relatedItems = items.filter(i => i.sessionId === session.id);
     const total = relatedItems.reduce((sum, i) => sum + (i.price || 0), 0);
@@ -666,7 +687,7 @@ function renderSessionCards(sessions, items, categories) {
     };
     card.innerHTML = `
       <div class="session-header">
-        <h3>${session.date}</h3>
+        <h3>${formatDateToBritish(session.date)}</h3>
       </div>
       <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
       <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
@@ -699,6 +720,7 @@ function renderSessionCards(sessions, items, categories) {
 // Upcoming Items
 // ================================
 function renderUpcoming() {
+  if (!db) return;
   const tx = db.transaction("items", "readonly");
   const store = tx.objectStore("items");
   const items = [];
@@ -715,12 +737,14 @@ function renderUpcoming() {
 }
 
 function toggleCompletedItems() {
+  if (!completedList || !toggleCompletedBtn) return;
   const isVisible = completedList.style.display !== 'none';
   completedList.style.display = isVisible ? 'none' : 'block';
   toggleCompletedBtn.textContent = isVisible ? 'Show Recently Completed' : 'Hide Recently Completed';
 }
 
 function displayCompletedItems(items) {
+  if (!completedItems || !toggleCompletedBtn) return;
   // Get items that have intervals but no nextDueKm (completed items)
   const completed = items.filter(i => i.interval && !i.nextDueKm);
   
@@ -756,8 +780,9 @@ function displayCompletedItems(items) {
 }
 
 function displayUpcoming(items) {
+  if (!upcomingList) return;
   upcomingList.innerHTML = "";
-  const filtered = items.filter(i => i.nextDueKm && i.interval);
+  const filtered = items.filter(i => i.nextDueKm && i.interval && i.interval > 0);
   filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
 
   if (filtered.length === 0) {
@@ -771,8 +796,11 @@ function displayUpcoming(items) {
   }
 
   filtered.forEach(item => {
+    // Prevent division by zero - ensure interval is valid
+    if (!item.interval || item.interval <= 0) return;
+    
     const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
-    const progressPercent = Math.min((kmSinceService / item.interval) * 100, 100);
+    const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
     const kmRemaining = item.nextDueKm - currentOdometer;
     
     // Calculate status and color based on progress
@@ -837,6 +865,7 @@ function displayUpcoming(items) {
 // Total Cost
 // ================================
 function renderTotalCost() {
+  if (!db || !totalCostDisplay) return;
   const tx = db.transaction("items", "readonly");
   const store = tx.objectStore("items");
   let total = 0;
@@ -855,6 +884,7 @@ function renderTotalCost() {
 // Edit / Delete
 // ================================
 function editSession(id) {
+  if (!db) return;
   const tx = db.transaction("sessions", "readonly");
   tx.objectStore("sessions").get(id).onsuccess = e => {
     const session = e.target.result;
@@ -863,6 +893,7 @@ function editSession(id) {
 }
 
 function loadItemsForEdit(sessionId) {
+  if (!db) return;
   const tx = db.transaction("items", "readonly");
   const store = tx.objectStore("items");
   store.openCursor().onsuccess = e => {
@@ -875,6 +906,7 @@ function loadItemsForEdit(sessionId) {
 }
 
 function viewSessionDetails(id) {
+  if (!db) return;
   const tx = db.transaction(["sessions", "items", "categories"], "readonly");
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
@@ -1044,7 +1076,7 @@ function displaySessionDetails(session, items, categories) {
 
 function markMaintenanceDone(itemId) {
   if (!confirm("Mark this maintenance as done? It will be removed from upcoming maintenance.")) return;
-  
+  if (!db) return;
   const tx = db.transaction("items", "readwrite");
   const store = tx.objectStore("items");
   
@@ -1063,6 +1095,7 @@ function markMaintenanceDone(itemId) {
 }
 
 function editUpcomingItem(itemId) {
+  if (!db) return;
   const tx = db.transaction("items", "readwrite");
   const store = tx.objectStore("items");
   
@@ -1138,8 +1171,16 @@ function restoreUpcomingItem(itemId) {
   };
 }
 
-// Make function globally accessible
+// Make functions globally accessible
 window.restoreUpcomingItem = restoreUpcomingItem;
+window.editSession = editSession;
+window.deleteSession = deleteSession;
+window.editCategory = editCategory;
+window.deleteCategory = deleteCategory;
+window.markMaintenanceDone = markMaintenanceDone;
+window.editUpcomingItem = editUpcomingItem;
+window.toggleSessionItems = toggleSessionItems;
+window.openCarInfoModal = openCarInfoModal;
 
 function deleteCompletedItem(itemId) {
   if (!confirm("Are you sure you want to delete this item from history? This action cannot be undone.")) {
@@ -1171,6 +1212,7 @@ window.deleteCompletedItem = deleteCompletedItem;
 
 function deleteSession(id) {
   if (!confirm("Delete this session permanently?")) return;
+  if (!db) return;
   const tx = db.transaction(["sessions", "items"], "readwrite");
   tx.objectStore("sessions").delete(id);
   const itemStore = tx.objectStore("items");
@@ -1255,14 +1297,18 @@ function initializeCharts() {
 }
 
 function updateChartButtons(activeId, inactiveId) {
-  document.getElementById(activeId).classList.add('active');
-  document.getElementById(inactiveId).classList.remove('active');
+  const activeBtn = document.getElementById(activeId);
+  const inactiveBtn = document.getElementById(inactiveId);
+  if (activeBtn) activeBtn.classList.add('active');
+  if (inactiveBtn) inactiveBtn.classList.remove('active');
 }
 
 function updateSpendingChart() {
   const canvas = document.getElementById('spendingChart');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const parent = canvas.parentElement;
+  if (!parent) return;
   
   // Get spending data
   getSpendingData(currentSpendingView).then(data => {
@@ -1334,8 +1380,10 @@ function updateSpendingChart() {
 
 function updateCategoryChart() {
   const canvas = document.getElementById('categoryChart');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const parent = canvas.parentElement;
+  if (!parent) return;
   // Ensure category filters/view mirror the shared chart filters
   selectedCategoryMonth = selectedSpendingMonth;
   selectedCategoryYear = selectedSpendingYear;
@@ -1412,6 +1460,10 @@ function updateCategoryChart() {
 
 function getSpendingData(viewType) {
   return new Promise((resolve) => {
+    if (!db) {
+      resolve({ labels: [], values: [] });
+      return;
+    }
     const tx = db.transaction(["sessions", "items"], "readonly");
     const sessionStore = tx.objectStore("sessions");
     const itemStore = tx.objectStore("items");
@@ -1442,6 +1494,10 @@ function getSpendingData(viewType) {
 
 function getCategorySpendingData(viewType) {
   return new Promise((resolve) => {
+    if (!db) {
+      resolve({ labels: [], values: [], colors: [] });
+      return;
+    }
     const tx = db.transaction(["sessions", "items", "categories"], "readonly");
     const sessionStore = tx.objectStore("sessions");
     const itemStore = tx.objectStore("items");
@@ -1597,6 +1653,7 @@ function processCategorySpendingData(sessions, items, categories, viewType, sele
 }
 
 function populateChartFilters() {
+  if (!db) return;
   // Get all unique years from sessions
   const tx = db.transaction("sessions", "readonly");
   const sessionStore = tx.objectStore("sessions");
@@ -1701,6 +1758,7 @@ function handleDateFilter(e) {
 }
 
 function applyFilters() {
+  if (!db) return;
   const tx = db.transaction(["sessions", "items", "categories"], "readonly");
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
@@ -1841,6 +1899,7 @@ function changePage(direction) {
 }
 
 function renderSessionCardsPaginated(sessions) {
+  if (!db) return;
   const tx = db.transaction(["items", "categories"], "readonly");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
@@ -1963,6 +2022,7 @@ function toggleSessionItems(event, sessionId) {
 }
 
 function loadCategoriesForFilter() {
+  if (!db || !categoryFilter) return;
   const tx = db.transaction("categories", "readonly");
   const store = tx.objectStore("categories");
   
@@ -2133,6 +2193,10 @@ function renderCarInfo() {
 // Export/Import Functions
 // ================================
 function exportAllData() {
+  if (!db) {
+    alert("Database not initialized. Please refresh the page.");
+    return;
+  }
   const tx = db.transaction(["sessions", "items", "categories"], "readonly");
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
@@ -2220,6 +2284,10 @@ function handleImportData(e) {
 }
 
 function importAllData(importData) {
+  if (!db) {
+    alert("Database not initialized. Please refresh the page.");
+    return;
+  }
   const tx = db.transaction(["sessions", "items", "categories"], "readwrite");
   
   // Clear existing data
@@ -2280,6 +2348,11 @@ function resetAllData() {
   }
   
   if (!confirm('This will permanently delete all sessions, items, and categories. Type "RESET" to confirm.')) {
+    return;
+  }
+  
+  if (!db) {
+    alert("Database not initialized. Please refresh the page.");
     return;
   }
   
