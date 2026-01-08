@@ -1,4 +1,4 @@
-# 🚗 Car Maintenance Tracker
+#  Car Maintenance Tracker
 
 A modern, feature-rich web application for tracking your car's maintenance history, expenses, and upcoming service reminders. Built with vanilla JavaScript, HTML, and CSS - no frameworks required!
 
@@ -10,7 +10,6 @@ A modern, feature-rich web application for tracking your car's maintenance histo
 - [Technology Stack](#-technology-stack)
 - [Getting Started](#-getting-started)
 - [Usage](#-usage)
-- [Project Structure](#-project-structure)
 - [Features in Detail](#-features-in-detail)
 - [Browser Compatibility](#-browser-compatibility)
 - [License](#-license)
@@ -51,35 +50,6 @@ A modern, feature-rich web application for tracking your car's maintenance histo
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- A modern web browser (Chrome, Firefox, Safari, or Edge)
-- No installation or setup required!
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/ziadmasoud/Maintenance_Tracker.git
-```
-
-2. Navigate to the project directory:
-```bash
-cd Maintenance_Tracker
-```
-
-3. Open `index.html` in your web browser:
-   - Simply double-click the file, or
-   - Use a local web server (optional):
-     ```bash
-     # Using Python
-     python -m http.server 8000
-     
-     # Using Node.js (http-server)
-     npx http-server
-     ```
-
-That's it! The application will automatically initialize IndexedDB and set up the database structure.
-
 ## 📖 Usage
 
 ### Adding a Maintenance Session
@@ -117,17 +87,6 @@ That's it! The application will automatically initialize IndexedDB and set up th
 2. In "Data Management":
    - Click "Export Data" to download a JSON file
    - Click "Import Data" to restore from a JSON file
-
-## 📁 Project Structure
-
-```
-Maintenance_Tracker/
-│
-├── index.html          # Main HTML structure
-├── script.js           # All JavaScript functionality
-├── style.css           # All styles and responsive design
-└── README.md           # Project documentation
-```
 
 ## 🔍 Features in Detail
 
@@ -171,12 +130,8 @@ Maintenance_Tracker/
 
 ## 📝 License
 
-This project is open source and available for personal and commercial use.
+This project is open source and available for personal.
 
 ## 🔗 Live Demo
 
 Visit the live application: [https://ziadmasoud.github.io/Maintenance_Tracker/](https://ziadmasoud.github.io/Maintenance_Tracker/)
-
----
-
-**Made with ❤️ using vanilla JavaScript**
