@@ -1,5 +1,45 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* ========================================
+   Design System Variables
+   ======================================== */
+:root {
+  /* Spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Shadows - simplified for cleaner look */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Borders - subtle */
+  --border-subtle: 1px solid rgba(0, 0, 0, 0.05);
+  --border-light: 1px solid rgba(0, 0, 0, 0.08);
+  --border-card: 1px solid rgba(30, 64, 175, 0.08);
+
+  /* Backgrounds - less heavy glassmorphism */
+  --bg-card: rgba(255, 255, 255, 0.97);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-section: rgba(255, 255, 255, 0.92);
+
+  /* Border radius scale */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+}
+
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #dbeafe;
@@ -17,20 +57,20 @@ body {
 }
 
 header {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
   color: #4a5568;
-  padding: 20px 30px;
+  padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 header h1 {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   margin: 0;
   color: #1e40af;
 }
@@ -38,88 +78,77 @@ header h1 {
 .summary {
   display: flex;
   align-items: center;
-  gap: 20px;
-  /* make odometer and total cost sit inside a single rounded card */
-  background: rgba(255, 255, 255, 0.95);
-  padding: 8px 12px;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(30, 64, 175, 0.06);
-  border: 1px solid rgba(30, 64, 175, 0.06);
+  gap: 12px;
+  background: rgba(248, 250, 252, 0.9);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  border: var(--border-subtle);
 }
 
 .odometer-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .odometer-section label {
   font-weight: 500;
-  color: #4a5568;
-  font-size: 0.95rem;
+  color: #64748b;
+  font-size: 0.85rem;
 }
 
 .odometer-btn {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  color: #1e40af;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: #1e40af;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  min-height: 44px;
+  font-size: 0.875rem;
+  transition: var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  min-height: 36px;
 }
 
 .odometer-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(240, 245, 255, 0.2) 100%);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: #1d4ed8;
+  box-shadow: var(--shadow-md);
 }
 
 .edit-icon {
-  opacity: 0.8;
-  font-size: 0.8rem;
+  opacity: 0.85;
+  font-size: 0.75rem;
 }
 
 .total-cost {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  padding: 12px 16px;
-  border-radius: 12px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   color: #1e40af;
-  font-size: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  border: var(--border-card);
+  box-shadow: var(--shadow-xs);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  margin-left: 4px;
-  transition: all 0.3s ease;
+  min-height: 36px;
+  transition: var(--transition-fast);
 }
 
 .total-cost:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(240, 245, 255, 0.2) 100%);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 main {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  gap: var(--space-5);
+  padding: var(--space-5);
   flex-wrap: wrap;
   max-width: 1400px;
   margin: 0 auto;
@@ -128,62 +157,60 @@ main {
 }
 
 section {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 20px;
-  padding: 28px;
+  background: var(--bg-section);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   flex: 1 1 45%;
   min-width: 300px;
-  max-width: calc(50% - 12px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
+  max-width: calc(50% - 10px);
+  box-shadow: var(--shadow-md);
+  border: var(--border-card);
+  transition: var(--transition-normal);
   box-sizing: border-box;
   overflow-wrap: break-word;
 }
 
 section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  border-color: rgba(30, 64, 175, 0.2);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(30, 64, 175, 0.12);
 }
 
 section.upcoming {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: var(--bg-section);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: var(--border-card);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
 }
 
 section.upcoming:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 section.sessions {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: var(--bg-section);
+  backdrop-filter: blur(8px);
+  border: var(--border-card);
+  box-shadow: var(--shadow-md);
 }
 
 section.charts-section {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: var(--bg-section);
+  backdrop-filter: blur(8px);
+  border: var(--border-card);
+  box-shadow: var(--shadow-md);
 }
 
 
 h2 {
   margin-top: 0;
-  margin-bottom: 20px;
-  color: #4a5568;
-  font-size: 1.4rem;
+  margin-bottom: var(--space-4);
+  color: #475569;
+  font-size: 1.2rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -192,40 +219,37 @@ h2 {
 
 h2::before {
   content: '';
-  width: 4px;
-  height: 24px;
+  width: 3px;
+  height: 18px;
   background: #1e40af;
   border-radius: 2px;
 }
 
 .session-card {
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  padding: 14px;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: var(--bg-card);
   position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
 .session-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(30, 64, 175, 0.15);
 }
 
 .session-card[style*="cursor: pointer"]:hover {
-  background: rgba(135, 206, 235, 0.05);
-  border-color: rgba(135, 206, 235, 0.3);
+  background: var(--bg-card-hover);
+  border-color: rgba(30, 64, 175, 0.2);
 }
 
 .session-card h3 {
   margin: 0;
-  color: #2d3748;
-  font-size: 1.1rem;
+  color: #334155;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -258,18 +282,18 @@ h2::before {
 
 .floating-btn {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: 20px;
+  bottom: 20px;
   background: #1e40af;
   color: white;
   border: none;
-  border-radius: 16px;
-  width: 60px;
-  height: 60px;
-  font-size: 26px;
+  border-radius: var(--radius-xl);
+  width: 52px;
+  height: 52px;
+  font-size: 22px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+  transition: var(--transition-fast);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -283,23 +307,23 @@ body.modal-open .floating-btn {
 }
 
 .floating-btn:hover {
-  transform: translateY(-3px) scale(1.08);
-  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.35);
   background: #1d4ed8;
 }
 
 .floating-btn.secondary {
-  background: #1e40af;
-  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
-  width: 60px;
-  height: 60px;
-  font-size: 26px;
+  background: #475569;
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.25);
+  width: 52px;
+  height: 52px;
+  font-size: 20px;
 }
 
 .floating-btn.secondary:hover {
-  transform: translateY(-3px) scale(1.08);
-  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.5);
-  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(71, 85, 105, 0.35);
+  background: #334155;
 }
 
 .modal {
@@ -344,6 +368,7 @@ body.modal-open .floating-btn {
 p {
   margin: 5px 0px 5px 0px;
 }
+
 .close {
   float: right;
   font-size: 24px;
@@ -677,12 +702,11 @@ select option:hover {
   font-size: 1.1rem;
 }
 
-
 /* Digital ID Content Layout */
 .digital-id-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-5);
   height: 100%;
   min-height: 600px;
 }
@@ -694,21 +718,19 @@ select option:hover {
   overflow-y: auto;
 }
 
-/* Car Info Card - Real ID Card Style (Rectangular) */
+/* Car Info Card - Clean ID Card Style */
 .car-info-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  padding: 24px 28px;
+  background: var(--bg-card);
+  border: var(--border-card);
+  border-radius: var(--radius-xl);
+  padding: 18px 20px;
   position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: var(--transition-fast);
+  box-shadow: var(--shadow-md);
   width: 100%;
   height: 25%;
-  min-height: 200px;
-  max-height: 280px;
+  min-height: 180px;
+  max-height: 260px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -716,8 +738,8 @@ select option:hover {
 }
 
 .car-info-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(30, 64, 175, 0.12);
 }
 
 .edit-car-info-btn {
@@ -880,31 +902,28 @@ select option:hover {
 
 
 .upcoming-item {
-  padding: 18px 20px;
-  margin-bottom: 14px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 245, 255, 0.15) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: var(--border-light);
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: var(--transition-fast);
   overflow: hidden;
   position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-sm);
 }
 
 .upcoming-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(30, 64, 175, 0.15);
 }
 
 .upcoming-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   position: relative;
 }
 
@@ -915,27 +934,27 @@ select option:hover {
 .item-name {
   display: block;
   font-weight: 600;
-  font-size: 1.15rem;
-  color: #2d3748;
+  font-size: 1.05rem;
+  color: #334155;
   margin-bottom: 0;
 }
 
 .item-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   margin-top: 3px;
 }
 
 .km-info {
-  font-size: 0.9rem;
-  color: #718096;
+  font-size: 0.85rem;
+  color: #64748b;
   font-weight: 500;
 }
 
 .next-due {
-  font-size: 0.85rem;
-  color: #a0aec0;
+  font-size: 0.8rem;
+  color: #94a3b8;
 }
 
 .upcoming-actions {
