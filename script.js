@@ -15,7 +15,7 @@ request.onupgradeneeded = function (e) {
   if (!db.objectStoreNames.contains("categories")) {
     const categoryStore = db.createObjectStore("categories", { keyPath: "id", autoIncrement: true });
     categoryStore.createIndex("name", "name", { unique: true });
-    
+
     // Add default categories
     const defaultCategories = [
       { name: "Oil Change", color: "#667eea" },
@@ -58,6 +58,108 @@ function formatDateToBritish(isoDate) {
   return `${day}/${month}/${year}`;
 }
 
+// ================================
+// Relative Time Context Functions
+// ================================
+function getRelativeTime(isoDate) {
+  if (!isoDate) return '';
+
+  const date = new Date(isoDate);
+  const now = new Date();
+
+  // Normalize dates to start of day for accurate day calculations
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysDiff = Math.floor((today - recordDate) / (1000 * 60 * 60 * 24));
+
+  // Handle future dates (shouldn't happen but handle gracefully)
+  if (daysDiff < 0) {
+    return 'Future date';
+  }
+
+  const diffWeeks = Math.floor(daysDiff / 7);
+  const diffMonths = Math.floor(daysDiff / 30);
+  const diffYears = Math.floor(daysDiff / 365);
+
+  // Smart relative time logic
+  if (daysDiff === 0) {
+    return 'Today';
+  } else if (daysDiff === 1) {
+    return 'Yesterday';
+  } else if (daysDiff === 2) {
+    return '2 days ago';
+  } else if (daysDiff < 7) {
+    return `${daysDiff} days ago`;
+  } else if (daysDiff === 7) {
+    return 'Last week';
+  } else if (daysDiff < 14) {
+    return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+  } else if (daysDiff < 30) {
+    const weeks = Math.floor(daysDiff / 7);
+    const remainingDays = daysDiff % 7;
+    if (remainingDays === 0) {
+      return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else {
+      return `${weeks} week${weeks > 1 ? 's' : ''} and ${remainingDays} day${remainingDays > 1 ? 's' : ''} ago`;
+    }
+  } else if (daysDiff < 60) {
+    return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+  } else if (daysDiff < 365) {
+    const months = Math.floor(daysDiff / 30);
+    const remainingDays = daysDiff % 30;
+    if (remainingDays === 0) {
+      return `${months} month${months > 1 ? 's' : ''} ago`;
+    } else if (remainingDays < 7) {
+      return `${months} month${months > 1 ? 's' : ''} ago`;
+    } else {
+      const weeks = Math.floor(remainingDays / 7);
+      return `${months} month${months > 1 ? 's' : ''} and ${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    }
+  } else {
+    const years = Math.floor(daysDiff / 365);
+    const remainingDays = daysDiff % 365;
+    const remainingMonths = Math.floor(remainingDays / 30);
+    if (remainingMonths === 0) {
+      return `${years} year${years > 1 ? 's' : ''} ago`;
+    } else {
+      return `${years} year${years > 1 ? 's' : ''} and ${remainingMonths} month${remainingMonths > 1 ? 's' : ''} ago`;
+    }
+  }
+}
+
+function getTimeContextColor(isoDate) {
+  if (!isoDate) return 'neutral';
+
+  const date = new Date(isoDate);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysDiff = Math.floor((today - recordDate) / (1000 * 60 * 60 * 24));
+
+  // Neutral for recent (within 30 days)
+  if (daysDiff <= 30) {
+    return 'neutral';
+  }
+  // Warning for moderate age (30-90 days)
+  else if (daysDiff <= 90) {
+    return 'warning';
+  }
+  // Critical for old records (90+ days)
+  else {
+    return 'critical';
+  }
+}
+
+function formatDateForTooltip(isoDate) {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
 function formatDateToISO(britishDate) {
   if (!britishDate) return '';
   if (britishDate.includes('/')) {
@@ -69,19 +171,19 @@ function formatDateToISO(britishDate) {
 
 function parseDateInput(dateInput) {
   if (!dateInput) return null;
-  
+
   // Remove any extra whitespace
   dateInput = dateInput.trim();
-  
+
   // Try different separators: /, -, .
   const separators = ['/', '-', '.'];
-  
+
   for (const sep of separators) {
     if (dateInput.includes(sep)) {
       const parts = dateInput.split(sep);
       if (parts.length === 3) {
         let day, month, year;
-        
+
         // Try different order formats
         const formats = [
           // DD/MM/YYYY format
@@ -106,24 +208,24 @@ function parseDateInput(dateInput) {
             return day.length <= 2 && month.length <= 2 && year.length === 4;
           }
         ];
-        
+
         for (const format of formats) {
           if (format()) {
             // Validate the date
             const dayNum = parseInt(day);
             const monthNum = parseInt(month);
             const yearNum = parseInt(year);
-            
-            if (dayNum >= 1 && dayNum <= 31 && 
-                monthNum >= 1 && monthNum <= 12 && 
-                yearNum >= 1900 && yearNum <= 2100) {
-              
+
+            if (dayNum >= 1 && dayNum <= 31 &&
+              monthNum >= 1 && monthNum <= 12 &&
+              yearNum >= 1900 && yearNum <= 2100) {
+
               // Create date object to validate it's a real date
               const testDate = new Date(yearNum, monthNum - 1, dayNum);
-              if (testDate.getDate() === dayNum && 
-                  testDate.getMonth() === monthNum - 1 && 
-                  testDate.getFullYear() === yearNum) {
-                
+              if (testDate.getDate() === dayNum &&
+                testDate.getMonth() === monthNum - 1 &&
+                testDate.getFullYear() === yearNum) {
+
                 // Return in ISO format (YYYY-MM-DD)
                 return `${yearNum}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
               }
@@ -133,16 +235,16 @@ function parseDateInput(dateInput) {
       }
     }
   }
-  
+
   return null;
 }
 
 function autoFormatDateInput(event) {
   let value = event.target.value;
-  
+
   // Remove any non-digit characters
   value = value.replace(/\D/g, '');
-  
+
   // Auto-add separators based on input length
   if (value.length >= 2 && value.length < 4) {
     value = value.substring(0, 2) + '/' + value.substring(2);
@@ -151,7 +253,7 @@ function autoFormatDateInput(event) {
   } else if (value.length > 8) {
     value = value.substring(0, 8);
   }
-  
+
   event.target.value = value;
 }
 
@@ -164,11 +266,11 @@ function initializeEventListeners() {
   if (clearSearchBtn) clearSearchBtn.addEventListener('click', clearSearch);
   if (categoryFilter) categoryFilter.addEventListener('change', handleCategoryFilter);
   if (dateFilter) dateFilter.addEventListener('change', handleDateFilter);
-  
+
   // Pagination
   prevPageBtn.addEventListener('click', () => changePage(-1));
   nextPageBtn.addEventListener('click', () => changePage(1));
-  
+
   // Settings modal
   settingsBtn.addEventListener('click', () => {
     settingsModal.style.display = 'flex';
@@ -179,16 +281,16 @@ function initializeEventListeners() {
     settingsModal.style.display = 'none';
     document.body.classList.remove('modal-open');
   });
-  
+
   // Export/Import functionality
   exportDataBtn.addEventListener('click', exportAllData);
   importDataBtn.addEventListener('click', () => importFileInput.click());
   importFileInput.addEventListener('change', handleImportData);
   resetAllDataBtn.addEventListener('click', resetAllData);
-  
+
   // Load categories for filter
   loadCategoriesForFilter();
-  
+
   // View details modal
   closeViewDetailsModal.addEventListener('click', () => {
     viewDetailsModal.style.display = 'none';
@@ -198,32 +300,32 @@ function initializeEventListeners() {
     viewDetailsModal.style.display = 'none';
     document.body.classList.remove('modal-open');
   });
-  
+
   // Date input uses native picker; no auto-formatting needed
-  
+
   // Toggle completed items
   toggleCompletedBtn.addEventListener('click', toggleCompletedItems);
-  
+
   // Car info modal
   const carInfoModal = document.getElementById('carInfoModal');
   const closeCarInfoModal = document.getElementById('closeCarInfoModal');
   const saveCarInfoBtn = document.getElementById('saveCarInfoBtn');
   const cancelCarInfoBtn = document.getElementById('cancelCarInfoBtn');
-  
+
   if (closeCarInfoModal) {
     closeCarInfoModal.addEventListener('click', () => {
       carInfoModal.style.display = 'none';
       document.body.classList.remove('modal-open');
     });
   }
-  
+
   if (cancelCarInfoBtn) {
     cancelCarInfoBtn.addEventListener('click', () => {
       carInfoModal.style.display = 'none';
       document.body.classList.remove('modal-open');
     });
   }
-  
+
   if (saveCarInfoBtn) {
     saveCarInfoBtn.addEventListener('click', saveCarInfo);
   }
@@ -347,7 +449,7 @@ saveOdometerBtn.addEventListener("click", () => {
 });
 
 // Close odometer modal when clicking outside
-window.addEventListener("click", function(e) {
+window.addEventListener("click", function (e) {
   if (e.target === odometerModal) {
     odometerModal.style.display = "none";
     document.body.classList.remove('modal-open');
@@ -360,28 +462,28 @@ if (addCategoryBtn) {
   addCategoryBtn.addEventListener("click", () => {
     const name = newCategoryName.value.trim();
     const color = newCategoryColor.value;
-    
+
     if (!name) {
       alert("Please enter a category name");
       return;
     }
-    
+
     if (!db) {
       alert("Database not initialized. Please refresh the page.");
       return;
     }
-    
+
     const category = { name, color };
     const tx = db.transaction("categories", "readwrite");
     tx.objectStore("categories").add(category);
-  
-  tx.oncomplete = () => {
-    newCategoryName.value = "";
-    newCategoryColor.value = "#87CEEB";
-    loadCategoriesList();
-    loadCategoriesForFilter(); // Also update the filter dropdown
-  };
-  
+
+    tx.oncomplete = () => {
+      newCategoryName.value = "";
+      newCategoryColor.value = "#87CEEB";
+      loadCategoriesList();
+      loadCategoriesForFilter(); // Also update the filter dropdown
+    };
+
     tx.onerror = () => {
       alert("Category with this name already exists");
     };
@@ -427,7 +529,7 @@ function closeSessionModal() {
 }
 
 // Handle clicks outside modals
-window.addEventListener("click", function(e) {
+window.addEventListener("click", function (e) {
   if (e.target === modal) closeSessionModal();
   if (e.target === odometerModal) {
     odometerModal.style.display = "none";
@@ -456,6 +558,7 @@ function addItemField(item = {}) {
       <input type="text" class="itemName" placeholder="Item / Service" value="${item.name || ""}">
       <input type="number" class="itemPrice" placeholder="Price (EGP)" value="${item.price || ""}">
       <input type="number" class="itemInterval" placeholder="Interval (km)" value="${item.interval || ""}">
+      <input type="number" class="itemIntervalMonths" placeholder="Interval (months)" value="${item.intervalMonths || ""}" min="1">
       <select class="itemCategory">
         <option value="">Select Category</option>
       </select>
@@ -468,7 +571,7 @@ function addItemField(item = {}) {
   `;
   div.querySelector(".delete-item-btn").onclick = () => div.remove();
   itemsContainer.appendChild(div);
-  
+
   // Load categories for this select
   loadCategoriesForSelect(div.querySelector(".itemCategory"), item.categoryId);
 }
@@ -531,7 +634,7 @@ function editCategory(id) {
     if (newName && newName.trim() !== category.name) {
       const newColor = prompt("Edit category color (hex code):", category.color) || category.color;
       const updatedCategory = { ...category, name: newName.trim(), color: newColor };
-      
+
       const updateTx = db.transaction("categories", "readwrite");
       updateTx.objectStore("categories").put(updatedCategory);
       updateTx.oncomplete = () => {
@@ -564,15 +667,15 @@ function saveSession() {
     alert("Database not initialized. Please refresh the page.");
     return;
   }
-  
+
   let date = document.getElementById("sessionDate").value;
-  
+
   // Native date input already provides ISO (YYYY-MM-DD)
   if (!date) {
     const today = new Date();
     date = today.toISOString().split("T")[0];
   }
-  
+
   const odometer = parseInt(document.getElementById("sessionOdometer").value) || 0;
   const merchant = document.getElementById("sessionMerchant").value.trim();
   const notes = document.getElementById("sessionNotes").value.trim();
@@ -685,30 +788,41 @@ function renderSessionCards(sessions, items, categories) {
         viewSessionDetails(session.id);
       }
     };
+    const relativeTime = getRelativeTime(session.date);
+    const timeContextColor = getTimeContextColor(session.date);
+    const tooltipDate = formatDateForTooltip(session.date);
+
     card.innerHTML = `
       <div class="session-header">
-        <h3>${formatDateToBritish(session.date)}</h3>
+        <div class="session-header-main">
+          <h3>${formatDateToBritish(session.date)}</h3>
+          <span class="time-context time-context-${timeContextColor}" 
+                title="Recorded on ${tooltipDate}">
+            ${relativeTime}
+          </span>
+        </div>
       </div>
       <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
       <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
       ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()}</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
+      <hr>
       <div class="item-list">
         ${relatedItems
-          .map(
-            item => {
-              const categoryName = item.categoryId && categories[item.categoryId] 
-                ? categories[item.categoryId].name 
-                : 'No Category';
-              return `
+        .map(
+          item => {
+            const categoryName = item.categoryId && categories[item.categoryId]
+              ? categories[item.categoryId].name
+              : 'No Category';
+            return `
           <div class="item-row">
             <span>${item.name || "Unnamed"} <span class="category-badge" style="background-color: ${item.categoryId && categories[item.categoryId] ? categories[item.categoryId].color : '#ccc'}">${categoryName}</span></span>
             <span>${item.price.toLocaleString()} EGP</span>
           </div>`;
-            }
-          )
-          .join("")}
+          }
+        )
+        .join("")}
       </div>
       <div class="session-total">Total: ${total.toLocaleString()} EGP</div>
     `;
@@ -747,15 +861,15 @@ function displayCompletedItems(items) {
   if (!completedItems || !toggleCompletedBtn) return;
   // Get items that have intervals but no nextDueKm (completed items)
   const completed = items.filter(i => i.interval && !i.nextDueKm);
-  
+
   if (completed.length === 0) {
     toggleCompletedBtn.style.display = 'none';
     return;
   }
-  
+
   toggleCompletedBtn.style.display = 'block';
   completedItems.innerHTML = "";
-  
+
   completed.forEach(item => {
     const div = document.createElement("div");
     div.classList.add("completed-item");
@@ -780,7 +894,7 @@ function displayCompletedItems(items) {
 }
 
 function displayUpcoming(items) {
-  if (!upcomingList) return;
+  if (!upcomingList || !db) return;
   upcomingList.innerHTML = "";
   const filtered = items.filter(i => i.nextDueKm && i.interval && i.interval > 0);
   filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
@@ -795,70 +909,92 @@ function displayUpcoming(items) {
     return;
   }
 
-  filtered.forEach(item => {
-    // Prevent division by zero - ensure interval is valid
-    if (!item.interval || item.interval <= 0) return;
-    
-    const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
-    const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
-    const kmRemaining = item.nextDueKm - currentOdometer;
-    
-    // Calculate status and color based on progress
-    let status = "status-ok";
-    let progressColor = "#16a34a"; // Green
-    let urgencyText = "Good";
-    
-    if (progressPercent >= 100) {
-      status = "status-danger";
-      progressColor = "#dc2626"; // Red
-      urgencyText = "Overdue";
-    } else if (progressPercent >= 80) {
-      status = "status-warning";
-      progressColor = "#ea580c"; // Orange
-      urgencyText = "Urgent";
-    } else if (progressPercent >= 60) {
-      status = "status-caution";
-      progressColor = "#eab308"; // Yellow
-      urgencyText = "Soon";
-    }
+  // Get all session dates for the filtered items
+  const tx = db.transaction("sessions", "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const sessions = {};
 
-    const div = document.createElement("div");
-    div.classList.add("upcoming-item", status);
-    
-    // Create progress bar with solid color
-    const progressBar = `
-      <div class="progress-container">
-        <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
-          <div class="progress-label">${progressPercent.toFixed(0)}%</div>
-        </div>
-      </div>
-    `;
-    
-    div.innerHTML = `
-      <div class="upcoming-content">
-        <span class="urgency-badge ${status}">${urgencyText}</span>
-        <div class="upcoming-info">
-          <div class="item-header-row">
-            <span class="item-name">${item.name}</span>
+  sessionStore.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      sessions[cursor.value.id] = cursor.value;
+      cursor.continue();
+    } else {
+      // Now render items with session dates
+      filtered.forEach(item => {
+        // Prevent division by zero - ensure interval is valid
+        if (!item.interval || item.interval <= 0) return;
+
+        const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
+        const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
+        const kmRemaining = item.nextDueKm - currentOdometer;
+
+        // Calculate status and color based on progress
+        let status = "status-ok";
+        let progressColor = "#16a34a"; // Green
+        let urgencyText = "Good";
+
+        if (progressPercent >= 100) {
+          status = "status-danger";
+          progressColor = "#dc2626"; // Red
+          urgencyText = "Overdue";
+        } else if (progressPercent >= 80) {
+          status = "status-warning";
+          progressColor = "#ea580c"; // Orange
+          urgencyText = "Urgent";
+        } else if (progressPercent >= 60) {
+          status = "status-caution";
+          progressColor = "#eab308"; // Yellow
+          urgencyText = "Soon";
+        }
+
+        // Get session date for time context
+        const session = sessions[item.sessionId];
+        const sessionDate = session ? session.date : null;
+        const relativeTime = sessionDate ? getRelativeTime(sessionDate) : '';
+        const timeContextColor = sessionDate ? getTimeContextColor(sessionDate) : 'neutral';
+        const tooltipDate = sessionDate ? formatDateForTooltip(sessionDate) : '';
+
+        const div = document.createElement("div");
+        div.classList.add("upcoming-item", status);
+
+        // Create progress bar with solid color
+        const progressBar = `
+          <div class="progress-container">
+            <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
+              <div class="progress-label">${progressPercent.toFixed(2)}%</div>
+            </div>
           </div>
-          <div class="item-details">
-            <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
-            <span class="next-due">Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})</span>
+        `;
+
+        div.innerHTML = `
+          <div class="upcoming-content">
+            <span class="urgency-badge ${status}">${urgencyText}</span>
+            <div class="upcoming-info">
+              <div class="item-header-row">
+                <span class="item-name">${item.name}</span>
+                ${relativeTime ? `<span class="time-context time-context-${timeContextColor}" title="Recorded on ${tooltipDate}">${relativeTime}</span>` : ''}
+              </div>
+              <div class="item-details">
+                <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
+                <span class="next-due">Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})</span>
+              </div>
+            </div>
+            <div class="upcoming-actions">
+              <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
+                ✓
+              </button>
+              <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
+                ✎
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="upcoming-actions">
-          <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
-            ✓
-          </button>
-          <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
-            ✎
-          </button>
-        </div>
-      </div>
-      ${progressBar}
-    `;
-    upcomingList.appendChild(div);
-  });
+          ${progressBar}
+        `;
+        upcomingList.appendChild(div);
+      });
+    }
+  };
 }
 
 // ================================
@@ -911,11 +1047,11 @@ function viewSessionDetails(id) {
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
-  
+
   sessionStore.get(id).onsuccess = e => {
     const session = e.target.result;
     if (!session) return;
-    
+
     // Get items for this session
     const items = [];
     itemStore.openCursor().onsuccess = e2 => {
@@ -953,7 +1089,7 @@ function displaySessionDetails(session, items, categories) {
             <span>${formatDateToBritish(session.date)}</span>
           </div>
   `;
-  
+
   // Only show odometer if it exists and is greater than 0
   if (session.odometer && session.odometer > 0) {
     detailsHTML += `
@@ -963,7 +1099,7 @@ function displaySessionDetails(session, items, categories) {
           </div>
     `;
   }
-  
+
   // Only show merchant if it exists
   if (session.merchant) {
     detailsHTML += `
@@ -973,7 +1109,7 @@ function displaySessionDetails(session, items, categories) {
       </div>
     `;
   }
-  
+
   // Only show notes if they exist
   if (session.notes) {
     detailsHTML += `
@@ -983,12 +1119,12 @@ function displaySessionDetails(session, items, categories) {
       </div>
     `;
   }
-  
+
   detailsHTML += `
         </div>
       </div>
   `;
-  
+
   // Add items section
   if (items.length > 0) {
     const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
@@ -997,15 +1133,15 @@ function displaySessionDetails(session, items, categories) {
         <h3>Items & Services</h3>
         <div class="items-list">
     `;
-    
+
     items.forEach(item => {
-      const categoryName = item.categoryId && categories[item.categoryId] 
-        ? categories[item.categoryId].name 
+      const categoryName = item.categoryId && categories[item.categoryId]
+        ? categories[item.categoryId].name
         : 'No Category';
-      const categoryColor = item.categoryId && categories[item.categoryId] 
-        ? categories[item.categoryId].color 
+      const categoryColor = item.categoryId && categories[item.categoryId]
+        ? categories[item.categoryId].color
         : '#ccc';
-      
+
       detailsHTML += `
         <div class="item-detail-card">
           <div class="item-header">
@@ -1015,7 +1151,7 @@ function displaySessionDetails(session, items, categories) {
           <div class="item-details">
             <div class="category-badge" style="background-color: ${categoryColor}">${categoryName}</div>
       `;
-      
+
       if (item.interval) {
         detailsHTML += `
           <div class="detail-item">
@@ -1024,7 +1160,7 @@ function displaySessionDetails(session, items, categories) {
           </div>
         `;
       }
-      
+
       if (item.nextDueKm) {
         detailsHTML += `
           <div class="detail-item">
@@ -1033,7 +1169,7 @@ function displaySessionDetails(session, items, categories) {
           </div>
         `;
       }
-      
+
       if (item.merchant) {
         detailsHTML += `
           <div class="detail-item">
@@ -1042,7 +1178,7 @@ function displaySessionDetails(session, items, categories) {
           </div>
         `;
       }
-      
+
       if (item.notes) {
         detailsHTML += `
           <div class="detail-item full-width">
@@ -1051,13 +1187,13 @@ function displaySessionDetails(session, items, categories) {
           </div>
         `;
       }
-      
+
       detailsHTML += `
           </div>
         </div>
       `;
     });
-    
+
     detailsHTML += `
         </div>
         <div class="session-total-details">
@@ -1066,9 +1202,9 @@ function displaySessionDetails(session, items, categories) {
       </div>
     `;
   }
-  
+
   detailsHTML += `</div>`;
-  
+
   sessionDetailsContent.innerHTML = detailsHTML;
   viewDetailsModal.style.display = 'flex';
   document.body.classList.add('modal-open');
@@ -1079,14 +1215,14 @@ function markMaintenanceDone(itemId) {
   if (!db) return;
   const tx = db.transaction("items", "readwrite");
   const store = tx.objectStore("items");
-  
+
   store.get(itemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
       // Clear the nextDueKm to remove from upcoming maintenance
       const updatedItem = { ...item, nextDueKm: null };
       store.put(updatedItem);
-      
+
       tx.oncomplete = () => {
         renderAll();
       };
@@ -1098,22 +1234,22 @@ function editUpcomingItem(itemId) {
   if (!db) return;
   const tx = db.transaction("items", "readwrite");
   const store = tx.objectStore("items");
-  
+
   store.get(itemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
       const newInterval = prompt(`Edit service interval for "${item.name}" (current: ${item.interval} km):`, item.interval);
-      
+
       if (newInterval && !isNaN(newInterval) && parseInt(newInterval) > 0) {
         const updatedInterval = parseInt(newInterval);
-        const updatedItem = { 
-          ...item, 
+        const updatedItem = {
+          ...item,
           interval: updatedInterval,
           nextDueKm: currentOdometer + updatedInterval
         };
-        
+
         store.put(updatedItem);
-        
+
         tx.oncomplete = () => {
           renderAll();
         };
@@ -1127,11 +1263,11 @@ function restoreUpcomingItem(itemId) {
     console.error("Database not initialized");
     return;
   }
-  
+
   const tx = db.transaction(["items", "sessions"], "readwrite");
   const itemStore = tx.objectStore("items");
   const sessionStore = tx.objectStore("sessions");
-  
+
   itemStore.get(itemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
@@ -1139,7 +1275,7 @@ function restoreUpcomingItem(itemId) {
       sessionStore.get(item.sessionId).onsuccess = sessionEvent => {
         const session = sessionEvent.target.result;
         let nextDueKm;
-        
+
         if (session && session.odometer) {
           // Calculate next due based on the session odometer where item was performed
           nextDueKm = session.odometer + item.interval;
@@ -1147,24 +1283,24 @@ function restoreUpcomingItem(itemId) {
           // Fallback to current odometer if session not found or no odometer
           nextDueKm = currentOdometer + item.interval;
         }
-        
+
         // Update the item with the calculated next due km
-        const updatedItem = { 
-          ...item, 
+        const updatedItem = {
+          ...item,
           nextDueKm: nextDueKm
         };
-        
+
         itemStore.put(updatedItem);
       };
     } else {
       console.error("Item not found:", itemId);
     }
   };
-  
+
   tx.oncomplete = () => {
     renderAll();
   };
-  
+
   tx.onerror = () => {
     console.error("Error restoring item:", tx.error);
     alert("Error restoring item. Please try again.");
@@ -1186,21 +1322,21 @@ function deleteCompletedItem(itemId) {
   if (!confirm("Are you sure you want to delete this item from history? This action cannot be undone.")) {
     return;
   }
-  
+
   if (!db) {
     console.error("Database not initialized");
     return;
   }
-  
+
   const tx = db.transaction("items", "readwrite");
   const itemStore = tx.objectStore("items");
-  
+
   itemStore.delete(itemId);
-  
+
   tx.oncomplete = () => {
     renderAll();
   };
-  
+
   tx.onerror = () => {
     console.error("Error deleting item:", tx.error);
     alert("Error deleting item. Please try again.");
@@ -1309,7 +1445,7 @@ function updateSpendingChart() {
   const ctx = canvas.getContext('2d');
   const parent = canvas.parentElement;
   if (!parent) return;
-  
+
   // Get spending data
   getSpendingData(currentSpendingView).then(data => {
     if (spendingChart) {
@@ -1318,7 +1454,7 @@ function updateSpendingChart() {
 
     // Check if there's any data - handle both monthly (always 12 values) and yearly (variable length)
     const hasData = data.values && data.values.length > 0 && data.values.some(v => v > 0);
-    
+
     // Get or create empty message element
     let emptyMsg = parent.querySelector('.chart-empty-message');
     if (!emptyMsg) {
@@ -1326,7 +1462,7 @@ function updateSpendingChart() {
       emptyMsg.className = 'chart-empty-message';
       parent.appendChild(emptyMsg);
     }
-    
+
     if (!hasData) {
       // Show empty state message
       const filterText = selectedSpendingYear ? ` for ${selectedSpendingYear}` : '';
@@ -1367,7 +1503,7 @@ function updateSpendingChart() {
           y: {
             beginAtZero: true,
             ticks: {
-              callback: function(value) {
+              callback: function (value) {
                 return value.toLocaleString() + ' EGP';
               }
             }
@@ -1397,7 +1533,7 @@ function updateCategoryChart() {
 
     // Check if there's any data
     const hasData = data.values && data.values.length > 0 && data.values.some(v => v > 0);
-    
+
     // Get or create empty message element
     let emptyMsg = parent.querySelector('.chart-empty-message');
     if (!emptyMsg) {
@@ -1405,7 +1541,7 @@ function updateCategoryChart() {
       emptyMsg.className = 'chart-empty-message';
       parent.appendChild(emptyMsg);
     }
-    
+
     if (!hasData) {
       // Show empty state message
       const filterText = selectedCategoryYear ? ` for ${selectedCategoryYear}` : '';
@@ -1444,7 +1580,7 @@ function updateCategoryChart() {
           },
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 const value = context.parsed;
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
@@ -1467,10 +1603,10 @@ function getSpendingData(viewType) {
     const tx = db.transaction(["sessions", "items"], "readonly");
     const sessionStore = tx.objectStore("sessions");
     const itemStore = tx.objectStore("items");
-    
+
     const sessions = [];
     const items = [];
-    
+
     sessionStore.openCursor().onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
@@ -1502,11 +1638,11 @@ function getCategorySpendingData(viewType) {
     const sessionStore = tx.objectStore("sessions");
     const itemStore = tx.objectStore("items");
     const categoryStore = tx.objectStore("categories");
-    
+
     const sessions = [];
     const items = [];
     const categories = {};
-    
+
     let completed = 0;
     const checkComplete = () => {
       completed++;
@@ -1515,7 +1651,7 @@ function getCategorySpendingData(viewType) {
         resolve(categoryData);
       }
     };
-    
+
     sessionStore.openCursor().onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
@@ -1525,7 +1661,7 @@ function getCategorySpendingData(viewType) {
         checkComplete();
       }
     };
-    
+
     itemStore.openCursor().onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
@@ -1535,7 +1671,7 @@ function getCategorySpendingData(viewType) {
         checkComplete();
       }
     };
-    
+
     categoryStore.openCursor().onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
@@ -1559,11 +1695,11 @@ function processSpendingData(sessions, items, viewType, selectedMonth = '', sele
       const sessionDate = new Date(session.date);
       const sessionYear = sessionDate.getFullYear();
       const sessionMonth = sessionDate.getMonth();
-      
+
       // Apply filters - only filter if values are actually set
       if (selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
       if (selectedMonth && selectedMonth !== '' && sessionMonth !== parseInt(selectedMonth)) return;
-      
+
       const sessionItems = items.filter(item => item.sessionId === session.id);
       const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
       if (totalSpending > 0) {
@@ -1579,10 +1715,10 @@ function processSpendingData(sessions, items, viewType, selectedMonth = '', sele
   sessions.forEach(session => {
     const sessionDate = new Date(session.date);
     const sessionYear = sessionDate.getFullYear();
-    
+
     // Apply year filter if selected
     if (selectedYear && sessionYear !== filterYear) return;
-    
+
     const sessionItems = items.filter(item => item.sessionId === session.id);
     const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
     if (totalSpending > 0) {
@@ -1603,52 +1739,52 @@ function processCategorySpendingData(sessions, items, categories, viewType, sele
   const categorySpending = {};
   const currentYear = new Date().getFullYear();
   const filterYear = selectedYear && selectedYear !== '' ? parseInt(selectedYear) : currentYear;
-  
+
   sessions.forEach(session => {
     const sessionDate = new Date(session.date);
     const sessionYear = sessionDate.getFullYear();
     const sessionMonth = sessionDate.getMonth();
-    
+
     // Apply filters - only filter if values are actually set
     if (viewType === 'monthly' && selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
     if (viewType === 'monthly' && selectedMonth && selectedMonth !== '' && sessionMonth !== parseInt(selectedMonth)) return;
     if (viewType === 'yearly' && selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
-    
+
     const sessionItems = items.filter(item => item.sessionId === session.id);
-    
+
     sessionItems.forEach(item => {
       if (item.price > 0) {
         const categoryId = item.categoryId || 'uncategorized';
-        const categoryName = categoryId !== 'uncategorized' && categories[categoryId] 
-          ? categories[categoryId].name 
+        const categoryName = categoryId !== 'uncategorized' && categories[categoryId]
+          ? categories[categoryId].name
           : 'Uncategorized';
-        
+
         if (!categorySpending[categoryName]) {
           categorySpending[categoryName] = {
             total: 0,
-            color: categoryId !== 'uncategorized' && categories[categoryId] 
-              ? categories[categoryId].color 
+            color: categoryId !== 'uncategorized' && categories[categoryId]
+              ? categories[categoryId].color
               : '#cccccc'
           };
         }
-        
+
         categorySpending[categoryName].total += item.price;
       }
     });
   });
-  
+
   const sortedCategories = Object.entries(categorySpending)
-    .sort(([,a], [,b]) => b.total - a.total);
-  
+    .sort(([, a], [, b]) => b.total - a.total);
+
   const labels = sortedCategories.map(([name]) => name);
-  const values = sortedCategories.map(([,data]) => data.total);
-  const colors = sortedCategories.map(([,data]) => data.color);
-  
+  const values = sortedCategories.map(([, data]) => data.total);
+  const colors = sortedCategories.map(([, data]) => data.color);
+
   // If no data, return empty arrays instead of undefined
   if (labels.length === 0) {
     return { labels: [], values: [], colors: [] };
   }
-  
+
   return { labels, values, colors };
 }
 
@@ -1659,7 +1795,7 @@ function populateChartFilters() {
   const sessionStore = tx.objectStore("sessions");
   const years = new Set();
   const currentYear = new Date().getFullYear();
-  
+
   sessionStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1669,13 +1805,13 @@ function populateChartFilters() {
     } else {
       // Add current year if no data
       if (years.size === 0) years.add(currentYear);
-      
+
       // Populate year filters
       const spendingYearFilter = document.getElementById('spendingYearFilter');
       const categoryYearFilter = document.getElementById('categoryYearFilter');
-      
+
       const sortedYears = Array.from(years).sort((a, b) => b - a);
-      
+
       if (spendingYearFilter) {
         spendingYearFilter.innerHTML = '<option value="">All Years</option>';
         sortedYears.forEach(year => {
@@ -1686,7 +1822,7 @@ function populateChartFilters() {
           spendingYearFilter.appendChild(option);
         });
       }
-      
+
       if (categoryYearFilter) {
         categoryYearFilter.innerHTML = '<option value="">All Years</option>';
         sortedYears.forEach(year => {
@@ -1697,7 +1833,7 @@ function populateChartFilters() {
           categoryYearFilter.appendChild(option);
         });
       }
-      
+
       // Populate month filters
       const spendingMonthFilter = document.getElementById('spendingMonthFilter');
       const categoryMonthFilter = document.getElementById('categoryMonthFilter');
@@ -1705,7 +1841,7 @@ function populateChartFilters() {
         const date = new Date(currentYear, i);
         return { value: i, name: date.toLocaleDateString('en-US', { month: 'short' }) };
       });
-      
+
       if (spendingMonthFilter) {
         spendingMonthFilter.innerHTML = '<option value="">All Months</option>';
         months.forEach(month => {
@@ -1715,7 +1851,7 @@ function populateChartFilters() {
           spendingMonthFilter.appendChild(option);
         });
       }
-      
+
       if (categoryMonthFilter) {
         categoryMonthFilter.innerHTML = '<option value="">All Months</option>';
         months.forEach(month => {
@@ -1763,11 +1899,11 @@ function applyFilters() {
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
-  
+
   const sessions = [];
   const items = [];
   const categories = {};
-  
+
   let completed = 0;
   const checkComplete = () => {
     completed++;
@@ -1776,7 +1912,7 @@ function applyFilters() {
       renderSessionsWithPagination();
     }
   };
-  
+
   sessionStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1786,7 +1922,7 @@ function applyFilters() {
       checkComplete();
     }
   };
-  
+
   itemStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1796,7 +1932,7 @@ function applyFilters() {
       checkComplete();
     }
   };
-  
+
   categoryStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1811,12 +1947,12 @@ function applyFilters() {
 function filterSessions(sessions, items, categories) {
   return sessions.filter(session => {
     const sessionItems = items.filter(item => item.sessionId === session.id);
-    
+
     // Search filter
     if (searchTerm) {
       const matchesDate = session.date.toLowerCase().includes(searchTerm);
       const matchesCategory = sessionItems.some(item => {
-        const categoryName = item.categoryId && categories[item.categoryId] 
+        const categoryName = item.categoryId && categories[item.categoryId]
           ? categories[item.categoryId].name.toLowerCase()
           : 'no category';
         return categoryName.includes(searchTerm);
@@ -1824,27 +1960,27 @@ function filterSessions(sessions, items, categories) {
       const matchesItemName = sessionItems.some(item => (item.name || '').toLowerCase().includes(searchTerm));
       const matchesMerchant = session.merchant && session.merchant.toLowerCase().includes(searchTerm);
       const matchesNotes = session.notes && session.notes.toLowerCase().includes(searchTerm);
-      
+
       if (!matchesDate && !matchesCategory && !matchesItemName && !matchesMerchant && !matchesNotes) {
         return false;
       }
     }
-    
+
     // Category filter
     if (selectedCategoryFilter) {
-      const hasMatchingCategory = sessionItems.some(item => 
+      const hasMatchingCategory = sessionItems.some(item =>
         item.categoryId && item.categoryId.toString() === selectedCategoryFilter
       );
       if (!hasMatchingCategory) {
         return false;
       }
     }
-    
+
     // Date filter
     if (selectedDateFilter) {
       const sessionDate = new Date(session.date);
       const now = new Date();
-      
+
       switch (selectedDateFilter) {
         case 'last30':
           const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -1859,7 +1995,7 @@ function filterSessions(sessions, items, categories) {
           break;
       }
     }
-    
+
     return true;
   }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Always sort by latest date first
 }
@@ -1869,7 +2005,7 @@ function renderSessionsWithPagination() {
   const startIndex = (currentPage - 1) * sessionsPerPage;
   const endIndex = startIndex + sessionsPerPage;
   const paginatedSessions = filteredSessions.slice(startIndex, endIndex);
-  
+
   // Show/hide pagination controls
   if (filteredSessions.length > sessionsPerPage) {
     paginationControls.style.display = 'flex';
@@ -1877,7 +2013,7 @@ function renderSessionsWithPagination() {
   } else {
     paginationControls.style.display = 'none';
   }
-  
+
   // Render the paginated sessions
   renderSessionCardsPaginated(paginatedSessions);
 }
@@ -1891,7 +2027,7 @@ function updatePaginationControls(totalPages) {
 function changePage(direction) {
   const totalPages = Math.ceil(filteredSessions.length / sessionsPerPage);
   const newPage = currentPage + direction;
-  
+
   if (newPage >= 1 && newPage <= totalPages) {
     currentPage = newPage;
     renderSessionsWithPagination();
@@ -1903,10 +2039,10 @@ function renderSessionCardsPaginated(sessions) {
   const tx = db.transaction(["items", "categories"], "readonly");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
-  
+
   const items = [];
   const categories = {};
-  
+
   let completed = 0;
   const checkComplete = () => {
     completed++;
@@ -1914,7 +2050,7 @@ function renderSessionCardsPaginated(sessions) {
       displaySessionsPaginated(sessions, items, categories);
     }
   };
-  
+
   itemStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1924,7 +2060,7 @@ function renderSessionCardsPaginated(sessions) {
       checkComplete();
     }
   };
-  
+
   categoryStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -1938,7 +2074,7 @@ function renderSessionCardsPaginated(sessions) {
 
 function displaySessionsPaginated(sessions, items, categories) {
   sessionsList.innerHTML = "";
-  
+
   sessions.forEach(session => {
     const relatedItems = items.filter(i => i.sessionId === session.id);
     const total = relatedItems.reduce((sum, i) => sum + (i.price || 0), 0);
@@ -1952,17 +2088,17 @@ function displaySessionsPaginated(sessions, items, categories) {
     card.dataset.sessionId = session.id;
     card.onclick = (e) => {
       // Don't open details if clicking on action buttons or show more button
-      if (!e.target.classList.contains('edit-btn') && 
-          !e.target.classList.contains('delete-btn') &&
-          !e.target.classList.contains('show-more-items') &&
-          !e.target.closest('.show-more-items')) {
+      if (!e.target.classList.contains('edit-btn') &&
+        !e.target.classList.contains('delete-btn') &&
+        !e.target.classList.contains('show-more-items') &&
+        !e.target.closest('.show-more-items')) {
         viewSessionDetails(session.id);
       }
     };
-    
+
     const itemsHTML = visibleItems.map(item => {
-      const categoryName = item.categoryId && categories[item.categoryId] 
-        ? categories[item.categoryId].name 
+      const categoryName = item.categoryId && categories[item.categoryId]
+        ? categories[item.categoryId].name
         : 'No Category';
       return `
         <div class="item-row">
@@ -1970,10 +2106,10 @@ function displaySessionsPaginated(sessions, items, categories) {
           <span>${item.price.toLocaleString()} EGP</span>
         </div>`;
     }).join("");
-    
+
     const hiddenItemsHTML = hiddenItems.map(item => {
-      const categoryName = item.categoryId && categories[item.categoryId] 
-        ? categories[item.categoryId].name 
+      const categoryName = item.categoryId && categories[item.categoryId]
+        ? categories[item.categoryId].name
         : 'No Category';
       return `
         <div class="item-row hidden-item">
@@ -1981,10 +2117,20 @@ function displaySessionsPaginated(sessions, items, categories) {
           <span>${item.price.toLocaleString()} EGP</span>
         </div>`;
     }).join("");
-    
+
+    const relativeTime = getRelativeTime(session.date);
+    const timeContextColor = getTimeContextColor(session.date);
+    const tooltipDate = formatDateForTooltip(session.date);
+
     card.innerHTML = `
       <div class="session-header">
-        <h3>${formatDateToBritish(session.date)}</h3>
+        <div class="session-header-main">
+          <h3>${formatDateToBritish(session.date)}</h3>
+          <span class="time-context time-context-${timeContextColor}" 
+                title="Recorded on ${tooltipDate}">
+            ${relativeTime}
+          </span>
+        </div>
       </div>
       <button class="edit-btn" onclick="editSession(${session.id})">✎</button>
       <button class="delete-btn" onclick="deleteSession(${session.id})">🗑</button>
@@ -2008,10 +2154,10 @@ function toggleSessionItems(event, sessionId) {
   event.stopPropagation();
   const card = document.querySelector(`[data-session-id="${sessionId}"]`);
   if (!card) return;
-  
+
   const hiddenContainer = card.querySelector('.hidden-items-container');
   const showMoreBtn = card.querySelector('.show-more-items');
-  
+
   if (hiddenContainer.style.display === 'none') {
     hiddenContainer.style.display = 'block';
     showMoreBtn.textContent = 'Show less';
@@ -2025,10 +2171,10 @@ function loadCategoriesForFilter() {
   if (!db || !categoryFilter) return;
   const tx = db.transaction("categories", "readonly");
   const store = tx.objectStore("categories");
-  
+
   // Clear existing options except "All Categories"
   categoryFilter.innerHTML = '<option value="">All Categories</option>';
-  
+
   store.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -2047,23 +2193,23 @@ function loadCategoriesForFilter() {
 function startLiveTime() {
   const liveTimeElement = document.getElementById('liveTime');
   if (!liveTimeElement) return;
-  
+
   function updateTime() {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    const dateStr = now.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     });
-    const timeStr = now.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
+    const timeStr = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
       second: '2-digit',
-      hour12: true 
+      hour12: true
     });
     liveTimeElement.textContent = `${dateStr} | ${timeStr}`;
   }
-  
+
   updateTime();
   setInterval(updateTime, 1000);
 }
@@ -2089,7 +2235,7 @@ function saveCarInfo() {
   const plate = document.getElementById('carPlateInput').value.trim().toUpperCase();
   const color = document.getElementById('carColorInput').value;
   const licenseExpiry = document.getElementById('carLicenseExpiryInput').value;
-  
+
   carInfo = {
     manufacturer: manufacturer || '',
     model: model || '',
@@ -2098,22 +2244,22 @@ function saveCarInfo() {
     color: color || '#1e40af',
     licenseExpiry: licenseExpiry || ''
   };
-  
+
   localStorage.setItem('carInfo', JSON.stringify(carInfo));
-  
+
   const carInfoModal = document.getElementById('carInfoModal');
   if (carInfoModal) {
     carInfoModal.style.display = 'none';
     document.body.classList.remove('modal-open');
   }
-  
+
   renderCarInfo();
 }
 
 function openCarInfoModal() {
   const carInfoModal = document.getElementById('carInfoModal');
   if (!carInfoModal) return;
-  
+
   // Populate form with current values
   document.getElementById('carManufacturerInput').value = carInfo.manufacturer || '';
   document.getElementById('carModelInput').value = carInfo.model || '';
@@ -2121,7 +2267,7 @@ function openCarInfoModal() {
   document.getElementById('carPlateInput').value = carInfo.plate || '';
   document.getElementById('carColorInput').value = carInfo.color || '#1e40af';
   document.getElementById('carLicenseExpiryInput').value = carInfo.licenseExpiry || '';
-  
+
   carInfoModal.style.display = 'flex';
   document.body.classList.add('modal-open');
 }
@@ -2134,12 +2280,12 @@ function renderCarInfo() {
   const licenseExpiryEl = document.getElementById('carLicenseExpiry');
   const licenseExpiryBox = document.getElementById('licenseExpiryBox');
   const carInfoCard = document.getElementById('carInfoCard');
-  
+
   if (manufacturerEl) manufacturerEl.textContent = carInfo.manufacturer || '—';
   if (modelEl) modelEl.textContent = carInfo.model || '—';
   if (yearEl) yearEl.textContent = carInfo.year || '—';
   if (plateEl) plateEl.textContent = carInfo.plate || '—';
-  
+
   // Apply car color to background with glassy effect
   if (carInfoCard && carInfo.color) {
     // Convert hex to RGB for rgba
@@ -2147,11 +2293,11 @@ function renderCarInfo() {
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
+
     // Apply light, transparent color with glassy effect
     carInfoCard.style.background = `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.15) 0%, rgba(${r}, ${g}, ${b}, 0.08) 100%)`;
   }
-  
+
   if (licenseExpiryEl && licenseExpiryBox) {
     if (carInfo.licenseExpiry) {
       const expiryDate = new Date(carInfo.licenseExpiry);
@@ -2161,17 +2307,17 @@ function renderCarInfo() {
         year: 'numeric'
       });
       licenseExpiryEl.textContent = formattedDate;
-      
+
       // Check if expiry is coming soon and update license box color
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expiry = new Date(carInfo.licenseExpiry);
       expiry.setHours(0, 0, 0, 0);
       const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-      
+
       // Remove all warning classes
       licenseExpiryBox.classList.remove('license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
-      
+
       if (daysUntilExpiry < 0) {
         // Expired
         licenseExpiryBox.classList.add('license-warning-expired');
@@ -2201,11 +2347,11 @@ function exportAllData() {
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
-  
+
   const sessions = [];
   const items = [];
   const categories = [];
-  
+
   let completed = 0;
   const checkComplete = () => {
     completed++;
@@ -2218,17 +2364,17 @@ function exportAllData() {
         carInfo,
         exportDate: new Date().toISOString()
       };
-      
+
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      
+
       const link = document.createElement('a');
       link.href = URL.createObjectURL(dataBlob);
       link.download = `car-maintenance-data-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
     }
   };
-  
+
   sessionStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -2238,7 +2384,7 @@ function exportAllData() {
       checkComplete();
     }
   };
-  
+
   itemStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -2248,7 +2394,7 @@ function exportAllData() {
       checkComplete();
     }
   };
-  
+
   categoryStore.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
@@ -2263,22 +2409,22 @@ function exportAllData() {
 function handleImportData(e) {
   const file = e.target.files[0];
   if (!file) return;
-  
+
   const reader = new FileReader();
-  reader.onload = function(event) {
+  reader.onload = function (event) {
     try {
       const importData = JSON.parse(event.target.result);
-      
+
       if (!confirm(`This will replace all existing data with the imported data. Are you sure you want to continue?`)) {
         return;
       }
-      
+
       importAllData(importData);
     } catch (error) {
       alert('Error reading file. Please make sure it\'s a valid JSON file.');
     }
   };
-  
+
   reader.readAsText(file);
   e.target.value = ''; // Reset file input
 }
@@ -2289,31 +2435,31 @@ function importAllData(importData) {
     return;
   }
   const tx = db.transaction(["sessions", "items", "categories"], "readwrite");
-  
+
   // Clear existing data
   tx.objectStore("sessions").clear();
   tx.objectStore("items").clear();
   tx.objectStore("categories").clear();
-  
+
   // Add imported data
   if (importData.categories) {
     importData.categories.forEach(category => {
       tx.objectStore("categories").add(category);
     });
   }
-  
+
   if (importData.sessions) {
     importData.sessions.forEach(session => {
       tx.objectStore("sessions").add(session);
     });
   }
-  
+
   if (importData.items) {
     importData.items.forEach(item => {
       tx.objectStore("items").add(item);
     });
   }
-  
+
   tx.oncomplete = () => {
     if (importData.currentOdometer) {
       currentOdometer = importData.currentOdometer;
@@ -2330,13 +2476,13 @@ function importAllData(importData) {
       }
       renderCarInfo();
     }
-    
+
     alert('Data imported successfully!');
     renderAll();
     loadCategoriesForFilter();
     settingsModal.style.display = 'none';
   };
-  
+
   tx.onerror = () => {
     alert('Error importing data. Please try again.');
   };
@@ -2346,28 +2492,28 @@ function resetAllData() {
   if (!confirm('Are you sure you want to reset ALL data? This action cannot be undone!')) {
     return;
   }
-  
+
   if (!confirm('This will permanently delete all sessions, items, and categories. Type "RESET" to confirm.')) {
     return;
   }
-  
+
   if (!db) {
     alert("Database not initialized. Please refresh the page.");
     return;
   }
-  
+
   const tx = db.transaction(["sessions", "items", "categories"], "readwrite");
-  
+
   tx.objectStore("sessions").clear();
   tx.objectStore("items").clear();
   tx.objectStore("categories").clear();
-  
+
   tx.oncomplete = () => {
     // Reset odometer
     currentOdometer = 0;
     localStorage.setItem('currentOdometer', '0');
     odometerValue.textContent = '0';
-    
+
     // Reset search and filters
     searchTerm = '';
     selectedCategoryFilter = '';
@@ -2376,7 +2522,7 @@ function resetAllData() {
     sessionSearch.value = '';
     categoryFilter.value = '';
     dateFilter.value = '';
-    
+
     // Clear car info from memory and localStorage to fully reset user data
     carInfo = {
       manufacturer: '',
@@ -2398,7 +2544,7 @@ function resetAllData() {
     loadCategoriesForFilter();
     settingsModal.style.display = 'none';
   };
-  
+
   tx.onerror = () => {
     alert('Error resetting data. Please try again.');
   };

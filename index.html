@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <header>
     <h1>Maintenance Tracker</h1>
@@ -27,7 +29,7 @@
 
     <section class="sessions">
       <h2>Maintenance Sessions</h2>
-      
+
       <!-- Search and Filter Controls -->
       <div class="search-controls">
         <div class="search-group">
@@ -46,11 +48,11 @@
           </select>
         </div>
       </div>
-      
+
       <!-- Session List with Pagination -->
       <div class="sessions-container">
         <div id="sessionsList"></div>
-        
+
         <!-- Pagination Controls -->
         <div class="pagination-controls" id="paginationControls" style="display: none;">
           <button id="prevPageBtn" class="pagination-btn">← Previous</button>
@@ -154,7 +156,7 @@
     <div class="modal-content large-modal">
       <span id="closeSettingsModal" class="close">&times;</span>
       <h2>Settings</h2>
-      
+
       <!-- Category Management Section -->
       <div class="settings-section">
         <h3>Category Management</h3>
@@ -163,18 +165,18 @@
             <label for="newCategoryName">Category Name:</label>
             <input type="text" id="newCategoryName" placeholder="Enter category name">
           </div>
-          
+
           <div class="form-group">
             <label for="newCategoryColor">Category Color:</label>
             <input type="color" id="newCategoryColor" value="#87CEEB">
           </div>
-          
+
           <button id="addCategoryBtn" class="primary-btn">Add Category</button>
         </div>
-        
+
         <div id="categoriesList" class="categories-list"></div>
       </div>
-      
+
       <!-- Data Management Section -->
       <div class="settings-section">
         <h3>Data Management</h3>
@@ -184,13 +186,14 @@
           <input type="file" id="importFileInput" accept=".json" style="display: none;">
         </div>
       </div>
-      
+
       <!-- Danger Zone Section -->
       <div class="settings-section">
         <h3>Danger Zone</h3>
         <div class="settings-group">
           <button id="resetAllDataBtn" class="danger-btn">Reset All Data</button>
-          <p class="warning-text">⚠️ This will permanently delete all sessions, items, and categories. This action cannot be undone!</p>
+          <p class="warning-text">⚠️ This will permanently delete all sessions, items, and categories. This action
+            cannot be undone!</p>
         </div>
       </div>
     </div>
@@ -282,4 +285,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>
