@@ -1372,6 +1372,7 @@ section h2::before {
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
+  margin-bottom: 1rem;
 }
 
 .primary-btn:hover {

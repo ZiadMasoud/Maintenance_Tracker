@@ -1,564 +1,770 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Maintenance Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Car Maintenance Tracker</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-
-<body data-active-tab="home">
-  <div class="app-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">🚗</div>
-        <div class="sidebar-title">
-          <span class="sidebar-title-main">Maintenance</span>
-          <span class="sidebar-title-sub">Tracker</span>
+  <body data-active-tab="home">
+    <div class="app-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">🚗</div>
+          <div class="sidebar-title">
+            <span class="sidebar-title-main">Maintenance</span>
+            <span class="sidebar-title-sub">Tracker</span>
+          </div>
         </div>
-      </div>
-      <nav class="sidebar-nav">
-        <button class="nav-link active" data-tab-target="home">
-          <span class="nav-icon">🏠</span>
-          <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-link" data-tab-target="analytics">
-          <span class="nav-icon">📊</span>
-          <span class="nav-label">Analytics</span>
-        </button>
-        <button class="nav-link" data-tab-target="fuel">
-          <span class="nav-icon">⛽</span>
-          <span class="nav-label">Fuel</span>
-        </button>
-        <button class="nav-link" data-tab-target="record">
-          <span class="nav-icon">✏️</span>
-          <span class="nav-label">Record</span>
-        </button>
-        <button class="nav-link" data-tab-target="settings">
-          <span class="nav-icon">⚙️</span>
-          <span class="nav-label">Settings</span>
-        </button>
-      </nav>
-    </aside>
-
-    <!-- Mobile overlay -->
-    <div id="mobileOverlay" class="mobile-overlay"></div>
-
-    <!-- Main Area -->
-    <div class="main-area" id="mainArea">
-      <!-- Header -->
-      <header>
-        <div class="header-left">
-          <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
+        <nav class="sidebar-nav">
+          <button class="nav-link active" data-tab-target="home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
           </button>
-          <h1>Dashboard</h1>
-        </div>
-        <div class="header-right">
-          <!-- Future actions area -->
-        </div>
-      </header>
+          <button class="nav-link" data-tab-target="analytics">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Analytics</span>
+          </button>
+          <button class="nav-link" data-tab-target="fuel">
+            <span class="nav-icon">⛽</span>
+            <span class="nav-label">Fuel</span>
+          </button>
+          <button class="nav-link" data-tab-target="record">
+            <span class="nav-icon">✏️</span>
+            <span class="nav-label">Record</span>
+          </button>
+          <button class="nav-link" data-tab-target="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+          </button>
+        </nav>
+      </aside>
 
-      <!-- Main Content -->
-      <main>
-        <!-- Home Tab Content -->
-        <div data-tab-content="home">
-          <!-- KPIs Section -->
-          <section class="home-kpis-section">
-            <div class="kpis-row">
-              <!-- Digital ID Card -->
-              <div id="carInfoCard" class="kpi-card kpi-digital-id car-info-card">
-                <button class="edit-car-info-btn" onclick="openCarInfoModal()" title="Edit Car Info">✎</button>
-                <div class="car-info-header">
-                  <div class="live-time" id="liveTime"></div>
-                </div>
-                <div class="car-info-body">
-                  <div class="car-info-main">
-                    <div class="car-info-item">
-                      <span class="car-info-label">Manufacturer</span>
-                      <span id="carManufacturer" class="car-info-value">—</span>
-                    </div>
-                    <div class="car-info-item">
-                      <span class="car-info-label">Model</span>
-                      <span id="carModel" class="car-info-value">—</span>
-                    </div>
-                    <div class="car-info-item">
-                      <span class="car-info-label">Year</span>
-                      <span id="carYear" class="car-info-value">—</span>
-                    </div>
-                    <div class="car-info-item">
-                      <span class="car-info-label">Plate Number</span>
-                      <span id="carPlate" class="car-info-value">—</span>
-                    </div>
-                  </div>
-                  <div class="license-expiry-box" id="licenseExpiryBox">
-                    <span class="license-label">License Expiry</span>
-                    <span id="carLicenseExpiry" class="license-value">—</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- KPI Cards -->
-              <div class="kpi-cards-group">
-                <!-- Odometer KPI -->
-                <div class="kpi-card kpi-odo">
-                  <div class="kpi-label">ODO</div>
-                  <button id="currentOdometerBtn" class="kpi-odo-btn">
-                    <span class="kpi-main" id="odometerValue">0</span>
-                    <span class="kpi-sub">km</span>
+      <!-- Mobile overlay -->
+      <div id="mobileOverlay" class="mobile-overlay"></div>
+
+      <!-- Main Area -->
+      <div class="main-area" id="mainArea">
+        <!-- Header -->
+        <header>
+          <div class="header-left">
+            <button
+              id="sidebarToggle"
+              class="sidebar-toggle-btn"
+              aria-label="Toggle sidebar"
+            >
+              <span class="hamburger-line"></span>
+              <span class="hamburger-line"></span>
+              <span class="hamburger-line"></span>
+            </button>
+            <h1>Dashboard</h1>
+          </div>
+          <div class="header-right">
+            <!-- Future actions area -->
+          </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+          <!-- Home Tab Content -->
+          <div data-tab-content="home">
+            <!-- KPIs Section -->
+            <section class="home-kpis-section">
+              <div class="kpis-row">
+                <!-- Digital ID Card -->
+                <div
+                  id="carInfoCard"
+                  class="kpi-card kpi-digital-id car-info-card"
+                >
+                  <button
+                    class="edit-car-info-btn"
+                    onclick="openCarInfoModal()"
+                    title="Edit Car Info"
+                  >
+                    ✎
                   </button>
-                </div>
-                
-                <!-- Total Spent KPI -->
-                <div class="kpi-card kpi-total">
-                  <div class="kpi-label">Total Spent</div>
-                  <div class="kpi-main" id="kpiTotalSpentValue">0</div>
-                  <div class="kpi-sub">EGP</div>
-                </div>
-                
-                <!-- Fuel Consumption KPI -->
-                <div class="kpi-card kpi-fuel">
-                  <div class="kpi-label">Avg Fuel Consumption</div>
-                  <div class="kpi-main" id="kpiAvgFuelValue">—</div>
-                  <div class="kpi-sub" id="kpiAvgFuelSub">L/100km</div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Home Content Grid -->
-          <div class="home-content-grid">
-            <!-- Maintenance Sessions Section -->
-            <section class="sessions">
-              <h2>Maintenance Sessions</h2>
-              <div class="panel-content">
-                <!-- Search and Filter Controls -->
-                <div class="search-controls">
-                  <div class="search-group">
-                    <input type="text" id="sessionSearch" placeholder="Search by date, category, or item/service...">
-                    <button id="clearSearchBtn" class="clear-search-btn">✕</button>
+                  <div class="car-info-header">
+                    <div class="live-time" id="liveTime"></div>
                   </div>
-                  <div class="filter-group">
-                    <select id="categoryFilter">
-                      <option value="">All Categories</option>
-                    </select>
-                    <select id="dateFilter">
-                      <option value="">All Time</option>
-                      <option value="last30">Last 30 Days</option>
-                      <option value="last90">Last 90 Days</option>
-                      <option value="thisYear">This Year</option>
-                    </select>
+                  <div class="car-info-body">
+                    <div class="car-info-main">
+                      <div class="car-info-item">
+                        <span class="car-info-label">Manufacturer</span>
+                        <span id="carManufacturer" class="car-info-value"
+                          >—</span
+                        >
+                      </div>
+                      <div class="car-info-item">
+                        <span class="car-info-label">Model</span>
+                        <span id="carModel" class="car-info-value">—</span>
+                      </div>
+                      <div class="car-info-item">
+                        <span class="car-info-label">Year</span>
+                        <span id="carYear" class="car-info-value">—</span>
+                      </div>
+                      <div class="car-info-item">
+                        <span class="car-info-label">Plate Number</span>
+                        <span id="carPlate" class="car-info-value">—</span>
+                      </div>
+                    </div>
+                    <div class="license-expiry-box" id="licenseExpiryBox">
+                      <span class="license-label">License Expiry</span>
+                      <span id="carLicenseExpiry" class="license-value">—</span>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Session List -->
-                <div class="sessions-container">
-                  <div id="sessionsList"></div>
+                <!-- KPI Cards -->
+                <div class="kpi-cards-group">
+                  <!-- Odometer KPI -->
+                  <div class="kpi-card kpi-odo">
+                    <div class="kpi-label">ODO</div>
+                    <button id="currentOdometerBtn" class="kpi-odo-btn">
+                      <span class="kpi-main" id="odometerValue">0</span>
+                      <span class="kpi-sub">km</span>
+                    </button>
+                  </div>
 
-                  <!-- Pagination Controls -->
-                  <div class="pagination-controls" id="paginationControls" style="display: none;">
-                    <button id="prevPageBtn" class="pagination-btn">← Previous</button>
-                    <span id="pageInfo" class="page-info">Page 1 of 1</span>
-                    <button id="nextPageBtn" class="pagination-btn">Next →</button>
+                  <!-- Total Spent KPI -->
+                  <div class="kpi-card kpi-total">
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-main" id="kpiTotalSpentValue">0</div>
+                    <div class="kpi-sub">EGP</div>
+                  </div>
+
+                  <!-- Fuel Consumption KPI -->
+                  <div class="kpi-card kpi-fuel">
+                    <div class="kpi-label">Avg Fuel Consumption</div>
+                    <div class="kpi-main" id="kpiAvgFuelValue">—</div>
+                    <div class="kpi-sub" id="kpiAvgFuelSub">L/100km</div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <!-- Upcoming Maintenance Section -->
-            <section class="upcoming">
-              <h2>Upcoming Maintenance</h2>
+            <!-- Home Content Grid -->
+            <div class="home-content-grid">
+              <!-- Maintenance Sessions Section -->
+              <section class="sessions">
+                <h2>Maintenance Sessions</h2>
+                <div class="panel-content">
+                  <!-- Search and Filter Controls -->
+                  <div class="search-controls">
+                    <div class="search-group">
+                      <input
+                        type="text"
+                        id="sessionSearch"
+                        placeholder="Search by date, category, or item/service..."
+                      />
+                      <button id="clearSearchBtn" class="clear-search-btn">
+                        ✕
+                      </button>
+                    </div>
+                    <div class="filter-group">
+                      <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                      </select>
+                      <select id="dateFilter">
+                        <option value="">All Time</option>
+                        <option value="last30">Last 30 Days</option>
+                        <option value="last90">Last 90 Days</option>
+                        <option value="thisYear">This Year</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Session List -->
+                  <div class="sessions-container">
+                    <div id="sessionsList"></div>
+
+                    <!-- Pagination Controls -->
+                    <div
+                      class="pagination-controls"
+                      id="paginationControls"
+                      style="display: none"
+                    >
+                      <button id="prevPageBtn" class="pagination-btn">
+                        ← Previous
+                      </button>
+                      <span id="pageInfo" class="page-info">Page 1 of 1</span>
+                      <button id="nextPageBtn" class="pagination-btn">
+                        Next →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Upcoming Maintenance Section -->
+              <section class="upcoming">
+                <h2>Upcoming Maintenance</h2>
+                <div class="panel-content">
+                  <div class="upcoming-maintenance-container">
+                    <div id="upcomingList"></div>
+                    <div
+                      class="pagination-controls"
+                      id="upcomingPaginationControls"
+                      style="display: none"
+                    >
+                      <button id="upcomingPrevPageBtn" class="pagination-btn">
+                        ← Previous
+                      </button>
+                      <span id="upcomingPageInfo" class="page-info"
+                        >Page 1 of 1</span
+                      >
+                      <button id="upcomingNextPageBtn" class="pagination-btn">
+                        Next →
+                      </button>
+                    </div>
+                    <div id="completedList" style="display: none">
+                      <h3>Recently Completed</h3>
+                      <div id="completedItems"></div>
+                    </div>
+                    <button
+                      id="toggleCompletedBtn"
+                      class="small-btn"
+                      style="margin-top: 12px"
+                    >
+                      Show Recently Completed
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- Analytics Tab Content -->
+          <div data-tab-content="analytics" style="display: none">
+            <!-- Spending Charts -->
+            <section class="charts-section">
+              <h2>Spending Analytics</h2>
               <div class="panel-content">
-                <div class="upcoming-maintenance-container">
-                  <div id="upcomingList"></div>
-                  <div class="pagination-controls" id="upcomingPaginationControls" style="display: none;">
-                    <button id="upcomingPrevPageBtn" class="pagination-btn">← Previous</button>
-                    <span id="upcomingPageInfo" class="page-info">Page 1 of 1</span>
-                    <button id="upcomingNextPageBtn" class="pagination-btn">Next →</button>
+                <div class="chart-controls">
+                  <button id="monthlyView" class="chart-btn active">
+                    Monthly
+                  </button>
+                  <button id="yearlyView" class="chart-btn">Yearly</button>
+                  <select
+                    id="spendingMonthFilter"
+                    class="chart-filter-select"
+                    style="display: none"
+                  >
+                    <option value="">All Months</option>
+                  </select>
+                  <select
+                    id="spendingYearFilter"
+                    class="chart-filter-select"
+                    style="display: none"
+                  >
+                    <option value="">All Years</option>
+                  </select>
+                </div>
+                <div class="charts-row">
+                  <div class="chart-card">
+                    <h3 class="chart-title">Spending Over Time</h3>
+                    <canvas id="spendingChart"></canvas>
                   </div>
-                  <div id="completedList" style="display: none;">
-                    <h3>Recently Completed</h3>
-                    <div id="completedItems"></div>
+                  <div class="chart-card">
+                    <h3 class="chart-title">Spending by Category</h3>
+                    <canvas id="categoryChart"></canvas>
                   </div>
-                  <button id="toggleCompletedBtn" class="small-btn" style="margin-top: 12px;">Show Recently Completed</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Fuel Analytics -->
+            <section class="fuel-analytics-section">
+              <h2>Fuel Analytics</h2>
+              <div class="panel-content">
+                <!-- Fuel KPIs -->
+                <div class="fuel-kpis-grid">
+                  <div class="fuel-kpi-card">
+                    <div class="fuel-kpi-label">Average Consumption</div>
+                    <div class="fuel-kpi-main" id="avgConsumption">--</div>
+                    <div class="fuel-kpi-sub">L/100km</div>
+                  </div>
+                  <div class="fuel-kpi-card">
+                    <div class="fuel-kpi-label">Cost per Kilometer</div>
+                    <div class="fuel-kpi-main" id="costPerKm">--</div>
+                    <div class="fuel-kpi-sub">EGP/km</div>
+                  </div>
+                  <div class="fuel-kpi-card">
+                    <div class="fuel-kpi-label">Total Fuel Added</div>
+                    <div class="fuel-kpi-main" id="totalFuel">--</div>
+                    <div class="fuel-kpi-sub">Liters</div>
+                  </div>
+                  <div class="fuel-kpi-card">
+                    <div class="fuel-kpi-label">Total Distance</div>
+                    <div class="fuel-kpi-main" id="totalDistance">--</div>
+                    <div class="fuel-kpi-sub">km</div>
+                  </div>
+                </div>
+
+                <!-- Fuel Charts -->
+                <div class="chart-card fuel-chart-card">
+                  <h3 class="chart-title">Fuel Consumption Trend</h3>
+                  <canvas id="fuelChart"></canvas>
+                </div>
+                <div class="chart-card fuel-chart-card">
+                  <h3 class="chart-title">Fuel Efficiency Over Time</h3>
+                  <canvas id="efficiencyChart"></canvas>
                 </div>
               </div>
             </section>
           </div>
-        </div>
 
-        <!-- Analytics Tab Content -->
-        <div data-tab-content="analytics" style="display: none;">
-          <!-- Spending Charts -->
-          <section class="charts-section">
-            <h2>Spending Analytics</h2>
-            <div class="panel-content">
-              <div class="chart-controls">
-                <button id="monthlyView" class="chart-btn active">Monthly</button>
-                <button id="yearlyView" class="chart-btn">Yearly</button>
-                <select id="spendingMonthFilter" class="chart-filter-select" style="display: none;">
-                  <option value="">All Months</option>
-                </select>
-                <select id="spendingYearFilter" class="chart-filter-select" style="display: none;">
-                  <option value="">All Years</option>
-                </select>
+          <!-- Fuel Tab Content -->
+          <div data-tab-content="fuel" style="display: none">
+            <!-- Fuel Entry Form -->
+            <section class="fuel-entry-section">
+              <h2>Record Fuel Entry</h2>
+              <div class="panel-content">
+                <form id="fuelEntryForm">
+                  <div
+                    id="fuelFormErrors"
+                    class="form-errors"
+                    style="display: none"
+                  ></div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="fuelDate">Date:</label>
+                      <input type="date" id="fuelDate" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="fuelOdometer">Odometer (km):</label>
+                      <input
+                        type="number"
+                        id="fuelOdometer"
+                        placeholder="e.g., 50000"
+                        min="0"
+                        step="1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="fuelTotalCost">Total Cost (EGP):</label>
+                      <input
+                        type="number"
+                        id="fuelTotalCost"
+                        placeholder="e.g., 500"
+                        min="0.01"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="fuelLiters">Liters (auto-calculated):</label>
+                      <input
+                        type="number"
+                        id="fuelLiters"
+                        placeholder="Auto-calculated"
+                        readonly
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-row fuel-form-row">
+                    <div class="form-group checkbox-group full-tank-group">
+                      <label class="checkbox-label full-tank-label">
+                        <input type="checkbox" id="fuelFullTank" checked />
+                        <span class="checkmark"></span>
+                        <span class="full-tank-text">Full Tank Refill</span>
+                      </label>
+                    </div>
+                    <div class="form-group notes-group">
+                      <label for="fuelNotes">Notes (optional):</label>
+                      <textarea
+                        id="fuelNotes"
+                        placeholder="e.g., Premium fuel, highway driving..."
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div class="actions">
+                    <button type="submit" id="saveFuelBtn" class="primary-btn">
+                      Save Fuel Entry
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div class="charts-row">
-                <div class="chart-card">
-                  <h3 class="chart-title">Spending Over Time</h3>
-                  <canvas id="spendingChart"></canvas>
+            </section>
+
+            <!-- Fuel History -->
+            <section class="fuel-history-section">
+              <h2>Fuel History</h2>
+              <div class="panel-content">
+                <div id="fuelHistoryList" class="fuel-history-list">
+                  <div class="empty-state">
+                    <div class="empty-icon">⛽</div>
+                    <p>No fuel entries yet</p>
+                    <span>Record your first fuel refill to see analytics</span>
+                  </div>
                 </div>
-                <div class="chart-card">
-                  <h3 class="chart-title">Spending by Category</h3>
-                  <canvas id="categoryChart"></canvas>
+                <!-- Fuel History Pagination -->
+                <div
+                  class="pagination-controls"
+                  id="fuelPaginationControls"
+                  style="display: none"
+                >
+                  <button id="fuelPrevPageBtn" class="pagination-btn">
+                    ← Previous
+                  </button>
+                  <span id="fuelPageInfo" class="page-info">Page 1 of 1</span>
+                  <button id="fuelNextPageBtn" class="pagination-btn">
+                    Next →
+                  </button>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- Fuel Analytics -->
-          <section class="fuel-analytics-section">
-            <h2>Fuel Analytics</h2>
-            <div class="panel-content">
-              <!-- Fuel KPIs -->
-              <div class="fuel-kpis-grid">
-                <div class="fuel-kpi-card">
-                  <div class="fuel-kpi-label">Average Consumption</div>
-                  <div class="fuel-kpi-main" id="avgConsumption">--</div>
-                  <div class="fuel-kpi-sub">L/100km</div>
-                </div>
-                <div class="fuel-kpi-card">
-                  <div class="fuel-kpi-label">Cost per Kilometer</div>
-                  <div class="fuel-kpi-main" id="costPerKm">--</div>
-                  <div class="fuel-kpi-sub">EGP/km</div>
-                </div>
-                <div class="fuel-kpi-card">
-                  <div class="fuel-kpi-label">Total Fuel Added</div>
-                  <div class="fuel-kpi-main" id="totalFuel">--</div>
-                  <div class="fuel-kpi-sub">Liters</div>
-                </div>
-                <div class="fuel-kpi-card">
-                  <div class="fuel-kpi-label">Total Distance</div>
-                  <div class="fuel-kpi-main" id="totalDistance">--</div>
-                  <div class="fuel-kpi-sub">km</div>
+            <!-- Last Refill Info -->
+            <section class="last-refill-section">
+              <h2>Last Refill</h2>
+              <div class="panel-content">
+                <div id="lastRefillInfo">
+                  <p class="empty-text">No refill recorded</p>
                 </div>
               </div>
+            </section>
+          </div>
 
-              <!-- Fuel Charts -->
-              <div class="chart-card fuel-chart-card">
-                <h3 class="chart-title">Fuel Consumption Trend</h3>
-                <canvas id="fuelChart"></canvas>
-              </div>
-              <div class="chart-card fuel-chart-card">
-                <h3 class="chart-title">Fuel Efficiency Over Time</h3>
-                <canvas id="efficiencyChart"></canvas>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Fuel Tab Content -->
-        <div data-tab-content="fuel" style="display: none;">
-          <!-- Fuel Entry Form -->
-          <section class="fuel-entry-section">
-            <h2>Record Fuel Entry</h2>
-            <div class="panel-content">
-              <form id="fuelEntryForm">
-                <div id="fuelFormErrors" class="form-errors" style="display: none;"></div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="fuelDate">Date:</label>
-                    <input type="date" id="fuelDate" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="fuelOdometer">Odometer (km):</label>
-                    <input type="number" id="fuelOdometer" placeholder="e.g., 50000" min="0" step="1" required>
-                  </div>
+          <!-- Record Tab Content -->
+          <div data-tab-content="record" style="display: none">
+            <section class="record-section">
+              <h2>Record Maintenance Session</h2>
+              <div class="panel-content">
+                <div class="form-group">
+                  <label>Date:</label>
+                  <input type="date" id="sessionDate" class="styled-input" />
                 </div>
 
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="fuelTotalCost">Total Cost (EGP):</label>
-                    <input type="number" id="fuelTotalCost" placeholder="e.g., 500" min="0.01" step="0.01" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="fuelLiters">Liters (auto-calculated):</label>
-                    <input type="number" id="fuelLiters" placeholder="Auto-calculated" readonly>
-                  </div>
+                <div class="form-group">
+                  <label>ODO (km):</label>
+                  <input
+                    type="number"
+                    id="sessionOdometer"
+                    placeholder="Enter odometer reading"
+                    class="styled-input"
+                  />
                 </div>
 
-                <div class="form-row fuel-form-row">
-                  <div class="form-group checkbox-group full-tank-group">
-                    <label class="checkbox-label full-tank-label">
-                      <input type="checkbox" id="fuelFullTank" checked>
-                      <span class="checkmark"></span>
-                      <span class="full-tank-text">Full Tank Refill</span>
-                    </label>
-                  </div>
-                  <div class="form-group notes-group">
-                    <label for="fuelNotes">Notes (optional):</label>
-                    <textarea id="fuelNotes" placeholder="e.g., Premium fuel, highway driving..."></textarea>
-                  </div>
+                <div class="form-group">
+                  <label>Merchant/Place:</label>
+                  <input
+                    type="text"
+                    id="sessionMerchant"
+                    placeholder="Optional"
+                    class="styled-input"
+                  />
                 </div>
+
+                <div class="form-group">
+                  <label>Notes:</label>
+                  <textarea
+                    id="sessionNotes"
+                    placeholder="Optional"
+                    class="styled-input"
+                  ></textarea>
+                </div>
+
+                <h3 class="items-section-title">Items / Services</h3>
+                <div id="itemsContainer"></div>
+                <button id="addItemBtn" class="small-btn">+ Add Item</button>
 
                 <div class="actions">
-                  <button type="submit" id="saveFuelBtn" class="primary-btn">Save Fuel Entry</button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          <!-- Fuel History -->
-          <section class="fuel-history-section">
-            <h2>Fuel History</h2>
-            <div class="panel-content">
-              <div id="fuelHistoryList" class="fuel-history-list">
-                <div class="empty-state">
-                  <div class="empty-icon">⛽</div>
-                  <p>No fuel entries yet</p>
-                  <span>Record your first fuel refill to see analytics</span>
+                  <button id="saveSessionBtn" class="primary-btn">
+                    Save Session
+                  </button>
                 </div>
               </div>
-              <!-- Fuel History Pagination -->
-              <div class="pagination-controls" id="fuelPaginationControls" style="display: none;">
-                <button id="fuelPrevPageBtn" class="pagination-btn">← Previous</button>
-                <span id="fuelPageInfo" class="page-info">Page 1 of 1</span>
-                <button id="fuelNextPageBtn" class="pagination-btn">Next →</button>
-              </div>
-            </div>
-          </section>
+            </section>
+          </div>
 
-          <!-- Last Refill Info -->
-          <section class="last-refill-section">
-            <h2>Last Refill</h2>
-            <div class="panel-content">
-              <div id="lastRefillInfo">
-                <p class="empty-text">No refill recorded</p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Record Tab Content -->
-        <div data-tab-content="record" style="display: none;">
-          <section class="record-section">
-            <h2>Record Maintenance Session</h2>
-            <div class="panel-content">
-              <div class="form-group">
-                <label>Date:</label>
-                <input type="date" id="sessionDate" class="styled-input">
-              </div>
-
-              <div class="form-group">
-                <label>ODO (km):</label>
-                <input type="number" id="sessionOdometer" placeholder="Enter odometer reading" class="styled-input">
-              </div>
-
-              <div class="form-group">
-                <label>Merchant/Place:</label>
-                <input type="text" id="sessionMerchant" placeholder="Optional" class="styled-input">
-              </div>
-
-              <div class="form-group">
-                <label>Notes:</label>
-                <textarea id="sessionNotes" placeholder="Optional" class="styled-input"></textarea>
-              </div>
-
-              <h3 class="items-section-title">Items / Services</h3>
-              <div id="itemsContainer"></div>
-              <button id="addItemBtn" class="small-btn">+ Add Item</button>
-
-              <div class="actions">
-                <button id="saveSessionBtn" class="primary-btn">Save Session</button>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Settings Tab Content -->
-        <div data-tab-content="settings" style="display: none;">
-          <section class="settings-section-wrapper">
-            <h2>Settings</h2>
-            <div class="settings-page">
-              <!-- Fuel Settings -->
-              <div class="settings-section">
-                <h3>Fuel Settings</h3>
-                <div class="settings-group">
-                  <div class="form-group">
-                    <label for="fuelPricePerLiter">Price per Liter (EGP):</label>
-                    <input type="number" id="fuelPricePerLiter" placeholder="e.g., 12.50" min="0.01" step="0.01" class="styled-input">
-                    <p class="help-text">This price will be used to auto-calculate liters when entering fuel costs</p>
+          <!-- Settings Tab Content -->
+          <div data-tab-content="settings" style="display: none">
+            <section class="settings-section-wrapper">
+              <h2>Settings</h2>
+              <div class="settings-page">
+                <!-- Fuel Settings -->
+                <div class="settings-section">
+                  <h3>Fuel Settings</h3>
+                  <div class="settings-group">
+                    <div class="form-group">
+                      <label for="fuelPricePerLiter"
+                        >Price per Liter (EGP):</label
+                      >
+                      <input
+                        type="number"
+                        id="fuelPricePerLiter"
+                        placeholder="e.g., 12.50"
+                        min="0.01"
+                        step="0.01"
+                        class="styled-input"
+                      />
+                      <p class="help-text">
+                        This price will be used to auto-calculate liters when
+                        entering fuel costs
+                      </p>
+                    </div>
+                    <button id="saveFuelSettingsBtn" class="primary-btn">
+                      Save Fuel Settings
+                    </button>
                   </div>
-                  <button id="saveFuelSettingsBtn" class="primary-btn">Save Fuel Settings</button>
-                </div>
-              </div>
-
-              <!-- Category Management -->
-              <div class="settings-section">
-                <h3>Category Management</h3>
-                <div class="settings-group">
-                  <div class="form-group">
-                    <label for="newCategoryName">Category Name:</label>
-                    <input type="text" id="newCategoryName" placeholder="Enter category name" class="styled-input">
+                  <h3>Data Management</h3>
+                  <div class="settings-group data-management-group">
+                    <button id="exportDataBtn" class="primary-btn">
+                      Export Data (JSON)
+                    </button>
+                    <button id="importDataBtn" class="secondary-btn">
+                      Import Data (JSON)
+                    </button>
+                    <input
+                      type="file"
+                      id="importFileInput"
+                      accept=".json"
+                      style="display: none"
+                    />
+                    <h3 style="margin-bottom: 0px">Danger Zone</h3>
+                    <button id="resetAllDataBtn" class="danger-btn">
+                      Reset All Data
+                    </button>
+                    <p class="warning-text">
+                      ⚠️ This will permanently delete all data. This action
+                      cannot be undone!
+                    </p>
                   </div>
-                  <div class="form-group">
-                    <label for="newCategoryColor">Category Color:</label>
-                    <input type="color" id="newCategoryColor" value="#87CEEB">
+                </div>
+                <!-- Category Management -->
+                <div class="settings-section">
+                  <h3>Category Management</h3>
+                  <div class="settings-group">
+                    <div class="form-group">
+                      <label for="newCategoryName">Category Name:</label>
+                      <input
+                        type="text"
+                        id="newCategoryName"
+                        placeholder="Enter category name"
+                        class="styled-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="newCategoryColor">Category Color:</label>
+                      <input
+                        type="color"
+                        id="newCategoryColor"
+                        value="#87CEEB"
+                      />
+                    </div>
+                    <button id="addCategoryBtn" class="primary-btn">
+                      Add Category
+                    </button>
                   </div>
-                  <button id="addCategoryBtn" class="primary-btn">Add Category</button>
-                </div>
-                <div id="categoriesList" class="categories-list"></div>
-                <!-- Category Pagination -->
-                <div class="pagination-controls" id="categoryPaginationControls" style="display: none;">
-                  <button id="categoryPrevPageBtn" class="pagination-btn">← Previous</button>
-                  <span id="categoryPageInfo" class="page-info">Page 1 of 1</span>
-                  <button id="categoryNextPageBtn" class="pagination-btn">Next →</button>
-                </div>
-              </div>
-
-              <!-- Data Management & Danger Zone Combined -->
-              <div class="settings-section">
-                <h3>Data Management</h3>
-                <div class="settings-group data-management-group">
-                  <button id="exportDataBtn" class="primary-btn">Export Data (JSON)</button>
-                  <button id="importDataBtn" class="secondary-btn">Import Data (JSON)</button>
-                  <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                  <hr class="danger-divider">
-                  <button id="resetAllDataBtn" class="danger-btn">Reset All Data</button>
-                  <p class="warning-text">⚠️ This will permanently delete all data. This action cannot be undone!</p>
+                  <div id="categoriesList" class="categories-list"></div>
+                  <!-- Category Pagination -->
+                  <div
+                    class="pagination-controls"
+                    id="categoryPaginationControls"
+                    style="display: none"
+                  >
+                    <button id="categoryPrevPageBtn" class="pagination-btn">
+                      ← Previous
+                    </button>
+                    <span id="categoryPageInfo" class="page-info"
+                      >Page 1 of 1</span
+                    >
+                    <button id="categoryNextPageBtn" class="pagination-btn">
+                      Next →
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Odometer Edit Modal -->
-  <div id="odometerModal" class="modal">
-    <div class="modal-content small-modal">
-      <span id="closeOdometerModal" class="close">&times;</span>
-      <h2>Update ODO</h2>
-      <div class="form-group">
-        <label for="odometerInput">ODO (km):</label>
-        <input type="number" id="odometerInput" placeholder="Enter odometer reading" class="styled-input">
-      </div>
-      <div class="actions">
-        <button id="saveOdometerBtn" class="primary-btn">Save</button>
-        <button id="cancelOdometerBtn" class="secondary-btn">Cancel</button>
+            </section>
+          </div>
+        </main>
       </div>
     </div>
-  </div>
 
-  <!-- View Details Modal -->
-  <div id="viewDetailsModal" class="modal">
-    <div class="modal-content">
-      <span id="closeViewDetailsModal" class="close">&times;</span>
-      <h2>Session Details</h2>
-      <div id="sessionDetailsContent"></div>
-      <div class="actions">
-        <button id="closeViewDetailsBtn" class="secondary-btn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Car Info Modal -->
-  <div id="carInfoModal" class="modal">
-    <div class="modal-content small-modal">
-      <span id="closeCarInfoModal" class="close">&times;</span>
-      <h2>Car Information</h2>
-      <div class="form-group">
-        <label for="carManufacturerInput">Manufacturer:</label>
-        <input type="text" id="carManufacturerInput" placeholder="e.g., Toyota, Honda, BMW" class="styled-input">
-      </div>
-      <div class="form-group">
-        <label for="carModelInput">Model:</label>
-        <input type="text" id="carModelInput" placeholder="e.g., Camry, Civic, 3 Series" class="styled-input">
-      </div>
-      <div class="form-group">
-        <label for="carYearInput">Year:</label>
-        <input type="number" id="carYearInput" placeholder="e.g., 2020" min="1900" max="2100" class="styled-input">
-      </div>
-      <div class="form-group">
-        <label for="carPlateInput">Plate Number:</label>
-        <input type="text" id="carPlateInput" placeholder="e.g., ABC-1234" class="styled-input">
-      </div>
-      <div class="form-group">
-        <label for="carColorInput">Car Color:</label>
-        <input type="color" id="carColorInput" value="#3b82f6">
-      </div>
-      <div class="form-group">
-        <label for="carLicenseExpiryInput">License Expiry Date:</label>
-        <input type="date" id="carLicenseExpiryInput" class="styled-input">
-      </div>
-      <div class="actions">
-        <button id="saveCarInfoBtn" class="primary-btn">Save</button>
-        <button id="cancelCarInfoBtn" class="secondary-btn">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Category Edit Popup -->
-  <div id="categoryEditPopup" class="popup-overlay">
-    <div class="popup-card">
-      <div class="popup-header">
-        <h3>Edit Category</h3>
-        <button class="popup-close" onclick="closeCategoryEditPopup()">&times;</button>
-      </div>
-      <div class="popup-body">
+    <!-- Odometer Edit Modal -->
+    <div id="odometerModal" class="modal">
+      <div class="modal-content small-modal">
+        <span id="closeOdometerModal" class="close">&times;</span>
+        <h2>Update ODO</h2>
         <div class="form-group">
-          <label for="editCategoryName">Category Name:</label>
-          <input type="text" id="editCategoryName" class="styled-input">
+          <label for="odometerInput">ODO (km):</label>
+          <input
+            type="number"
+            id="odometerInput"
+            placeholder="Enter odometer reading"
+            class="styled-input"
+          />
+        </div>
+        <div class="actions">
+          <button id="saveOdometerBtn" class="primary-btn">Save</button>
+          <button id="cancelOdometerBtn" class="secondary-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div id="viewDetailsModal" class="modal">
+      <div class="modal-content">
+        <span id="closeViewDetailsModal" class="close">&times;</span>
+        <h2>Session Details</h2>
+        <div id="sessionDetailsContent"></div>
+        <div class="actions">
+          <button id="closeViewDetailsBtn" class="secondary-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Car Info Modal -->
+    <div id="carInfoModal" class="modal">
+      <div class="modal-content small-modal">
+        <span id="closeCarInfoModal" class="close">&times;</span>
+        <h2>Car Information</h2>
+        <div class="form-group">
+          <label for="carManufacturerInput">Manufacturer:</label>
+          <input
+            type="text"
+            id="carManufacturerInput"
+            placeholder="e.g., Toyota, Honda, BMW"
+            class="styled-input"
+          />
         </div>
         <div class="form-group">
-          <label for="editCategoryColor">Category Color:</label>
-          <input type="color" id="editCategoryColor">
+          <label for="carModelInput">Model:</label>
+          <input
+            type="text"
+            id="carModelInput"
+            placeholder="e.g., Camry, Civic, 3 Series"
+            class="styled-input"
+          />
         </div>
-      </div>
-      <div class="popup-actions">
-        <button id="saveCategoryEditBtn" class="primary-btn">Save Changes</button>
-        <button class="secondary-btn" onclick="closeCategoryEditPopup()">Cancel</button>
+        <div class="form-group">
+          <label for="carYearInput">Year:</label>
+          <input
+            type="number"
+            id="carYearInput"
+            placeholder="e.g., 2020"
+            min="1900"
+            max="2100"
+            class="styled-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="carPlateInput">Plate Number:</label>
+          <input
+            type="text"
+            id="carPlateInput"
+            placeholder="e.g., ABC-1234"
+            class="styled-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="carColorInput">Car Color:</label>
+          <input type="color" id="carColorInput" value="#3b82f6" />
+        </div>
+        <div class="form-group">
+          <label for="carLicenseExpiryInput">License Expiry Date:</label>
+          <input type="date" id="carLicenseExpiryInput" class="styled-input" />
+        </div>
+        <div class="actions">
+          <button id="saveCarInfoBtn" class="primary-btn">Save</button>
+          <button id="cancelCarInfoBtn" class="secondary-btn">Cancel</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Upcoming Maintenance Edit Popup -->
-  <div id="upcomingEditPopup" class="popup-overlay">
-    <div class="popup-card">
-      <div class="popup-header">
-        <h3>Edit Maintenance Interval</h3>
-        <button class="popup-close" onclick="closeUpcomingEditPopup()">&times;</button>
-      </div>
-      <div class="popup-body">
-        <div class="form-group">
-          <label for="editUpcomingItemName">Item Name:</label>
-          <input type="text" id="editUpcomingItemName" class="styled-input" readonly>
+    <!-- Category Edit Popup -->
+    <div id="categoryEditPopup" class="popup-overlay">
+      <div class="popup-card">
+        <div class="popup-header">
+          <h3>Edit Category</h3>
+          <button class="popup-close" onclick="closeCategoryEditPopup()">
+            &times;
+          </button>
         </div>
-        <div class="form-group">
-          <label for="editUpcomingInterval">Service Interval (km):</label>
-          <input type="number" id="editUpcomingInterval" class="styled-input" min="1">
+        <div class="popup-body">
+          <div class="form-group">
+            <label for="editCategoryName">Category Name:</label>
+            <input type="text" id="editCategoryName" class="styled-input" />
+          </div>
+          <div class="form-group">
+            <label for="editCategoryColor">Category Color:</label>
+            <input type="color" id="editCategoryColor" />
+          </div>
         </div>
-        <div class="form-group">
-          <label for="editUpcomingIntervalMonths">Service Interval (months):</label>
-          <input type="number" id="editUpcomingIntervalMonths" class="styled-input" min="1" placeholder="Optional">
+        <div class="popup-actions">
+          <button id="saveCategoryEditBtn" class="primary-btn">
+            Save Changes
+          </button>
+          <button class="secondary-btn" onclick="closeCategoryEditPopup()">
+            Cancel
+          </button>
         </div>
-      </div>
-      <div class="popup-actions">
-        <button id="saveUpcomingEditBtn" class="primary-btn">Save Changes</button>
-        <button class="secondary-btn" onclick="closeUpcomingEditPopup()">Cancel</button>
       </div>
     </div>
-  </div>
 
-  <script src="fuel-analytics.js"></script>
-  <script src="script.js"></script>
-</body>
+    <!-- Upcoming Maintenance Edit Popup -->
+    <div id="upcomingEditPopup" class="popup-overlay">
+      <div class="popup-card">
+        <div class="popup-header">
+          <h3>Edit Maintenance Interval</h3>
+          <button class="popup-close" onclick="closeUpcomingEditPopup()">
+            &times;
+          </button>
+        </div>
+        <div class="popup-body">
+          <div class="form-group">
+            <label for="editUpcomingItemName">Item Name:</label>
+            <input
+              type="text"
+              id="editUpcomingItemName"
+              class="styled-input"
+              readonly
+            />
+          </div>
+          <div class="form-group">
+            <label for="editUpcomingInterval">Service Interval (km):</label>
+            <input
+              type="number"
+              id="editUpcomingInterval"
+              class="styled-input"
+              min="1"
+            />
+          </div>
+          <div class="form-group">
+            <label for="editUpcomingIntervalMonths"
+              >Service Interval (months):</label
+            >
+            <input
+              type="number"
+              id="editUpcomingIntervalMonths"
+              class="styled-input"
+              min="1"
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+        <div class="popup-actions">
+          <button id="saveUpcomingEditBtn" class="primary-btn">
+            Save Changes
+          </button>
+          <button class="secondary-btn" onclick="closeUpcomingEditPopup()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
 
+    <script src="fuel-analytics.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
