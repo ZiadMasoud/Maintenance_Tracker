@@ -732,7 +732,7 @@ class FuelUIRenderer {
     if (!records || records.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">⛽</div>
+          <div class="empty-icon"><i class="fas fa-gas-pump"></i></div>
           <p>No fuel entries yet</p>
           <span>Record your first fuel refill to see analytics</span>
         </div>
@@ -745,23 +745,21 @@ class FuelUIRenderer {
 
     container.innerHTML = sorted.map(record => `
       <div class="fuel-history-item" data-record-id="${record.id}">
-        <div class="fuel-history-main">
-          <div class="fuel-history-date">
+        <div class="fuel-history-header">
+          <div class="fuel-history-header-main">
             <span class="date">${this.formatDate(record.date)}</span>
             ${record.isFullTank ? '<span class="full-tank-badge">Full Tank</span>' : ''}
           </div>
-          <div class="fuel-history-details">
-            <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
-            <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
-            <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
-          </div>
+          <button class="edit-btn" onclick="fuelApp.editRecord('${record.id}')"><i class="fas fa-edit"></i></button>
+          <button class="delete-btn" onclick="fuelApp.deleteRecord('${record.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="fuel-history-details">
+          <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
+          <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
+          <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
         </div>
         <div class="fuel-history-cost">
           <span class="total">${parseFloat(record.totalCost).toLocaleString()} EGP</span>
-        </div>
-        <div class="fuel-history-actions">
-          <button class="edit-btn" onclick="fuelApp.editRecord('${record.id}')">✎</button>
-          <button class="delete-btn" onclick="fuelApp.deleteRecord('${record.id}')">🗑</button>
         </div>
       </div>
     `).join('');
@@ -1045,9 +1043,18 @@ class FuelEntryForm {
     
     try {
       this.setLoading(true);
-      await this.stateManager.addRecord(formData);
+      
+      // Check if we're editing an existing record
+      if (fuelApp && fuelApp.editingRecordId) {
+        await fuelApp.stateManager.editRecord(fuelApp.editingRecordId, formData);
+        fuelApp.editingRecordId = null; // Clear edit mode
+        this.showSuccess('Fuel entry updated successfully!');
+      } else {
+        await this.stateManager.addRecord(formData);
+        this.showSuccess('Fuel entry saved successfully!');
+      }
+      
       this.resetForm();
-      this.showSuccess('Fuel entry saved successfully!');
     } catch (error) {
       this.showError(error.message);
     } finally {
@@ -1110,6 +1117,16 @@ class FuelEntryForm {
     }
     if (this.inputs.totalCost) {
       this.inputs.totalCost.value = '';
+    }
+    
+    // Reset button text
+    if (this.submitBtn) {
+      this.submitBtn.textContent = 'Save Fuel Entry';
+    }
+    
+    // Clear edit mode
+    if (fuelApp) {
+      fuelApp.editingRecordId = null;
     }
     
     // Update odometer placeholder with new value

@@ -142,7 +142,7 @@ body {
 .sidebar-logo {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: rgb(246, 238, 238);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -238,9 +238,194 @@ body {
   margin: 0;
 }
 
+/* Car Name Button */
+.car-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.car-name-btn:hover .sidebar-title-main {
+  color: var(--color-primary);
+}
+
+/* Mobile adjustments for car name */
+@media (max-width: 991px) {
+  .car-name-btn {
+    gap: 0;
+    margin-bottom: 0px;
+  }
+  
+  .sidebar-title-sub {
+    margin-top: 0px;
+  }
+}
+
 /* ========================================
-   Mobile Overlay
+   Sidebar Header Icons
    ======================================== */
+.sidebar-logo .fa-car {
+  color: var(--color-primary);
+  font-size: 2rem;
+}
+
+/* ========================================
+   Navigation Icons
+   ======================================== */
+.nav-icon .fa-home {
+  color: var(--text-secondary);
+}
+
+.nav-link.active .fa-home {
+  color: var(--color-primary);
+}
+
+.nav-icon .fa-chart-bar {
+  color: var(--text-secondary);
+}
+
+.nav-link.active .fa-chart-bar {
+  color: var(--color-primary);
+}
+
+.nav-icon .fa-gas-pump {
+  color: var(--text-secondary);
+}
+
+.nav-link.active .fa-gas-pump {
+  color: var(--color-primary);
+}
+
+.nav-icon .fa-edit {
+  color: var(--text-secondary);
+}
+
+.nav-link.active .fa-edit {
+  color: var(--color-primary);
+}
+
+.nav-icon .fa-cog {
+  color: var(--text-secondary);
+}
+
+.nav-link.active .fa-cog {
+  color: var(--color-primary);
+}
+
+/* ========================================
+   Icon Colors
+   ======================================== */
+/* Edit buttons */
+.edit-car-info-btn .fa-edit {
+  color: var(--text-muted);
+}
+
+.edit-car-info-btn:hover .fa-edit {
+  color: var(--color-primary);
+}
+
+/* Category action buttons */
+.category-edit-btn .fa-edit {
+  color: var(--text-secondary);
+}
+
+.category-edit-btn:hover .fa-edit {
+  color: var(--color-primary);
+}
+
+.category-delete-btn .fa-trash {
+  color: var(--text-secondary);
+}
+
+.category-delete-btn:hover .fa-trash {
+  color: var(--color-danger);
+}
+
+/* Pagination arrows */
+.pagination-btn .fa-chevron-left,
+.pagination-btn .fa-chevron-right {
+  color: var(--text-secondary);
+}
+
+.pagination-btn:hover .fa-chevron-left,
+.pagination-btn:hover .fa-chevron-right {
+  color: var(--color-primary);
+}
+
+/* Clear search button */
+.clear-search-btn .fa-times {
+  color: var(--text-muted);
+}
+
+.clear-search-btn:hover .fa-times {
+  color: var(--color-danger);
+}
+
+/* Modal close buttons */
+.close .fa-times,
+.popup-close .fa-times {
+  color: var(--text-muted);
+}
+
+.close:hover .fa-times,
+.popup-close:hover .fa-times {
+  color: var(--text-secondary);
+}
+
+/* Warning icon */
+.warning-text .fa-exclamation-triangle {
+  color: var(--color-warning);
+  margin-right: var(--space-2);
+}
+
+/* Empty state icons */
+.empty-icon .fa-gas-pump {
+  color: var(--text-muted);
+  font-size: 3rem;
+  margin-bottom: var(--space-3);
+}
+
+/* Session card buttons */
+.edit-btn .fa-edit {
+  color: var(--text-secondary);
+}
+
+.edit-btn:hover .fa-edit {
+  color: var(--color-secondary);
+}
+
+.delete-btn .fa-trash {
+  color: var(--text-secondary);
+}
+
+.delete-btn:hover .fa-trash {
+  color: var(--color-danger);
+}
+
+/* Upcoming item buttons */
+.mark-done-btn .fa-check {
+  color: var(--text-secondary);
+}
+
+.mark-done-btn:hover .fa-check {
+  color: var(--color-success);
+}
+
+.edit-upcoming-btn .fa-edit {
+  color: var(--text-secondary);
+}
+
+.edit-upcoming-btn:hover .fa-edit {
+  color: var(--color-primary);
+}
 .mobile-overlay {
   display: none;
   position: fixed;
@@ -487,7 +672,7 @@ section h2::before {
 }
 
 .edit-car-info-btn:hover {
-  background: var(--color-primary);
+  background: whitesmoke;
   border-color: var(--color-primary);
   color: white;
 }
@@ -1998,8 +2183,8 @@ body.modal-open .floating-btn {
 
 .fuel-history-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-4);
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -2012,23 +2197,85 @@ body.modal-open .floating-btn {
   box-shadow: var(--shadow-sm);
 }
 
-.fuel-history-main {
-  flex: 1;
+.fuel-history-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-2);
+  padding-right: 80px;
+  position: relative;
 }
 
-.fuel-history-date {
+.fuel-history-header-main {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.fuel-history-header .date {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fuel-history-header .edit-btn,
+.fuel-history-header .delete-btn {
+  position: absolute;
+  top: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: 1rem;
+}
+
+.fuel-history-header .edit-btn {
+  right: 48px;
+  color: var(--color-primary);
+}
+
+.fuel-history-header .delete-btn {
+  right: var(--space-4);
+  color: var(--color-danger);
+}
+
+.fuel-history-header .edit-btn:hover,
+.fuel-history-header .delete-btn:hover {
+  background: var(--bg-hover);
+}
+
+.fuel-history-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.fuel-history-cost {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 .fuel-history-date .date {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.full-tank-badge {
+  background: var(--color-success);
+  color: white;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .fuel-history-details {
@@ -2392,10 +2639,6 @@ body.modal-open .floating-btn {
   .fuel-history-cost {
     padding: 0;
     text-align: left;
-  }
-  
-  .fuel-history-actions {
-    align-self: flex-end;
   }
   
   .fuel-history-details {

@@ -55,6 +55,8 @@ request.onsuccess = function (e) {
   initializeSidebar();
   // Initialize odometer display
   if (odometerValue) odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
+  // Initialize car name display
+  if (carNameDisplay) carNameDisplay.textContent = carName;
   // Load car info from localStorage
   loadCarInfo();
   // Load fuel settings
@@ -297,6 +299,16 @@ function setActiveTab(target) {
       }
     }, 100);
   }
+
+  // Load and render fuel history when Fuel tab is shown
+  if (target === 'fuel' && typeof fuelApp !== 'undefined' && fuelApp) {
+    setTimeout(() => {
+      const records = fuelApp.getRecords();
+      if (fuelApp.uiRenderer) {
+        fuelApp.uiRenderer.renderFuelHistory(records);
+      }
+    }, 100);
+  }
 }
 
 // ================================
@@ -329,7 +341,7 @@ function initializeEventListeners() {
         const sidebar = document.getElementById('sidebar');
         const mobileOverlay = document.getElementById('mobileOverlay');
         sidebar.classList.remove('sidebar-open');
-        mobileOverlay.classList.remove('sidebar-open');
+        mobileOverlay.classList.remove('active');
       }
     });
   });
@@ -443,6 +455,15 @@ const odometerInput = document.getElementById("odometerInput");
 const saveOdometerBtn = document.getElementById("saveOdometerBtn");
 const cancelOdometerBtn = document.getElementById("cancelOdometerBtn");
 
+// Car name modal elements
+const carNameModal = document.getElementById("carNameModal");
+const closeCarNameModal = document.getElementById("closeCarNameModal");
+const carNameInput = document.getElementById("carNameInput");
+const saveCarNameBtn = document.getElementById("saveCarNameBtn");
+const cancelCarNameBtn = document.getElementById("cancelCarNameBtn");
+const carNameBtn = document.getElementById("carNameBtn");
+const carNameDisplay = document.getElementById("carNameDisplay");
+
 // Category management elements
 const newCategoryName = document.getElementById("newCategoryName");
 const newCategoryColor = document.getElementById("newCategoryColor");
@@ -515,6 +536,7 @@ const sessionDetailsContent = document.getElementById("sessionDetailsContent");
 let editingSessionId = null;
 let currentOdometer = parseInt(localStorage.getItem('currentOdometer')) || 0;
 let fuelPricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
+let carName = localStorage.getItem('carName') || 'My Car';
 
 // Chart instances
 let spendingChart = null;
@@ -624,6 +646,52 @@ window.addEventListener("click", function (e) {
 });
 
 // ================================
+// Car Name Button
+// ================================
+if (carNameBtn) {
+  carNameBtn.addEventListener("click", () => {
+    carNameInput.value = carName;
+    carNameModal.style.display = "flex";
+    document.body.classList.add('modal-open');
+  });
+}
+
+if (closeCarNameModal) {
+  closeCarNameModal.addEventListener("click", () => {
+    carNameModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  });
+}
+
+if (cancelCarNameBtn) {
+  cancelCarNameBtn.addEventListener("click", () => {
+    carNameModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  });
+}
+
+if (saveCarNameBtn) {
+  saveCarNameBtn.addEventListener("click", () => {
+    const newName = carNameInput.value.trim();
+    if (newName) {
+      carName = newName;
+      localStorage.setItem('carName', newName);
+      if (carNameDisplay) carNameDisplay.textContent = newName;
+    }
+    carNameModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  });
+}
+
+// Close car name modal when clicking outside
+window.addEventListener("click", function (e) {
+  if (e.target === carNameModal) {
+    carNameModal.style.display = "none";
+    document.body.classList.remove('modal-open');
+  }
+});
+
+// ================================
 // Category Management
 // ================================
 if (addCategoryBtn) {
@@ -698,8 +766,8 @@ function renderCategoriesPage() {
         <span class="category-name">${category.name}</span>
       </div>
       <div class="category-actions">
-        <button class="category-edit-btn" onclick="openCategoryEditPopup(${category.id})" title="Edit">✎</button>
-        <button class="category-delete-btn" onclick="deleteCategory(${category.id})" title="Delete">🗑</button>
+        <button class="category-edit-btn" onclick="openCategoryEditPopup(${category.id})" title="Edit"><i class="fas fa-edit"></i></button>
+        <button class="category-delete-btn" onclick="deleteCategory(${category.id})" title="Delete"><i class="fas fa-trash"></i></button>
       </div>
     `;
     categoriesList.appendChild(categoryDiv);
@@ -1065,8 +1133,8 @@ function renderSessionCards(sessions, items, categories) {
           </span>
         </div>
       </div>
-      <button class="edit-btn" onclick="event.stopPropagation(); editSession(${session.id})">✎</button>
-      <button class="delete-btn" onclick="event.stopPropagation(); deleteSession(${session.id})">🗑</button>
+      <button class="edit-btn" onclick="event.stopPropagation(); editSession(${session.id})"><i class="fas fa-edit"></i></button>
+      <button class="delete-btn" onclick="event.stopPropagation(); deleteSession(${session.id})"><i class="fas fa-trash"></i></button>
       ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
@@ -1268,10 +1336,10 @@ function renderUpcomingPage() {
             </div>
             <div class="upcoming-actions">
               <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
-                ✓
+                <i class="fas fa-check"></i>
               </button>
               <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
-                ✎
+                <i class="fas fa-edit"></i>
               </button>
             </div>
           </div>
@@ -2404,8 +2472,8 @@ function displaySessionsPaginated(sessions, items, categories) {
           </span>
         </div>
       </div>
-      <button class="edit-btn" onclick="event.stopPropagation(); editSession(${session.id})">✎</button>
-      <button class="delete-btn" onclick="event.stopPropagation(); deleteSession(${session.id})">🗑</button>
+      <button class="edit-btn" onclick="event.stopPropagation(); editSession(${session.id})"><i class="fas fa-edit"></i></button>
+      <button class="delete-btn" onclick="event.stopPropagation(); deleteSession(${session.id})"><i class="fas fa-trash"></i></button>
       ${session.odometer && session.odometer > 0 ? `<p><strong>ODO:</strong> ${session.odometer.toLocaleString()} km</p>` : ''}
       ${session.merchant ? `<p><strong>Merchant:</strong> ${session.merchant}</p>` : ""}
       ${session.notes ? `<p><strong>Notes:</strong> ${session.notes}</p>` : ""}
@@ -2888,7 +2956,7 @@ function renderFuelPage() {
   if (!fuelRecordsAll || fuelRecordsAll.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">⛽</div>
+        <div class="empty-icon"><i class="fas fa-gas-pump"></i></div>
         <p>No fuel entries yet</p>
         <span>Record your first fuel refill to see analytics</span>
       </div>
@@ -2904,23 +2972,21 @@ function renderFuelPage() {
 
   container.innerHTML = pageRecords.map(record => `
     <div class="fuel-history-item" data-record-id="${record.id}">
-      <div class="fuel-history-main">
-        <div class="fuel-history-date">
+      <div class="fuel-history-header">
+        <div class="fuel-history-header-main">
           <span class="date">${formatDateToBritish(record.date)}</span>
           ${record.isFullTank ? '<span class="full-tank-badge">Full Tank</span>' : ''}
         </div>
-        <div class="fuel-history-details">
-          <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
-          <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
-          <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
-        </div>
+        <button class="edit-btn" onclick="editFuelRecord('${record.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+        <button class="delete-btn" onclick="deleteFuelRecord('${record.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="fuel-history-details">
+        <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
+        <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
+        <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
       </div>
       <div class="fuel-history-cost">
         <span class="total">${parseFloat(record.totalCost).toLocaleString()} EGP</span>
-      </div>
-      <div class="fuel-history-actions">
-        <button class="edit-btn" onclick="editFuelRecord('${record.id}')" title="Edit">✎</button>
-        <button class="delete-btn" onclick="deleteFuelRecord('${record.id}')" title="Delete">🗑</button>
       </div>
     </div>
   `).join('');
