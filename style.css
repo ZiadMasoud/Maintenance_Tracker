@@ -246,9 +246,9 @@ body {
   margin: 0;
   text-align: left;
   cursor: pointer;
-  display: flex;
+  /* display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-1); */
   transition: all var(--transition-fast);
   width: 100%;
 }
@@ -259,9 +259,23 @@ body {
 
 /* Mobile adjustments for car name */
 @media (max-width: 991px) {
+  .sidebar-header {
+    padding: var(--space-3) var(--space-5);
+    height: auto;
+  }
+  
   .car-name-btn {
     gap: 0;
     margin-bottom: 0px;
+  }
+  
+  .sidebar-title {
+    margin-bottom: 0;
+    line-height: 1;
+  }
+  
+  .sidebar-title-main {
+    margin-bottom: 0;
   }
   
   .sidebar-title-sub {
