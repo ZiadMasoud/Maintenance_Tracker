@@ -37,6 +37,10 @@
             <span class="nav-icon"><i class="fas fa-gas-pump"></i></span>
             <span class="nav-label">Fuel</span>
           </button>
+          <button class="nav-link" data-tab-target="finance">
+            <span class="nav-icon"><i class="fas fa-wallet"></i></span>
+            <span class="nav-label">Finance</span>
+          </button>
           <button class="nav-link" data-tab-target="record">
             <span class="nav-icon"><i class="fas fa-edit"></i></span>
             <span class="nav-label">Record</span>
@@ -65,7 +69,7 @@
               <span class="hamburger-line"></span>
               <span class="hamburger-line"></span>
             </button>
-            <h1>Dashboard</h1>
+            <h1 id="pageTitle">Dashboard</h1>
           </div>
           <div class="header-right">
             <!-- Future actions area -->
@@ -125,26 +129,42 @@
                 <!-- KPI Cards -->
                 <div class="kpi-cards-group">
                   <!-- Odometer KPI -->
-                  <div class="kpi-card kpi-odo">
+                  <div class="kpi-card kpi-odo" data-kpi="odometer">
                     <div class="kpi-label">ODO</div>
                     <button id="currentOdometerBtn" class="kpi-odo-btn">
                       <span class="kpi-main" id="odometerValue">0</span>
                       <span class="kpi-sub">km</span>
                     </button>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Current vehicle mileage reading from the odometer. Track your total distance traveled.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
 
                   <!-- Total Spent KPI -->
-                  <div class="kpi-card kpi-total">
+                  <div class="kpi-card kpi-total" data-kpi="totalSpent">
                     <div class="kpi-label">Total Spent</div>
                     <div class="kpi-main" id="kpiTotalSpentValue">0</div>
                     <div class="kpi-sub">EGP</div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Cumulative amount spent on all maintenance sessions, fuel, and car-related expenses.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
 
                   <!-- Fuel Consumption KPI -->
-                  <div class="kpi-card kpi-fuel">
+                  <div class="kpi-card kpi-fuel" data-kpi="avgFuel">
                     <div class="kpi-label">Avg Fuel Consumption</div>
                     <div class="kpi-main" id="kpiAvgFuelValue">—</div>
                     <div class="kpi-sub" id="kpiAvgFuelSub">L/100km</div>
+                    <div class="fuel-efficiency-indicator" id="homeFuelEfficiencyIndicator" style="display: none;">
+                      <span class="efficiency-badge"></span>
+                      <span class="efficiency-text"></span>
+                    </div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Average fuel efficiency based on your refueling history. Lower values indicate better fuel economy. Good: 6-8L/100km, Average: 8-10L/100km, High: >10L/100km.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -286,25 +306,45 @@
               <div class="panel-content">
                 <!-- Fuel KPIs -->
                 <div class="fuel-kpis-grid">
-                  <div class="fuel-kpi-card">
+                  <div class="fuel-kpi-card" data-kpi="fuelAvgConsumption">
                     <div class="fuel-kpi-label">Average Consumption</div>
                     <div class="fuel-kpi-main" id="avgConsumption">--</div>
                     <div class="fuel-kpi-sub">L/100km</div>
+                    <div class="fuel-efficiency-indicator" id="analyticsFuelEfficiencyIndicator" style="display: none;">
+                      <span class="efficiency-badge"></span>
+                      <span class="efficiency-text"></span>
+                    </div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Average liters of fuel consumed per 100 kilometers driven. Good: 6-8L/100km, Average: 8-10L/100km, High: >10L/100km.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
-                  <div class="fuel-kpi-card">
+                  <div class="fuel-kpi-card" data-kpi="fuelCostPerKm">
                     <div class="fuel-kpi-label">Cost per Kilometer</div>
                     <div class="fuel-kpi-main" id="costPerKm">--</div>
                     <div class="fuel-kpi-sub">EGP/km</div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Average cost in Egyptian Pounds for each kilometer driven, based on fuel prices and consumption.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
-                  <div class="fuel-kpi-card">
+                  <div class="fuel-kpi-card" data-kpi="fuelTotal">
                     <div class="fuel-kpi-label">Total Fuel Added</div>
                     <div class="fuel-kpi-main" id="totalFuel">--</div>
                     <div class="fuel-kpi-sub">Liters</div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Total liters of fuel added to your vehicle across all recorded refueling sessions.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
-                  <div class="fuel-kpi-card">
+                  <div class="fuel-kpi-card" data-kpi="fuelTotalDistance">
                     <div class="fuel-kpi-label">Total Distance</div>
                     <div class="fuel-kpi-main" id="totalDistance">--</div>
                     <div class="fuel-kpi-sub">km</div>
+                    <div class="kpi-description-container">
+                      <p class="kpi-description collapsed" data-max-lines="2">Total distance driven between your first and last fuel entry, calculated from odometer readings.</p>
+                      <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                    </div>
                   </div>
                 </div>
 
@@ -435,6 +475,97 @@
               <div class="panel-content">
                 <div id="lastRefillInfo">
                   <p class="empty-text">No refill recorded</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Finance Tab Content -->
+          <div data-tab-content="finance" style="display: none">
+            <!-- Finance KPIs Section -->
+            <section class="finance-kpis-section">
+              <div class="finance-kpis-grid">
+                <div class="finance-kpi-card kpi-savings" data-kpi="totalSavings">
+                  <div class="finance-kpi-label">Total Savings</div>
+                  <div class="finance-kpi-main" id="financeTotalSavings">0</div>
+                  <div class="finance-kpi-sub">EGP</div>
+                  <div class="kpi-description-container">
+                    <p class="kpi-description collapsed" data-max-lines="2">Total funds you have saved and allocated for car-related expenses and maintenance. This includes all money set aside for future repairs, routine maintenance, fuel costs, and unexpected vehicle expenses that may arise throughout the year.</p>
+                    <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                  </div>
+                </div>
+                <div class="finance-kpi-card kpi-income" data-kpi="monthlyIncome">
+                  <div class="finance-kpi-label">Monthly Income</div>
+                  <div class="finance-kpi-main" id="financeMonthlyIncome">0</div>
+                  <div class="finance-kpi-sub">EGP</div>
+                  <div class="kpi-description-container">
+                    <p class="kpi-description collapsed" data-max-lines="2">Total funds added this month from all sources including savings, bonuses, and refunds. This encompasses any money deposited into your car maintenance fund, whether from regular monthly savings contributions, work bonuses, tax refunds, or other income sources specifically designated for vehicle expenses.</p>
+                    <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                  </div>
+                </div>
+                <div class="finance-kpi-card kpi-expenses" data-kpi="monthlyExpenses">
+                  <div class="finance-kpi-label">Monthly Expenses</div>
+                  <div class="finance-kpi-main" id="financeMonthlyExpenses">0</div>
+                  <div class="finance-kpi-sub">EGP</div>
+                  <div class="kpi-description-container">
+                    <p class="kpi-description collapsed" data-max-lines="2">Total car-related expenses spent this month including maintenance and fuel costs. This covers all outflows from your vehicle fund, such as routine maintenance services, unexpected repairs, fuel purchases, oil changes, tire replacements, and any other costs associated with keeping your vehicle operational and well-maintained.</p>
+                    <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                  </div>
+                </div>
+                <div class="finance-kpi-card kpi-balance" data-kpi="netBalance">
+                  <div class="finance-kpi-label">Net Balance</div>
+                  <div class="finance-kpi-main" id="financeNetBalance">0</div>
+                  <div class="finance-kpi-sub">EGP</div>
+                  <div class="kpi-description-container">
+                    <p class="kpi-description collapsed" data-max-lines="2">Difference between monthly income and expenses. Positive means surplus, negative means deficit. This metric helps you understand whether you're saving more than you're spending on your vehicle, indicating good financial health, or if expenses are exceeding income, suggesting a need to adjust your budget or spending habits.</p>
+                    <button class="kpi-show-more" style="display: none;"><i class="fas fa-chevron-down"></i></button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Finance Transactions Section -->
+            <section class="finance-transactions-section">
+              <div class="section-header-with-action">
+                <h2>Transaction History</h2>
+                <button id="addFundsBtn" class="primary-btn">
+                  <i class="fas fa-plus"></i> Add Funds
+                </button>
+              </div>
+              <div class="panel-content">
+                <!-- Transaction Table -->
+                <div class="finance-table-container">
+                  <table class="finance-table" id="financeTable">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Item</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="financeTableBody">
+                      <!-- Transactions will be rendered here -->
+                    </tbody>
+                  </table>
+                  <div id="financeEmptyState" class="empty-state" style="display: none">
+                    <div class="empty-icon"><i class="fas fa-wallet"></i></div>
+                    <p>No transactions yet</p>
+                    <span>Add funds or record maintenance to see transactions</span>
+                  </div>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="pagination-controls" id="financePaginationControls" style="display: none">
+                  <button id="financePrevPageBtn" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </button>
+                  <span id="financePageInfo" class="page-info">Page 1 of 1</span>
+                  <button id="financeNextPageBtn" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                  </button>
                 </div>
               </div>
             </section>
@@ -787,6 +918,143 @@
           <button class="secondary-btn" onclick="closeUpcomingEditPopup()">
             Cancel
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Funds Popup -->
+    <div id="addFundsPopup" class="popup-overlay">
+      <div class="popup-card">
+        <div class="popup-header">
+          <h3>Add Funds</h3>
+          <button class="popup-close" onclick="closeAddFundsPopup()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="popup-body">
+          <div class="form-group">
+            <label for="fundDate">Date:</label>
+            <input type="date" id="fundDate" class="styled-input" />
+          </div>
+          <div class="form-group">
+            <label for="fundAmount">Amount (EGP):</label>
+            <input
+              type="number"
+              id="fundAmount"
+              placeholder="e.g., 1000"
+              min="0.01"
+              step="0.01"
+              class="styled-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="fundSource">Source/Description:</label>
+            <input
+              type="text"
+              id="fundSource"
+              placeholder="e.g., Monthly savings, Bonus, etc."
+              class="styled-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="fundCategory">Category:</label>
+            <select id="fundCategory" class="styled-input">
+              <option value="Savings">Savings</option>
+              <option value="Bonus">Bonus</option>
+              <option value="Refund">Refund</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fundNotes">Notes (optional):</label>
+            <textarea
+              id="fundNotes"
+              placeholder="Additional notes..."
+              class="styled-input"
+            ></textarea>
+          </div>
+        </div>
+        <div class="popup-actions">
+          <button id="saveFundBtn" class="primary-btn">Add Funds</button>
+          <button class="secondary-btn" onclick="closeAddFundsPopup()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Transaction Popup -->
+    <div id="editTransactionPopup" class="popup-overlay">
+      <div class="popup-card">
+        <div class="popup-header">
+          <h3>Edit Transaction</h3>
+          <button class="popup-close" onclick="closeEditTransactionPopup()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="popup-body">
+          <input type="hidden" id="editTransactionId" />
+          <div class="form-group">
+            <label for="editTransactionDate">Date:</label>
+            <input type="date" id="editTransactionDate" class="styled-input" />
+          </div>
+          <div class="form-group">
+            <label for="editTransactionAmount">Amount (EGP):</label>
+            <input
+              type="number"
+              id="editTransactionAmount"
+              placeholder="e.g., 1000"
+              min="0.01"
+              step="0.01"
+              class="styled-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="editTransactionDescription">Description:</label>
+            <input
+              type="text"
+              id="editTransactionDescription"
+              placeholder="e.g., Monthly savings, Maintenance..."
+              class="styled-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="editTransactionCategory">Category:</label>
+            <input
+              type="text"
+              id="editTransactionCategory"
+              placeholder="e.g., Savings, Fuel, Maintenance..."
+              class="styled-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="editTransactionNotes">Notes (optional):</label>
+            <textarea
+              id="editTransactionNotes"
+              placeholder="Additional notes..."
+              class="styled-input"
+            ></textarea>
+          </div>
+        </div>
+        <div class="popup-actions">
+          <button id="saveTransactionEditBtn" class="primary-btn">Save Changes</button>
+          <button class="secondary-btn" onclick="closeEditTransactionPopup()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Details Popup -->
+    <div id="transactionDetailsPopup" class="popup-overlay">
+      <div class="popup-card">
+        <div class="popup-header">
+          <h3>Transaction Details</h3>
+          <button class="popup-close" onclick="closeTransactionDetailsPopup()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="popup-body" id="transactionDetailsContent">
+          <!-- Content will be populated dynamically -->
+        </div>
+        <div class="popup-actions">
+          <button class="secondary-btn" onclick="closeTransactionDetailsPopup()">Close</button>
         </div>
       </div>
     </div>

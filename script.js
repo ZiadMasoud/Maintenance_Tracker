@@ -2,7 +2,7 @@
 // IndexedDB Setup
 // ================================
 let db;
-const request = indexedDB.open("carMaintainDB", 4);
+const request = indexedDB.open("carMaintainDB", 5);
 
 request.onupgradeneeded = function (e) {
   db = e.target.result;
@@ -46,6 +46,14 @@ request.onupgradeneeded = function (e) {
   // Create settings store (new in version 4)
   if (!db.objectStoreNames.contains("settings")) {
     db.createObjectStore("settings", { keyPath: "key" });
+  }
+
+  // Create finance records store (new in version 5)
+  if (!db.objectStoreNames.contains("financeRecords")) {
+    const financeStore = db.createObjectStore("financeRecords", { keyPath: "id", autoIncrement: true });
+    financeStore.createIndex("date", "date", { unique: false });
+    financeStore.createIndex("type", "type", { unique: false });
+    financeStore.createIndex("sessionId", "sessionId", { unique: false });
   }
 };
 
@@ -283,6 +291,19 @@ function setActiveTab(target) {
   // Update body attribute
   document.body.setAttribute('data-active-tab', target);
 
+  // Update page title
+  const pageTitles = {
+    'home': 'Dashboard',
+    'analytics': 'Analytics',
+    'fuel': 'Fuel',
+    'finance': 'Finance',
+    'record': 'Record',
+    'settings': 'Settings'
+  };
+  if (pageTitle) {
+    pageTitle.textContent = pageTitles[target] || 'Dashboard';
+  }
+
   // Show/hide tab content
   const tabContents = document.querySelectorAll('[data-tab-content]');
   tabContents.forEach(content => {
@@ -309,6 +330,18 @@ function setActiveTab(target) {
       }
     }, 100);
   }
+
+  // Load and render finance records when Finance tab is shown
+  if (target === 'finance') {
+    setTimeout(() => {
+      loadFinanceRecords();
+    }, 100);
+  }
+
+  // Re-initialize KPI descriptions after tab switch
+  setTimeout(() => {
+    initializeKPIDescriptions();
+  }, 150);
 }
 
 // ================================
@@ -333,6 +366,11 @@ function initializeEventListeners() {
             const analytics = fuelApp.getAnalytics();
             fuelApp.uiRenderer.renderCharts(analytics);
           }
+        }, 100);
+      } else if (target === 'finance') {
+        // Load finance records when Finance tab is clicked
+        setTimeout(() => {
+          loadFinanceRecords();
         }, 100);
       }
       
@@ -430,6 +468,9 @@ function initializeEventListeners() {
   if (saveCarInfoBtn) {
     saveCarInfoBtn.addEventListener('click', saveCarInfo);
   }
+
+  // Initialize finance event listeners
+  initializeFinanceEventListeners();
 }
 
 // ================================
@@ -1015,8 +1056,17 @@ function saveSession() {
       }
     };
   } else {
-    sessionStore.add(sessionObj);
-    items.forEach(i => itemStore.add(i));
+    const addReq = sessionStore.add(sessionObj);
+    addReq.onsuccess = e => {
+      const newSessionId = e.target.result;
+      items.forEach(i => itemStore.add(i));
+      
+      // Add finance expense record for new session
+      const totalCost = items.reduce((sum, i) => sum + (i.price || 0), 0);
+      if (totalCost > 0) {
+        addMaintenanceExpense(newSessionId, date, items, merchant);
+      }
+    };
   }
 
   tx.oncomplete = function () {
@@ -1071,6 +1121,9 @@ function updateFuelKPIs() {
         if (kpiAvgFuelSub) {
           kpiAvgFuelSub.textContent = 'L/100km';
         }
+        
+        // Update fuel efficiency indicator
+        updateFuelEfficiencyIndicator(avgConsumption, 'homeFuelEfficiencyIndicator');
       } else {
         if (kpiAvgFuelValue) kpiAvgFuelValue.textContent = '—';
         if (kpiAvgFuelSub) kpiAvgFuelSub.textContent = 'L/100km';
@@ -1078,6 +1131,53 @@ function updateFuelKPIs() {
     }
   };
 }
+
+// ================================
+// Fuel Efficiency Indicator
+// ================================
+function updateFuelEfficiencyIndicator(consumption, indicatorId) {
+  const indicator = document.getElementById(indicatorId);
+  if (!indicator) return;
+  
+  const badge = indicator.querySelector('.efficiency-badge');
+  const text = indicator.querySelector('.efficiency-text');
+  
+  if (!badge || !text) return;
+  
+  // Define efficiency ranges (L/100km)
+  // Good: 6-8L/100km (compact cars, efficient sedans)
+  // Average: 8-10L/100km (mid-size cars, SUVs)
+  // Poor: >10L/100km (large SUVs, trucks, or inefficient driving)
+  
+  let efficiencyClass = '';
+  let efficiencyLabel = '';
+  
+  if (consumption <= 8) {
+    efficiencyClass = 'efficiency-good';
+    efficiencyLabel = 'Good Efficiency';
+  } else if (consumption <= 10) {
+    efficiencyClass = 'efficiency-average';
+    efficiencyLabel = 'Average Efficiency';
+  } else {
+    efficiencyClass = 'efficiency-poor';
+    efficiencyLabel = 'High Consumption';
+  }
+  
+  // Remove existing classes
+  indicator.classList.remove('efficiency-good', 'efficiency-average', 'efficiency-poor');
+  
+  // Add new class
+  indicator.classList.add(efficiencyClass);
+  
+  // Update text
+  text.textContent = efficiencyLabel;
+  
+  // Show indicator
+  indicator.style.display = 'flex';
+}
+
+// Make function available globally for fuel-analytics.js
+window.updateFuelEfficiencyIndicator = updateFuelEfficiencyIndicator;
 
 // ================================
 // Render Sessions
@@ -1744,17 +1844,27 @@ function deleteCompletedItem(itemId) {
 function deleteSession(id) {
   if (!confirm("Delete this session permanently?")) return;
   if (!db) return;
-  const tx = db.transaction(["sessions", "items"], "readwrite");
-  tx.objectStore("sessions").delete(id);
-  const itemStore = tx.objectStore("items");
-  itemStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      if (cursor.value.sessionId === id) cursor.delete();
-      cursor.continue();
-    }
-  };
-  tx.oncomplete = renderAll;
+  
+  // Delete finance records first
+  deleteFinanceRecordsBySession(id).then(() => {
+    const tx = db.transaction(["sessions", "items"], "readwrite");
+    tx.objectStore("sessions").delete(id);
+    const itemStore = tx.objectStore("items");
+    itemStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (cursor.value.sessionId === id) cursor.delete();
+        cursor.continue();
+      }
+    };
+    tx.oncomplete = () => {
+      renderAll();
+      // Refresh finance records if on finance tab
+      if (document.body.getAttribute('data-active-tab') === 'finance') {
+        loadFinanceRecords();
+      }
+    };
+  });
 }
 
 // ================================
@@ -2873,7 +2983,7 @@ function resetAllData() {
     return;
   }
 
-  if (!confirm('This will permanently delete all sessions, items, categories, and fuel records. Type "RESET" to confirm.')) {
+  if (!confirm('This will permanently delete all sessions, items, categories, fuel records, and finance records. Type "RESET" to confirm.')) {
     return;
   }
 
@@ -2882,13 +2992,14 @@ function resetAllData() {
     return;
   }
 
-  const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readwrite");
+  const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords"], "readwrite");
 
   tx.objectStore("sessions").clear();
   tx.objectStore("items").clear();
   tx.objectStore("categories").clear();
   tx.objectStore("fuelRecords").clear();
   tx.objectStore("fuelSessions").clear();
+  tx.objectStore("financeRecords").clear();
 
   tx.oncomplete = () => {
     currentOdometer = 0;
@@ -2927,9 +3038,18 @@ function resetAllData() {
       fuelApp.stateManager.loadSession('default');
     }
 
+    // Reset finance records
+    allFinanceRecords = [];
+    financeCurrentPage = 1;
+
     alert('All data has been reset!');
     renderAll();
     loadCategoriesForFilter();
+    
+    // Refresh finance if on finance tab
+    if (document.body.getAttribute('data-active-tab') === 'finance') {
+      loadFinanceRecords();
+    }
   };
 
   tx.onerror = () => {
@@ -3025,6 +3145,678 @@ function deleteFuelRecord(recordId) {
 }
 
 // ================================
+// FINANCE MANAGEMENT
+// ================================
+
+// Finance DOM Elements
+const addFundsBtn = document.getElementById('addFundsBtn');
+const addFundsPopup = document.getElementById('addFundsPopup');
+const saveFundBtn = document.getElementById('saveFundBtn');
+const fundDate = document.getElementById('fundDate');
+const fundAmount = document.getElementById('fundAmount');
+const fundSource = document.getElementById('fundSource');
+const fundCategory = document.getElementById('fundCategory');
+const fundNotes = document.getElementById('fundNotes');
+const financeTableBody = document.getElementById('financeTableBody');
+const financePaginationControls = document.getElementById('financePaginationControls');
+const financePrevPageBtn = document.getElementById('financePrevPageBtn');
+const financeNextPageBtn = document.getElementById('financeNextPageBtn');
+const financePageInfo = document.getElementById('financePageInfo');
+const financeEmptyState = document.getElementById('financeEmptyState');
+const financeTotalSavings = document.getElementById('financeTotalSavings');
+const financeMonthlyIncome = document.getElementById('financeMonthlyIncome');
+const financeMonthlyExpenses = document.getElementById('financeMonthlyExpenses');
+const financeNetBalance = document.getElementById('financeNetBalance');
+const pageTitle = document.getElementById('pageTitle');
+const editTransactionPopup = document.getElementById('editTransactionPopup');
+const editTransactionId = document.getElementById('editTransactionId');
+const editTransactionDate = document.getElementById('editTransactionDate');
+const editTransactionAmount = document.getElementById('editTransactionAmount');
+const editTransactionDescription = document.getElementById('editTransactionDescription');
+const editTransactionCategory = document.getElementById('editTransactionCategory');
+const editTransactionNotes = document.getElementById('editTransactionNotes');
+const saveTransactionEditBtn = document.getElementById('saveTransactionEditBtn');
+
+// Finance State
+let allFinanceRecords = [];
+let financeCurrentPage = 1;
+const financePerPage = 5;
+
+// Finance Event Listeners
+function initializeFinanceEventListeners() {
+  if (addFundsBtn) {
+    addFundsBtn.addEventListener('click', openAddFundsPopup);
+  }
+  if (saveFundBtn) {
+    saveFundBtn.addEventListener('click', saveFund);
+  }
+  if (saveTransactionEditBtn) {
+    saveTransactionEditBtn.addEventListener('click', saveTransactionEdit);
+  }
+  if (financePrevPageBtn) {
+    financePrevPageBtn.addEventListener('click', () => changeFinancePage(-1));
+  }
+  if (financeNextPageBtn) {
+    financeNextPageBtn.addEventListener('click', () => changeFinancePage(1));
+  }
+}
+
+// Open Add Funds Popup
+function openAddFundsPopup() {
+  const today = new Date().toISOString().split('T')[0];
+  if (fundDate) fundDate.value = today;
+  if (fundAmount) fundAmount.value = '';
+  if (fundSource) fundSource.value = '';
+  if (fundCategory) fundCategory.value = 'Savings';
+  if (fundNotes) fundNotes.value = '';
+  
+  if (addFundsPopup) {
+    addFundsPopup.classList.add('active');
+    document.body.classList.add('modal-open');
+  }
+}
+
+// Close Add Funds Popup
+function closeAddFundsPopup() {
+  if (addFundsPopup) {
+    addFundsPopup.classList.remove('active');
+    document.body.classList.remove('modal-open');
+  }
+}
+
+// Save Fund
+function saveFund() {
+  if (!db) return;
+  
+  // Prevent double submission
+  if (saveFund.isSubmitting) return;
+  saveFund.isSubmitting = true;
+  
+  const date = fundDate?.value;
+  const amount = parseFloat(fundAmount?.value);
+  const source = fundSource?.value?.trim();
+  const category = fundCategory?.value;
+  const notes = fundNotes?.value?.trim();
+  
+  if (!date || isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid date and amount');
+    saveFund.isSubmitting = false;
+    return;
+  }
+  
+  if (!source) {
+    alert('Please enter a source/description');
+    saveFund.isSubmitting = false;
+    return;
+  }
+  
+  // Category colors for income categories
+  const categoryColors = {
+    'Savings': '#10b981', // Green
+    'Bonus': '#8b5cf6',   // Purple
+    'Refund': '#3b82f6',  // Blue
+    'Other': '#6b7280'    // Gray
+  };
+  
+  const record = {
+    date: date,
+    amount: amount,
+    description: source,
+    category: category,
+    categoryColor: categoryColors[category] || '#6b7280',
+    notes: notes,
+    type: 'income',
+    sessionId: null,
+    createdAt: new Date().toISOString()
+  };
+  
+  const tx = db.transaction('financeRecords', 'readwrite');
+  const store = tx.objectStore('financeRecords');
+  store.add(record);
+  
+  tx.oncomplete = () => {
+    closeAddFundsPopup();
+    loadFinanceRecords();
+    updateFinanceKPIs();
+    saveFund.isSubmitting = false;
+  };
+  
+  tx.onerror = () => {
+    alert('Error saving fund. Please try again.');
+    saveFund.isSubmitting = false;
+  };
+}
+
+// Load Finance Records
+function loadFinanceRecords() {
+  if (!db || !financeTableBody) return;
+  
+  // Reset the array to prevent duplicates
+  allFinanceRecords = [];
+  
+  const tx = db.transaction('financeRecords', 'readonly');
+  const store = tx.objectStore('financeRecords');
+  
+  store.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      allFinanceRecords.push(cursor.value);
+      cursor.continue();
+    } else {
+      // Remove duplicates based on record id
+      const uniqueIds = new Set();
+      allFinanceRecords = allFinanceRecords.filter(record => {
+        if (uniqueIds.has(record.id)) {
+          return false;
+        }
+        uniqueIds.add(record.id);
+        return true;
+      });
+      
+      // Sort by date descending (newest first)
+      allFinanceRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+      financeCurrentPage = 1;
+      renderFinancePage();
+      updateFinanceKPIs();
+    }
+  };
+}
+
+// Render Finance Page
+function renderFinancePage() {
+  if (!financeTableBody) return;
+  
+  if (allFinanceRecords.length === 0) {
+    financeTableBody.innerHTML = '';
+    if (financeEmptyState) financeEmptyState.style.display = 'block';
+    if (financePaginationControls) financePaginationControls.style.display = 'none';
+    return;
+  }
+  
+  if (financeEmptyState) financeEmptyState.style.display = 'none';
+  
+  const totalPages = Math.ceil(allFinanceRecords.length / financePerPage);
+  const startIndex = (financeCurrentPage - 1) * financePerPage;
+  const endIndex = startIndex + financePerPage;
+  const pageRecords = allFinanceRecords.slice(startIndex, endIndex);
+  
+  financeTableBody.innerHTML = pageRecords.map(record => {
+    const isIncome = record.type === 'income';
+    const amountClass = isIncome ? 'amount-income' : 'amount-expense';
+    const typeClass = isIncome ? 'income' : 'expense';
+    const typeLabel = isIncome ? 'Income' : 'Expense';
+    const amountPrefix = isIncome ? '+' : '-';
+    
+    // Get category color (use gray if no color set)
+    const categoryColor = record.categoryColor || '#9ca3af';
+    const categoryStyle = `background-color: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;`;
+    
+    // Allow delete for all records (income, fuel, maintenance)
+    const canDelete = true;
+    
+    return `
+      <tr data-record-id="${record.id}">
+        <td data-label="Date" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${formatDateToBritish(record.date)}</td>
+        <td data-label="Amount" class="${amountClass}" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${amountPrefix}${record.amount.toLocaleString()} EGP</td>
+        <td data-label="Item" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${record.description}</td>
+        <td data-label="Type" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;"><span class="transaction-type ${typeClass}">${typeLabel}</span></td>
+        <td data-label="Category" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;"><span style="${categoryStyle}">${record.category || '-'}</span></td>
+        <td class="actions-cell">
+          <button class="action-btn edit-btn" onclick="event.stopPropagation(); editFinanceRecord('${record.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+          <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteFinanceRecord('${record.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  if (financePaginationControls && financePageInfo) {
+    if (totalPages > 1) {
+      financePaginationControls.style.display = 'flex';
+      financePageInfo.textContent = `Page ${financeCurrentPage} of ${totalPages}`;
+      if (financePrevPageBtn) financePrevPageBtn.disabled = financeCurrentPage === 1;
+      if (financeNextPageBtn) financeNextPageBtn.disabled = financeCurrentPage === totalPages;
+    } else {
+      financePaginationControls.style.display = 'none';
+    }
+  }
+}
+
+// Change Finance Page
+function changeFinancePage(direction) {
+  const totalPages = Math.ceil(allFinanceRecords.length / financePerPage);
+  const newPage = financeCurrentPage + direction;
+  
+  if (newPage >= 1 && newPage <= totalPages) {
+    financeCurrentPage = newPage;
+    renderFinancePage();
+  }
+}
+
+// Update Finance KPIs
+function updateFinanceKPIs() {
+  if (!allFinanceRecords.length) {
+    if (financeTotalSavings) financeTotalSavings.textContent = '0';
+    if (financeMonthlyIncome) financeMonthlyIncome.textContent = '0';
+    if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = '0';
+    if (financeNetBalance) financeNetBalance.textContent = '0';
+    return;
+  }
+  
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  let totalSavings = 0;
+  let monthlyIncome = 0;
+  let monthlyExpenses = 0;
+  
+  allFinanceRecords.forEach(record => {
+    const recordDate = new Date(record.date);
+    const amount = parseFloat(record.amount);
+    
+    if (record.type === 'income') {
+      totalSavings += amount;
+      if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+        monthlyIncome += amount;
+      }
+    } else {
+      totalSavings -= amount;
+      if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+        monthlyExpenses += amount;
+      }
+    }
+  });
+  
+  const netBalance = monthlyIncome - monthlyExpenses;
+  
+  if (financeTotalSavings) financeTotalSavings.textContent = totalSavings.toLocaleString();
+  if (financeMonthlyIncome) financeMonthlyIncome.textContent = monthlyIncome.toLocaleString();
+  if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = monthlyExpenses.toLocaleString();
+  if (financeNetBalance) financeNetBalance.textContent = netBalance.toLocaleString();
+}
+
+// Add Maintenance Expense to Finance (called when maintenance session is saved)
+function addMaintenanceExpense(sessionId, date, items, merchant) {
+  if (!db) return Promise.resolve();
+  
+  return new Promise((resolve, reject) => {
+    // Get categories for items
+    const tx = db.transaction(['categories'], 'readonly');
+    const categoryStore = tx.objectStore('categories');
+    const categories = {};
+    
+    // Load categories first
+    categoryStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        categories[cursor.value.id] = cursor.value;
+        cursor.continue();
+      }
+    };
+    
+    tx.oncomplete = () => {
+      // Create a finance record for each item with its category
+      const totalCost = items.reduce((sum, i) => sum + (i.price || 0), 0);
+      const itemCategories = items.map(item => {
+        const cat = item.categoryId && categories[item.categoryId];
+        return cat ? { name: cat.name, color: cat.color } : { name: 'Uncategorized', color: '#9ca3af' };
+      });
+      
+      // Get unique categories and use the first one's color
+      const firstCat = itemCategories[0];
+      const uniqueCategoryNames = [...new Set(itemCategories.map(c => c.name))];
+      const categoryDisplay = uniqueCategoryNames.length === 1 
+        ? uniqueCategoryNames[0] 
+        : uniqueCategoryNames.slice(0, 2).join(', ') + (uniqueCategoryNames.length > 2 ? '...' : '');
+      
+      const record = {
+        date: date,
+        amount: totalCost,
+        description: merchant ? `Maintenance - ${merchant}` : 'Maintenance Session',
+        category: categoryDisplay,
+        categoryColor: firstCat?.color || '#9ca3af',
+        notes: items.map(i => `${i.name} (${i.price} EGP)`).join(', '),
+        type: 'expense',
+        sessionId: sessionId,
+        createdAt: new Date().toISOString()
+      };
+      
+      const tx2 = db.transaction('financeRecords', 'readwrite');
+      const store = tx2.objectStore('financeRecords');
+      store.add(record);
+      
+      tx2.oncomplete = () => {
+        resolve();
+      };
+      
+      tx2.onerror = () => {
+        reject(new Error('Failed to add maintenance expense'));
+      };
+    };
+    
+    tx.onerror = () => {
+      reject(new Error('Failed to load categories'));
+    };
+  });
+}
+
+// Add Fuel Expense to Finance (called when fuel entry is saved)
+function addFuelExpense(fuelRecord) {
+  if (!db) return Promise.resolve();
+  
+  return new Promise((resolve, reject) => {
+    const record = {
+      date: fuelRecord.date,
+      amount: fuelRecord.totalCost,
+      description: `Fuel - ${parseFloat(fuelRecord.liters).toFixed(2)} L @ ${parseFloat(fuelRecord.odometer).toLocaleString()} km`,
+      category: 'Fuel',
+      categoryColor: '#f59e0b', // Fuel orange color
+      notes: fuelRecord.notes || '',
+      type: 'expense',
+      fuelRecordId: fuelRecord.id,
+      createdAt: new Date().toISOString()
+    };
+    
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
+    store.add(record);
+    
+    tx.oncomplete = () => {
+      // Refresh finance if on finance tab
+      if (document.body.getAttribute('data-active-tab') === 'finance') {
+        loadFinanceRecords();
+      }
+      resolve();
+    };
+    
+    tx.onerror = () => {
+      reject(new Error('Failed to add fuel expense'));
+    };
+  });
+}
+
+// Delete Finance Records by Fuel Record ID (called when fuel entry is deleted)
+function deleteFinanceRecordsByFuelRecord(fuelRecordId) {
+  if (!db) return Promise.resolve();
+  
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
+    const recordsToDelete = [];
+    
+    // Find records with matching fuelRecordId
+    store.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (cursor.value.fuelRecordId === fuelRecordId) {
+          recordsToDelete.push(cursor.primaryKey);
+        }
+        cursor.continue();
+      } else {
+        recordsToDelete.forEach(id => store.delete(id));
+      }
+    };
+    
+    tx.oncomplete = () => {
+      resolve();
+    };
+    
+    tx.onerror = () => {
+      reject(new Error('Failed to delete fuel finance records'));
+    };
+  });
+}
+function deleteFinanceRecordsBySession(sessionId) {
+  if (!db) return Promise.resolve();
+  
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
+    const index = store.index('sessionId');
+    const recordsToDelete = [];
+    
+    index.openCursor(sessionId).onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        recordsToDelete.push(cursor.primaryKey);
+        cursor.continue();
+      } else {
+        recordsToDelete.forEach(id => store.delete(id));
+      }
+    };
+    
+    tx.oncomplete = () => {
+      resolve();
+    };
+    
+    tx.onerror = () => {
+      reject(new Error('Failed to delete finance records'));
+    };
+  });
+}
+
+// Delete single finance record
+function deleteFinanceRecord(recordId) {
+  if (!db) return;
+  
+  if (!confirm('Are you sure you want to delete this transaction?')) return;
+  
+  const tx = db.transaction('financeRecords', 'readwrite');
+  const store = tx.objectStore('financeRecords');
+  
+  store.delete(recordId);
+  
+  tx.oncomplete = () => {
+    loadFinanceRecords();
+  };
+  
+  tx.onerror = () => {
+    alert('Error deleting record. Please try again.');
+  };
+}
+
+// Edit Finance Record - Open Popup
+function editFinanceRecord(recordId) {
+  if (!db || !editTransactionPopup) return;
+  
+  const tx = db.transaction('financeRecords', 'readonly');
+  const store = tx.objectStore('financeRecords');
+  
+  store.get(recordId).onsuccess = e => {
+    const record = e.target.result;
+    if (!record) return;
+    
+    // Populate the edit form
+    editTransactionId.value = record.id;
+    editTransactionDate.value = record.date;
+    editTransactionAmount.value = record.amount;
+    editTransactionDescription.value = record.description;
+    editTransactionCategory.value = record.category || '';
+    editTransactionNotes.value = record.notes || '';
+    
+    // Show the popup
+    editTransactionPopup.classList.add('active');
+    document.body.classList.add('modal-open');
+  };
+}
+
+// Close Edit Transaction Popup
+function closeEditTransactionPopup() {
+  if (editTransactionPopup) {
+    editTransactionPopup.classList.remove('active');
+    document.body.classList.remove('modal-open');
+  }
+}
+
+// Save Transaction Edit
+function saveTransactionEdit() {
+  if (!db) return;
+  
+  const id = parseInt(editTransactionId.value);
+  const date = editTransactionDate?.value;
+  const amount = parseFloat(editTransactionAmount?.value);
+  const description = editTransactionDescription?.value?.trim();
+  const category = editTransactionCategory?.value?.trim();
+  const notes = editTransactionNotes?.value?.trim();
+  
+  if (!date || isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid date and amount');
+    return;
+  }
+  
+  if (!description) {
+    alert('Please enter a description');
+    return;
+  }
+  
+  const tx = db.transaction('financeRecords', 'readwrite');
+  const store = tx.objectStore('financeRecords');
+  
+  store.get(id).onsuccess = e => {
+    const record = e.target.result;
+    if (!record) {
+      alert('Record not found');
+      return;
+    }
+    
+    // Update the record
+    const updatedRecord = {
+      ...record,
+      date: date,
+      amount: amount,
+      description: description,
+      category: category || record.category,
+      notes: notes
+    };
+    
+    store.put(updatedRecord);
+  };
+  
+  tx.oncomplete = () => {
+    closeEditTransactionPopup();
+    loadFinanceRecords();
+    updateFinanceKPIs();
+  };
+  
+  tx.onerror = () => {
+    alert('Error saving changes. Please try again.');
+  };
+}
+
+// View Transaction Details Popup
+const transactionDetailsPopup = document.getElementById('transactionDetailsPopup');
+const transactionDetailsContent = document.getElementById('transactionDetailsContent');
+
+function viewTransactionDetails(recordId) {
+  if (!db || !transactionDetailsPopup || !transactionDetailsContent) return;
+  
+  const tx = db.transaction('financeRecords', 'readonly');
+  const store = tx.objectStore('financeRecords');
+  
+  store.get(recordId).onsuccess = e => {
+    const record = e.target.result;
+    if (!record) return;
+    
+    const isIncome = record.type === 'income';
+    const typeClass = isIncome ? 'income' : 'expense';
+    const typeLabel = isIncome ? 'Income' : 'Expense';
+    const amountClass = isIncome ? 'amount-income' : 'amount-expense';
+    const amountPrefix = isIncome ? '+' : '-';
+    
+    transactionDetailsContent.innerHTML = `
+      <div class="transaction-detail-row">
+        <label>Date:</label>
+        <span>${formatDateToBritish(record.date)}</span>
+      </div>
+      <div class="transaction-detail-row">
+        <label>Description:</label>
+        <span>${record.description}</span>
+      </div>
+      <div class="transaction-detail-row">
+        <label>Category:</label>
+        <span>${record.category || '-'}</span>
+      </div>
+      <div class="transaction-detail-row">
+        <label>Type:</label>
+        <span><span class="transaction-type ${typeClass}">${typeLabel}</span></span>
+      </div>
+      <div class="transaction-detail-row">
+        <label>Amount:</label>
+        <span class="${amountClass}">${amountPrefix}${record.amount.toLocaleString()} EGP</span>
+      </div>
+      ${record.notes ? `
+      <div class="transaction-detail-row">
+        <label>Details:</label>
+        <span>${record.notes}</span>
+      </div>
+      ` : ''}
+      <div class="transaction-detail-row">
+        <label>Recorded:</label>
+        <span>${new Date(record.createdAt).toLocaleString()}</span>
+      </div>
+    `;
+    
+    transactionDetailsPopup.classList.add('active');
+    document.body.classList.add('modal-open');
+  };
+}
+
+function closeTransactionDetailsPopup() {
+  if (transactionDetailsPopup) {
+    transactionDetailsPopup.classList.remove('active');
+    document.body.classList.remove('modal-open');
+  }
+}
+
+// ================================
+// KPI Description Toggle Functionality
+// ================================
+function initializeKPIDescriptions() {
+  const kpiCards = document.querySelectorAll('[data-kpi]');
+  
+  kpiCards.forEach(card => {
+    const description = card.querySelector('.kpi-description');
+    const showMoreBtn = card.querySelector('.kpi-show-more');
+    
+    if (!description || !showMoreBtn) return;
+    
+    // Check if description is truncated
+    const checkTruncation = () => {
+      const isTruncated = description.scrollHeight > description.clientHeight;
+      showMoreBtn.style.display = isTruncated ? 'flex' : 'none';
+    };
+    
+    // Initial check after a short delay to ensure content is rendered
+    setTimeout(checkTruncation, 100);
+    
+    // Re-check on window resize
+    window.addEventListener('resize', checkTruncation);
+    
+    // Toggle functionality
+    showMoreBtn.addEventListener('click', () => {
+      const isExpanded = description.classList.contains('expanded');
+      
+      if (isExpanded) {
+        description.classList.remove('expanded');
+        description.classList.add('collapsed');
+        showMoreBtn.classList.remove('expanded');
+        showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+      } else {
+        description.classList.remove('collapsed');
+        description.classList.add('expanded');
+        showMoreBtn.classList.add('expanded');
+        showMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+      }
+    });
+  });
+}
+
+// Initialize KPI descriptions when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  initializeKPIDescriptions();
+});
+
+// ================================
 // Global Function Exports
 // ================================
 window.restoreUpcomingItem = restoreUpcomingItem;
@@ -3044,3 +3836,14 @@ window.closeUpcomingEditPopup = closeUpcomingEditPopup;
 window.saveUpcomingEdit = saveUpcomingEdit;
 window.editFuelRecord = editFuelRecord;
 window.deleteFuelRecord = deleteFuelRecord;
+window.openAddFundsPopup = openAddFundsPopup;
+window.closeAddFundsPopup = closeAddFundsPopup;
+window.saveFund = saveFund;
+window.viewTransactionDetails = viewTransactionDetails;
+window.closeTransactionDetailsPopup = closeTransactionDetailsPopup;
+window.addFuelExpense = addFuelExpense;
+window.deleteFinanceRecordsByFuelRecord = deleteFinanceRecordsByFuelRecord;
+window.deleteFinanceRecord = deleteFinanceRecord;
+window.editFinanceRecord = editFinanceRecord;
+window.closeEditTransactionPopup = closeEditTransactionPopup;
+window.saveTransactionEdit = saveTransactionEdit;

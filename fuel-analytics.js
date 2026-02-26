@@ -207,7 +207,7 @@ class FuelStateManager {
 // ================================
 class FuelDataManager {
   static DB_NAME = 'carMaintainDB';
-  static DB_VERSION = 4; // Incremented for settings store
+  static DB_VERSION = 5; // Incremented to match main DB version with finance store
   static STORE_FUEL = 'fuelRecords';
   static STORE_FUEL_SESSIONS = 'fuelSessions';
 
@@ -715,6 +715,14 @@ class FuelUIRenderer {
     if (kpiAvgFuelSub) {
       kpiAvgFuelSub.textContent = 'L/100km';
     }
+    
+    // Update fuel efficiency indicators
+    if (analytics.avgConsumption > 0) {
+      if (typeof updateFuelEfficiencyIndicator === 'function') {
+        updateFuelEfficiencyIndicator(analytics.avgConsumption, 'homeFuelEfficiencyIndicator');
+        updateFuelEfficiencyIndicator(analytics.avgConsumption, 'analyticsFuelEfficiencyIndicator');
+      }
+    }
   }
 
   // Render fuel entry history table with pagination
@@ -1041,16 +1049,36 @@ class FuelEntryForm {
       return;
     }
     
+    // Prevent double submission
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+    
     try {
       this.setLoading(true);
       
       // Check if we're editing an existing record
       if (fuelApp && fuelApp.editingRecordId) {
         await fuelApp.stateManager.editRecord(fuelApp.editingRecordId, formData);
+        
+        // Update finance record for fuel edit
+        if (typeof window.addFuelExpense === 'function') {
+          const updatedRecord = await FuelDataManager.getRecord(fuelApp.editingRecordId);
+          if (updatedRecord) {
+            await window.deleteFinanceRecordsByFuelRecord(fuelApp.editingRecordId);
+            await window.addFuelExpense(updatedRecord);
+          }
+        }
+        
         fuelApp.editingRecordId = null; // Clear edit mode
         this.showSuccess('Fuel entry updated successfully!');
       } else {
-        await this.stateManager.addRecord(formData);
+        const newRecord = await this.stateManager.addRecord(formData);
+        
+        // Add finance record for fuel
+        if (typeof window.addFuelExpense === 'function' && newRecord) {
+          await window.addFuelExpense(newRecord);
+        }
+        
         this.showSuccess('Fuel entry saved successfully!');
       }
       
@@ -1059,6 +1087,7 @@ class FuelEntryForm {
       this.showError(error.message);
     } finally {
       this.setLoading(false);
+      this.isSubmitting = false;
     }
   }
 
@@ -1070,7 +1099,7 @@ class FuelEntryForm {
     return {
       date: this.inputs.date?.value,
       odometer: this.inputs.odometer?.value,
-      liters: liters,
+      liters: parseFloat(liters.toFixed(2)),
       pricePerLiter: pricePerLiter,
       totalCost: totalCost,
       isFullTank: this.inputs.isFullTank?.checked || false,
@@ -1181,6 +1210,10 @@ class FuelApplication {
 
   async deleteRecord(recordId) {
     if (confirm('Are you sure you want to delete this fuel entry?')) {
+      // Delete associated finance record first
+      if (typeof window.deleteFinanceRecordsByFuelRecord === 'function') {
+        await window.deleteFinanceRecordsByFuelRecord(recordId);
+      }
       return this.stateManager.deleteRecord(recordId);
     }
   }
@@ -1239,7 +1272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Update Fuel KPIs on Main Dashboard
 // ================================
 function updateFuelKPIsOnDashboard() {
-  const dbRequest = indexedDB.open('carMaintainDB', 4);
+  const dbRequest = indexedDB.open('carMaintainDB', 5);
   
   dbRequest.onsuccess = function(e) {
     const db = e.target.result;
