@@ -397,6 +397,12 @@ function initializeEventListeners() {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const target = item.getAttribute('data-tab-target');
+      
+      // Close more tabs card if open
+      if (target !== 'more') {
+        closeMoreTabsCard();
+      }
+      
       setActiveTab(target);
 
       if (target === 'record') {
@@ -415,6 +421,60 @@ function initializeEventListeners() {
         // Load finance records when Finance tab is clicked
         setTimeout(() => {
           loadFinanceRecords();
+        }, 100);
+      }
+    });
+  });
+
+  // More tabs functionality
+  const moreTabsBtn = document.getElementById('moreTabsBtn');
+  const moreTabsCard = document.getElementById('moreTabsCard');
+  const closeMoreTabsBtn = document.getElementById('closeMoreTabs');
+
+  function openMoreTabsCard() {
+    moreTabsCard.classList.add('show');
+  }
+
+  function closeMoreTabsCard() {
+    moreTabsCard.classList.remove('show');
+  }
+
+  if (moreTabsBtn) {
+    moreTabsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openMoreTabsCard();
+    });
+  }
+
+  if (closeMoreTabsBtn) {
+    closeMoreTabsBtn.addEventListener('click', closeMoreTabsCard);
+  }
+
+  // Close more tabs card when clicking outside
+  document.addEventListener('click', (e) => {
+    if (moreTabsCard && !moreTabsCard.contains(e.target) && !moreTabsBtn.contains(e.target)) {
+      closeMoreTabsCard();
+    }
+  });
+
+  // More tabs card items
+  const moreTabItems = document.querySelectorAll('.more-tab-item[data-tab-target]');
+  moreTabItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = item.getAttribute('data-tab-target');
+      setActiveTab(target);
+      closeMoreTabsCard();
+
+      if (target === 'settings') {
+        loadCategoriesList();
+      } else if (target === 'analytics') {
+        // Re-render fuel charts when Analytics tab is clicked
+        setTimeout(() => {
+          if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.uiRenderer) {
+            const analytics = fuelApp.getAnalytics();
+            fuelApp.uiRenderer.renderCharts(analytics);
+          }
         }, 100);
       }
     });

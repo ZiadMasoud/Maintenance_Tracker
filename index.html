@@ -894,9 +894,9 @@
           <i class="fas fa-home mobile-bottom-nav-icon"></i>
           <span class="mobile-bottom-nav-label">Home</span>
         </a>
-        <a href="#" class="mobile-bottom-nav-item" data-tab-target="analytics">
-          <i class="fas fa-chart-bar mobile-bottom-nav-icon"></i>
-          <span class="mobile-bottom-nav-label">Analytics</span>
+        <a href="#" class="mobile-bottom-nav-item" data-tab-target="record">
+          <i class="fas fa-edit mobile-bottom-nav-icon"></i>
+          <span class="mobile-bottom-nav-label">Record</span>
         </a>
         <a href="#" class="mobile-bottom-nav-item" data-tab-target="fuel">
           <i class="fas fa-gas-pump mobile-bottom-nav-icon"></i>
@@ -906,16 +906,32 @@
           <i class="fas fa-wallet mobile-bottom-nav-icon"></i>
           <span class="mobile-bottom-nav-label">Finance</span>
         </a>
-        <a href="#" class="mobile-bottom-nav-item" data-tab-target="record">
-          <i class="fas fa-edit mobile-bottom-nav-icon"></i>
-          <span class="mobile-bottom-nav-label">Record</span>
-        </a>
-        <a href="#" class="mobile-bottom-nav-item" data-tab-target="settings">
-          <i class="fas fa-cog mobile-bottom-nav-icon"></i>
-          <span class="mobile-bottom-nav-label">Settings</span>
+        <a href="#" class="mobile-bottom-nav-item" id="moreTabsBtn">
+          <i class="fas fa-ellipsis-h mobile-bottom-nav-icon"></i>
+          <span class="mobile-bottom-nav-label">More</span>
         </a>
       </div>
     </nav>
+
+    <!-- More Tabs Floating Card -->
+    <div class="more-tabs-card" id="moreTabsCard">
+      <div class="more-tabs-header">
+        <h3>More Options</h3>
+        <button class="more-tabs-close" id="closeMoreTabs">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="more-tabs-content">
+        <a href="#" class="more-tab-item" data-tab-target="analytics">
+          <i class="fas fa-chart-bar"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="#" class="more-tab-item" data-tab-target="settings">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </div>
+    </div>
 
   <script src="fuel-analytics.js"></script>
   <script src="script.js"></script>
