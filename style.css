@@ -1,32 +1,32 @@
 /* ========================================
-   Car Maintenance Tracker - Modern SaaS Dashboard
-   Design System: Linear/Stripe/Vercel inspired
+   Floosy Finance App Design System
    ======================================== */
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
 /* ========================================
-   CSS Variables - Design System
+   CSS Variables - Floosy Design System
    ======================================== */
 :root {
-  /* Colors - Clean SaaS Palette */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-primary-light: #60a5fa;
+  /* Floosy Brand Colors */
+  --color-primary: #8b5cf6;
+  --color-primary-dark: #7c3aed;
+  --color-primary-light: #a78bfa;
   --color-secondary: #64748b;
-
+  
   /* Background Colors */
-  --bg-page: #f8fafc;
+  --bg-page: #ffffff;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --bg-active: #eff6ff;
-
+  --bg-hover: #f8fafc;
+  --bg-active: #8b5cf6;
+  --bg-mobile-nav: #ffffff;
+  
   /* Text Colors */
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --text-on-primary: #ffffff;
+  --text-mobile-nav: #475569;
 
   /* Border Colors */
   --border-light: #e2e8f0;
@@ -77,10 +77,26 @@
   --sidebar-collapsed: 70px;
   --header-height: 64px;
 
-  /* Typography */
+  /* Typography - Floosy Style */
   --font-sans:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  
+  /* Floosy Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  
+  /* Floosy Font Weights */
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
 }
 
 /* ========================================
@@ -148,15 +164,16 @@ body {
 }
 
 .sidebar-logo {
-  width: 36px;
-  height: 36px;
-  background: rgb(246, 238, 238);
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
 }
 
 .sidebar-title {
@@ -209,7 +226,10 @@ body {
 
 .nav-link.active {
   background: var(--bg-active);
-  color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
 .nav-icon {
@@ -295,8 +315,8 @@ body {
    Sidebar Header Icons
    ======================================== */
 .sidebar-logo .fa-car {
-  color: var(--color-primary);
-  font-size: 2rem;
+  color: #ffffff;
+  font-size: 1.5rem;
 }
 
 /* ========================================
@@ -307,7 +327,7 @@ body {
 }
 
 .nav-link.active .fa-home {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 .nav-icon .fa-chart-bar {
@@ -315,7 +335,7 @@ body {
 }
 
 .nav-link.active .fa-chart-bar {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 .nav-icon .fa-gas-pump {
@@ -323,7 +343,7 @@ body {
 }
 
 .nav-link.active .fa-gas-pump {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 .nav-icon .fa-edit {
@@ -331,7 +351,7 @@ body {
 }
 
 .nav-link.active .fa-edit {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 .nav-icon .fa-cog {
@@ -339,7 +359,7 @@ body {
 }
 
 .nav-link.active .fa-cog {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 /* ========================================
@@ -448,6 +468,7 @@ body {
 .edit-upcoming-btn:hover .fa-edit {
   color: var(--color-primary);
 }
+
 .mobile-overlay {
   display: none;
   position: fixed;
@@ -929,10 +950,12 @@ section h2::before {
 .time-context-neutral {
   color: var(--text-muted);
 }
+
 .time-context-warning {
   color: var(--color-warning);
   font-weight: 500;
 }
+
 .time-context-critical {
   color: var(--color-danger);
   font-weight: 500;
@@ -1009,7 +1032,7 @@ section h2::before {
 .category-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: var(--radius-full);
+  border-radius: 0;
   font-size: 0.6875rem;
   font-weight: 500;
   color: white;
@@ -1139,10 +1162,12 @@ section h2::before {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -1841,6 +1866,7 @@ section h2::before {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -2097,9 +2123,11 @@ body.modal-open .floating-btn {
 .status-ok {
   color: var(--color-success);
 }
+
 .status-warning {
   color: var(--color-warning);
 }
+
 .status-danger {
   color: var(--color-danger);
 }
@@ -2180,12 +2208,12 @@ body.modal-open .floating-btn {
   transition: all var(--transition-fast);
 }
 
-.full-tank-label input[type="checkbox"]:checked + .checkmark {
+.full-tank-label input[type="checkbox"]:checked+.checkmark {
   background: var(--color-success);
   border-color: var(--color-success);
 }
 
-.full-tank-label input[type="checkbox"]:checked + .checkmark::after {
+.full-tank-label input[type="checkbox"]:checked+.checkmark::after {
   opacity: 1;
   transform: scale(1);
 }
@@ -2460,6 +2488,79 @@ body.modal-open .floating-btn {
 }
 
 /* ========================================
+   Mobile Bottom Navigation - Light Theme
+   ======================================== */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-mobile-nav);
+  border-top: 1px solid var(--border-light);
+  z-index: 100;
+  padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-bottom-nav-items {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mobile-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-mobile-nav);
+  text-decoration: none;
+  min-width: 60px;
+  position: relative;
+}
+
+.mobile-bottom-nav-item:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.mobile-bottom-nav-item.active {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--color-primary);
+}
+
+
+.mobile-bottom-nav-icon {
+  font-size: 1.25rem;
+  transition: all var(--transition-fast);
+}
+
+.mobile-bottom-nav-item.active .mobile-bottom-nav-icon {
+  color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.mobile-bottom-nav-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+.mobile-bottom-nav-item.active .mobile-bottom-nav-label {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ========================================
    Responsive Design
    ======================================== */
 
@@ -2526,13 +2627,12 @@ body.modal-open .floating-btn {
 
   .main-area {
     margin-left: 0;
+    padding-bottom: 80px; /* Space for bottom nav */
   }
 
+  /* Hide sidebar toggle in mobile */
   .sidebar-toggle-btn {
-    display: flex;
-    min-width: 44px;
-    min-height: 44px;
-    touch-action: manipulation;
+    display: none;
   }
 
   .kpi-cards-group {
@@ -2557,12 +2657,18 @@ body.modal-open .floating-btn {
     min-height: 44px;
     min-width: 80px;
   }
+  
+  /* Show mobile bottom navigation */
+  .mobile-bottom-nav {
+    display: block;
+  }
 }
 
 /* Small screens (576px - 767px) */
 @media (max-width: 767px) {
   main {
     padding: var(--space-4);
+    padding-bottom: 80px; /* Space for bottom nav */
   }
 
   header {
@@ -2570,7 +2676,8 @@ body.modal-open .floating-btn {
   }
 
   header h1 {
-    font-size: 1.125rem;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
   }
 
   .kpi-cards-group {
@@ -2584,7 +2691,7 @@ body.modal-open .floating-btn {
 
   .nav-link {
     min-height: 52px;
-    font-size: 1rem;
+    font-size: var(--font-size-base);
   }
 
   .nav-icon {
@@ -2716,6 +2823,11 @@ body.modal-open .floating-btn {
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
   }
+  
+  /* Ensure mobile bottom nav is visible */
+  .mobile-bottom-nav {
+    display: block;
+  }
 }
 
 /* Extra small screens (< 576px) */
@@ -2805,7 +2917,7 @@ body.modal-open .floating-btn {
    FINANCE TAB STYLES
    ======================================== */
 
-/* Finance KPIs Grid */
+/* Finance KPIs Grid - Floosy Style */
 .finance-kpis-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2814,35 +2926,41 @@ body.modal-open .floating-btn {
 }
 
 .finance-kpi-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   padding: var(--space-5) var(--space-4);
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
+.finance-kpi-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  border-color: #cbd5e1;
+}
+
+/* KPI Icons - Floosy Style */
 .finance-kpi-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--border-light) 0%, var(--border-medium) 100%);
+  height: 4px;
+  background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%);
   transition: all var(--transition-normal);
 }
 
-.finance-kpi-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-  transform: translateY(-2px);
-}
-
 .finance-kpi-card:hover::before {
-  height: 4px;
+  height: 6px;
 }
 
 /* KPI specific accent colors on hover */
@@ -2851,7 +2969,7 @@ body.modal-open .floating-btn {
 }
 
 .finance-kpi-card.kpi-income:hover::before {
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
 }
 
 .finance-kpi-card.kpi-expenses:hover::before {
@@ -2867,55 +2985,56 @@ body.modal-open .floating-btn {
   font-family: 'Font Awesome 6 Free';
   font-weight: 900;
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  font-size: 1.25rem;
-  color: var(--border-medium);
-  opacity: 0.3;
+  top: var(--space-4);
+  right: var(--space-4);
+  font-size: 1.5rem;
+  color: #cbd5e1;
+  opacity: 0.6;
   transition: all var(--transition-fast);
 }
 
 .finance-kpi-card:hover::after {
-  opacity: 0.6;
+  opacity: 0.8;
   transform: scale(1.1);
 }
 
 .finance-kpi-card.kpi-savings::after {
   content: '\f4d3';
-  color: var(--color-success);
+  color: #10b981;
 }
 
 .finance-kpi-card.kpi-income::after {
   content: '\f0d6';
-  color: var(--color-primary);
+  color: #8b5cf6;
 }
 
 .finance-kpi-card.kpi-expenses::after {
   content: '\f068';
-  color: var(--color-danger);
+  color: #ef4444;
 }
 
 .finance-kpi-card.kpi-balance::after {
   content: '\f24e';
-  color: var(--color-warning);
+  color: #f59e0b;
 }
 
 .finance-kpi-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   margin-bottom: var(--space-3);
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
 }
 
 .finance-kpi-main {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-black);
   color: var(--text-primary);
   margin-bottom: var(--space-2);
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .finance-kpi-card.kpi-savings .finance-kpi-main {
@@ -2935,8 +3054,9 @@ body.modal-open .floating-btn {
 }
 
 .finance-kpi-sub {
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
 }
 
 /* ========================================
@@ -2973,32 +3093,34 @@ body.modal-open .floating-btn {
 }
 
 .kpi-show-more {
-  background: none;
-  border: none;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   color: var(--color-primary);
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  padding: var(--space-1) 0;
-  display: flex;
+  padding: 4px 14px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
   transition: all var(--transition-fast);
-  align-self: flex-start;
+  align-self: center;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
 }
 
 .kpi-show-more:hover {
+  background: rgba(59, 130, 246, 0.15);
   color: var(--color-primary-dark);
+  border-color: rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
 }
 
-.kpi-show-more i {
-  font-size: 0.625rem;
-  transition: transform var(--transition-fast);
-}
-
-.kpi-show-more.expanded i {
-  transform: rotate(180deg);
+.kpi-show-more:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* Fuel KPI cards description adjustments */
@@ -3095,6 +3217,26 @@ body.modal-open .floating-btn {
 .fuel-efficiency-indicator.efficiency-poor .efficiency-badge {
   background: var(--color-danger);
   box-shadow: 0 0 4px var(--color-danger);
+}
+
+/* KPI Value Row - for side-by-side layout (value + efficiency badge) */
+.kpi-value-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.kpi-value-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kpi-value-row .fuel-efficiency-indicator {
+  margin-top: var(--space-1);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Fuel KPI card adjustments */
@@ -3230,7 +3372,7 @@ body.modal-open .floating-btn {
 }
 
 .nav-link.active .fa-wallet {
-  color: var(--color-primary);
+  color: #ffffff;
 }
 
 /* Add Funds Button in Header */
@@ -3270,6 +3412,7 @@ body.modal-open .floating-btn {
     margin: 0;
     padding: 0;
     width: 100%;
+    max-width: 100%;
   }
 
   .finance-table,
@@ -3278,6 +3421,8 @@ body.modal-open .floating-btn {
   .finance-table td {
     display: block;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .finance-table thead {
@@ -3291,6 +3436,10 @@ body.modal-open .floating-btn {
     margin-bottom: var(--space-3);
     padding: var(--space-4);
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .finance-table td {
@@ -3300,6 +3449,10 @@ body.modal-open .floating-btn {
     justify-content: space-between;
     align-items: center;
     font-size: 0.875rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
   }
 
   .finance-table td::before {
@@ -3325,7 +3478,7 @@ body.modal-open .floating-btn {
     width: auto;
     padding: 0;
     z-index: 10;
-    
+
   }
 
   .finance-table td.actions-cell .action-btn {
@@ -3365,7 +3518,9 @@ body.modal-open .floating-btn {
     padding: var(--space-2);
     justify-content: flex-start;
     gap: var(--space-3);
+    flex: 1;
     width: 300px;
+    box-sizing: border-box;
   }
 
   .finance-table td:nth-child(2)::before {
@@ -3385,7 +3540,11 @@ body.modal-open .floating-btn {
     justify-content: flex-start;
     gap: var(--space-3);
     padding: var(--space-1);
-    width: 300px;
+    width: 100%;
+    flex: 1;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .finance-table td:nth-child(3)::before {
@@ -3402,7 +3561,9 @@ body.modal-open .floating-btn {
     padding: var(--space-1);
     justify-content: flex-start;
     gap: var(--space-3);
-    width: 300px;
+    width: 100%;
+    flex: 1;
+    box-sizing: border-box;
   }
 
   .finance-table td:nth-child(4)::before,
@@ -3416,6 +3577,7 @@ body.modal-open .floating-btn {
 }
 
 @media (max-width: 575px) {
+
   /* On very small screens, only show Date, Amount, Item, Actions */
   .finance-table th:nth-child(4),
   .finance-table td:nth-child(4) {
@@ -3431,7 +3593,6 @@ body.modal-open .floating-btn {
   /* Make Item column wrap text */
   .finance-table td:nth-child(3) {
     white-space: normal;
-    max-width: 150px;
     word-wrap: break-word;
   }
 }
