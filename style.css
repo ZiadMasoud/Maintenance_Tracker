@@ -2532,7 +2532,6 @@ body.modal-open .floating-btn {
 }
 
 .mobile-bottom-nav-item.active {
-  background: rgba(139, 92, 246, 0.1);
   color: var(--color-primary);
 }
 
