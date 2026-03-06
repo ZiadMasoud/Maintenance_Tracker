@@ -14,19 +14,19 @@
   --color-secondary: #64748b;
   
   /* Background Colors */
-  --bg-page: #ffffff;
+  --bg-page: #f0f2f5;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #f8fafc;
+  --bg-hover: #e2e8f0;
   --bg-active: #8b5cf6;
   --bg-mobile-nav: #ffffff;
   
   /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-muted: #999999;
   --text-on-primary: #ffffff;
-  --text-mobile-nav: #475569;
+  --text-mobile-nav: #555555;
 
   /* Border Colors */
   --border-light: #e2e8f0;
@@ -73,9 +73,9 @@
   --transition-slow: 300ms ease;
 
   /* Layout */
-  --sidebar-width: 240px;
+  --sidebar-width: 280px;
   --sidebar-collapsed: 70px;
-  --header-height: 64px;
+  --header-height: 72px;
 
   /* Typography - Floosy Style */
   --font-sans:
@@ -83,19 +83,19 @@
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
   
   /* Floosy Font Sizes */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 2rem;
+  --font-size-xs: 0.875rem;
+  --font-size-sm: 1rem;
+  --font-size-base: 1.125rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.625rem;
+  --font-size-3xl: 2.125rem;
   
   /* Floosy Font Weights */
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
+  --font-weight-medium: 600;
+  --font-weight-semibold: 700;
+  --font-weight-bold: 800;
+  --font-weight-extrabold: 900;
   --font-weight-black: 900;
 }
 
@@ -154,7 +154,7 @@ body {
 }
 
 .sidebar-header {
-  padding: var(--space-5);
+  padding: var(--space-6);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -194,10 +194,10 @@ body {
 }
 
 .sidebar-nav {
-  padding: var(--space-3);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   flex: 1;
   overflow-y: auto;
 }
@@ -205,12 +205,12 @@ body {
 .nav-link {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   border: none;
@@ -233,8 +233,8 @@ body {
 }
 
 .nav-icon {
-  font-size: 1.125rem;
-  width: 24px;
+  font-size: 1.25rem;
+  width: 28px;
   text-align: center;
   flex-shrink: 0;
 }
@@ -559,8 +559,8 @@ header {
 }
 
 header h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -587,8 +587,8 @@ section:last-child {
 }
 
 section h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 1.375rem;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--space-4);
   display: flex;
@@ -611,7 +611,7 @@ section h2::before {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  padding: var(--space-5);
+  padding: var(--space-6);
   box-shadow: var(--shadow-sm);
 }
 
@@ -643,12 +643,12 @@ section h2::before {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  padding: var(--space-4);
+  padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  min-height: 120px;
+  min-height: 140px;
   transition: all var(--transition-fast);
 }
 
@@ -658,21 +658,21 @@ section h2::before {
 }
 
 .kpi-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 
 .kpi-main {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
 .kpi-sub {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--text-muted);
 }
 
@@ -1032,9 +1032,9 @@ section h2::before {
 .category-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 0;
+  border-radius: var(--radius-md);
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 900;
   color: white;
   margin-left: var(--space-2);
 }

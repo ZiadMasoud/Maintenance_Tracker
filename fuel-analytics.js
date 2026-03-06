@@ -1083,6 +1083,11 @@ class FuelEntryForm {
       }
       
       this.resetForm();
+      
+      // Update fuel KPIs after successful save
+      if (typeof window.updateFuelTabKPIs === 'function') {
+        window.updateFuelTabKPIs();
+      }
     } catch (error) {
       this.showError(error.message);
     } finally {

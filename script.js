@@ -335,6 +335,7 @@ function setActiveTab(target) {
       if (fuelApp.uiRenderer) {
         fuelApp.uiRenderer.renderFuelHistory(records);
       }
+      updateFuelTabKPIs();
     }, 100);
   }
 
@@ -1227,6 +1228,89 @@ function updateFuelKPIs() {
     }
   };
 }
+
+// ================================
+// Update Fuel Tab KPIs
+// ================================
+function updateFuelTabKPIs() {
+  if (!db) return;
+
+  const tx = db.transaction("fuelRecords", "readonly");
+  const store = tx.objectStore("fuelRecords");
+  const records = [];
+
+  store.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      records.push(cursor.value);
+      cursor.continue();
+    } else {
+      updateFuelTabKPIDisplay(records);
+    }
+  };
+}
+
+function updateFuelTabKPIDisplay(records) {
+  // Get DOM elements
+  const timeBetweenRecordsEl = document.getElementById('timeBetweenRecords');
+  const kmBetweenRecordsEl = document.getElementById('kmBetweenRecords');
+  const lastRefillDaysEl = document.getElementById('lastRefillDays');
+  const kmSinceLastRefillEl = document.getElementById('kmSinceLastRefill');
+  const currentOdometerEl = document.getElementById('odometerValue');
+
+  if (!timeBetweenRecordsEl || !kmBetweenRecordsEl || !lastRefillDaysEl || !kmSinceLastRefillEl) return;
+
+  if (records.length === 0) {
+    timeBetweenRecordsEl.textContent = '--';
+    kmBetweenRecordsEl.textContent = '--';
+    lastRefillDaysEl.textContent = '--';
+    kmSinceLastRefillEl.textContent = '--';
+    return;
+  }
+
+  // Sort records by date
+  const sortedRecords = records.sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  // Calculate time between records (average)
+  let totalDaysBetween = 0;
+  let totalKmBetween = 0;
+  let intervals = 0;
+
+  for (let i = 1; i < sortedRecords.length; i++) {
+    const prevRecord = sortedRecords[i - 1];
+    const currRecord = sortedRecords[i];
+    
+    const daysDiff = Math.ceil((new Date(currRecord.date) - new Date(prevRecord.date)) / (1000 * 60 * 60 * 24));
+    const kmDiff = currRecord.odometer - prevRecord.odometer;
+    
+    if (daysDiff > 0 && kmDiff > 0) {
+      totalDaysBetween += daysDiff;
+      totalKmBetween += kmDiff;
+      intervals++;
+    }
+  }
+
+  // Calculate averages
+  const avgDaysBetween = intervals > 0 ? Math.round(totalDaysBetween / intervals) : 0;
+  const avgKmBetween = intervals > 0 ? Math.round(totalKmBetween / intervals) : 0;
+
+  // Get current odometer reading
+  const currentOdometer = currentOdometerEl ? parseInt(currentOdometerEl.textContent) || 0 : 0;
+  
+  // Calculate time and distance since last refill
+  const lastRecord = sortedRecords[sortedRecords.length - 1];
+  const daysSinceLastRefill = Math.ceil((new Date() - new Date(lastRecord.date)) / (1000 * 60 * 60 * 24));
+  const kmSinceLastRefill = currentOdometer > lastRecord.odometer ? currentOdometer - lastRecord.odometer : 0;
+
+  // Update display
+  timeBetweenRecordsEl.textContent = avgDaysBetween > 0 ? avgDaysBetween.toString() : '--';
+  kmBetweenRecordsEl.textContent = avgKmBetween > 0 ? avgKmBetween.toString() : '--';
+  lastRefillDaysEl.textContent = daysSinceLastRefill > 0 ? daysSinceLastRefill.toString() : '0';
+  kmSinceLastRefillEl.textContent = kmSinceLastRefill > 0 ? kmSinceLastRefill.toString() : '0';
+}
+
+// Make function globally available
+window.updateFuelTabKPIs = updateFuelTabKPIs;
 
 // ================================
 // Fuel Efficiency Indicator
