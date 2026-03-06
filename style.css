@@ -1450,12 +1450,12 @@ section h2::before {
 }
 
 .fuel-kpi-card {
-  background: var(--bg-card);
+  background: transparent;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .fuel-kpi-label {
@@ -2474,6 +2474,51 @@ body.modal-open .floating-btn {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-primary);
+}
+
+/* Last Refill KPI Card Styles */
+.fuel-kpi-last-refill .fuel-kpi-main {
+  font-size: 1rem;
+  text-align: left;
+}
+
+.last-refill-kpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.last-refill-kpi-content .last-refill-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.last-refill-kpi-content .last-refill-details {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.last-refill-kpi-content .last-refill-liters {
+  font-weight: 500;
+}
+
+.last-refill-kpi-content .last-refill-odometer {
+  color: var(--text-muted);
+}
+
+.last-refill-kpi-content .last-refill-cost {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.last-refill-kpi-content .last-refill-price {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .full-tank-badge {

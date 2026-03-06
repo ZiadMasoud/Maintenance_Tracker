@@ -471,8 +471,8 @@ class FuelAnalyticsEngine {
     // Sort records by odometer to ensure correct order
     const sortedRecords = [...records].sort((a, b) => a.odometer - b.odometer);
 
-    // Basic totals
-    const totalFuelConsumed = this.computeTotalFuel(sortedRecords);
+    // Basic totals - use consumed fuel (excluding baseline) for consumption metrics
+    const totalFuelConsumed = this.computeTotalFuelConsumed(sortedRecords);
     const totalFuelCost = this.computeTotalCost(sortedRecords);
     const totalDistance = this.computeTotalDistance(sortedRecords);
 
@@ -516,6 +516,14 @@ class FuelAnalyticsEngine {
     };
   }
 
+  // Compute total fuel consumed (excluding first record's baseline fill)
+  computeTotalFuelConsumed(records) {
+    if (records.length < 2) return 0;
+    // Exclude first record's liters - it establishes the baseline
+    return records.slice(1).reduce((sum, record) => sum + parseFloat(record.liters || 0), 0);
+  }
+
+  // Compute total fuel (all refills including baseline)
   computeTotalFuel(records) {
     return records.reduce((sum, record) => sum + parseFloat(record.liters || 0), 0);
   }
@@ -1291,11 +1299,12 @@ function updateFuelKPIsOnDashboard() {
         records.push(cursor.value);
         cursor.continue();
       } else {
-        // Calculate and update KPIs
+        // Calculate and update KPIs - exclude first record's liters (baseline fill)
         if (records.length >= 2) {
           const sortedRecords = records.sort((a, b) => a.odometer - b.odometer);
           const totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
-          const totalLiters = sortedRecords.reduce((sum, r) => sum + r.liters, 0);
+          // Sum liters from records[1] onwards - fuel actually consumed to travel the distance
+          const totalLiters = sortedRecords.slice(1).reduce((sum, r) => sum + r.liters, 0);
           const avgConsumption = totalDistance > 0 ? (totalLiters / totalDistance) * 100 : 0;
           
           const kpiAvgFuelValue = document.getElementById('kpiAvgFuelValue');

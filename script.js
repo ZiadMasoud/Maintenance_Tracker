@@ -1205,11 +1205,12 @@ function updateFuelKPIs() {
       records.push(cursor.value);
       cursor.continue();
     } else {
-      // Calculate fuel analytics
+      // Calculate fuel analytics - exclude first record's liters (baseline fill)
       if (records.length >= 2) {
         const sortedRecords = records.sort((a, b) => a.odometer - b.odometer);
         const totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
-        const totalLiters = sortedRecords.reduce((sum, r) => sum + r.liters, 0);
+        // Sum liters from records[1] onwards - fuel actually consumed to travel the distance
+        const totalLiters = sortedRecords.slice(1).reduce((sum, r) => sum + r.liters, 0);
         const avgConsumption = totalDistance > 0 ? (totalLiters / totalDistance) * 100 : 0;
 
         if (kpiAvgFuelValue) {
@@ -1255,58 +1256,58 @@ function updateFuelTabKPIDisplay(records) {
   const timeBetweenRecordsEl = document.getElementById('timeBetweenRecords');
   const kmBetweenRecordsEl = document.getElementById('kmBetweenRecords');
   const lastRefillDaysEl = document.getElementById('lastRefillDays');
-  const kmSinceLastRefillEl = document.getElementById('kmSinceLastRefill');
+  const lastRefillKPIEl = document.getElementById('lastRefillKPI');
   const currentOdometerEl = document.getElementById('odometerValue');
 
-  if (!timeBetweenRecordsEl || !kmBetweenRecordsEl || !lastRefillDaysEl || !kmSinceLastRefillEl) return;
+  if (!timeBetweenRecordsEl || !kmBetweenRecordsEl || !lastRefillDaysEl || !lastRefillKPIEl) return;
 
   if (records.length === 0) {
     timeBetweenRecordsEl.textContent = '--';
     kmBetweenRecordsEl.textContent = '--';
     lastRefillDaysEl.textContent = '--';
-    kmSinceLastRefillEl.textContent = '--';
+    lastRefillKPIEl.innerHTML = '<p class="empty-text">No refill recorded</p>';
     return;
   }
 
   // Sort records by date
   const sortedRecords = records.sort((a, b) => new Date(a.date) - new Date(b.date));
   
-  // Calculate time between records (average)
-  let totalDaysBetween = 0;
-  let totalKmBetween = 0;
-  let intervals = 0;
+  // Calculate difference between last two records (not average)
+  let daysBetweenLastTwo = 0;
+  let kmBetweenLastTwo = 0;
 
-  for (let i = 1; i < sortedRecords.length; i++) {
-    const prevRecord = sortedRecords[i - 1];
-    const currRecord = sortedRecords[i];
+  if (sortedRecords.length >= 2) {
+    const lastRecord = sortedRecords[sortedRecords.length - 1];
+    const secondLastRecord = sortedRecords[sortedRecords.length - 2];
     
-    const daysDiff = Math.ceil((new Date(currRecord.date) - new Date(prevRecord.date)) / (1000 * 60 * 60 * 24));
-    const kmDiff = currRecord.odometer - prevRecord.odometer;
-    
-    if (daysDiff > 0 && kmDiff > 0) {
-      totalDaysBetween += daysDiff;
-      totalKmBetween += kmDiff;
-      intervals++;
-    }
+    daysBetweenLastTwo = Math.ceil((new Date(lastRecord.date) - new Date(secondLastRecord.date)) / (1000 * 60 * 60 * 24));
+    kmBetweenLastTwo = lastRecord.odometer - secondLastRecord.odometer;
   }
 
-  // Calculate averages
-  const avgDaysBetween = intervals > 0 ? Math.round(totalDaysBetween / intervals) : 0;
-  const avgKmBetween = intervals > 0 ? Math.round(totalKmBetween / intervals) : 0;
-
-  // Get current odometer reading
-  const currentOdometer = currentOdometerEl ? parseInt(currentOdometerEl.textContent) || 0 : 0;
-  
-  // Calculate time and distance since last refill
+  // Calculate time since last refill
   const lastRecord = sortedRecords[sortedRecords.length - 1];
   const daysSinceLastRefill = Math.ceil((new Date() - new Date(lastRecord.date)) / (1000 * 60 * 60 * 24));
-  const kmSinceLastRefill = currentOdometer > lastRecord.odometer ? currentOdometer - lastRecord.odometer : 0;
 
   // Update display
-  timeBetweenRecordsEl.textContent = avgDaysBetween > 0 ? avgDaysBetween.toString() : '--';
-  kmBetweenRecordsEl.textContent = avgKmBetween > 0 ? avgKmBetween.toString() : '--';
+  timeBetweenRecordsEl.textContent = daysBetweenLastTwo > 0 ? daysBetweenLastTwo.toString() : '--';
+  kmBetweenRecordsEl.textContent = kmBetweenLastTwo > 0 ? kmBetweenLastTwo.toString() : '--';
   lastRefillDaysEl.textContent = daysSinceLastRefill > 0 ? daysSinceLastRefill.toString() : '0';
-  kmSinceLastRefillEl.textContent = kmSinceLastRefill > 0 ? kmSinceLastRefill.toString() : '0';
+
+  // Update Last Refill KPI
+  if (lastRefillKPIEl) {
+    const pricePerLiter = parseFloat(lastRecord.pricePerLiter) || 0;
+    lastRefillKPIEl.innerHTML = `
+      <div class="last-refill-kpi-content">
+        <div class="last-refill-date">${formatDateToBritish(lastRecord.date)}</div>
+        <div class="last-refill-details">
+          <span class="last-refill-liters">${lastRecord.liters} L</span>
+          <span class="last-refill-odometer">@ ${lastRecord.odometer.toLocaleString()} km</span>
+        </div>
+        <div class="last-refill-cost">${lastRecord.totalCost.toLocaleString()} EGP</div>
+        ${pricePerLiter > 0 ? `<div class="last-refill-price">${pricePerLiter.toFixed(2)} EGP/L</div>` : ''}
+      </div>
+    `;
+  }
 }
 
 // Make function globally available

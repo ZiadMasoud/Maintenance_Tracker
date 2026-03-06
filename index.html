@@ -341,13 +341,22 @@
           <section class="fuel-kpis-section">
             <h2>Fuel KPIs</h2>
             <div class="panel-content">
+              <!-- Fuel KPIs -->
               <div class="fuel-kpis-grid">
+                <!-- Last Refill KPI -->
+                <div class="fuel-kpi-card fuel-kpi-last-refill" data-kpi="lastRefill">
+                  <div class="fuel-kpi-label">Last Refill</div>
+                  <div class="fuel-kpi-main" id="lastRefillKPI">
+                    <p class="empty-text">No refill recorded</p>
+                  </div>
+                  <div class="fuel-kpi-sub">Most recent fuel entry</div>
+                </div>
                 <div class="fuel-kpi-card" data-kpi="timeBetweenRecords">
                   <div class="fuel-kpi-label">Time Between Records</div>
                   <div class="fuel-kpi-main" id="timeBetweenRecords">--</div>
                   <div class="fuel-kpi-sub">days</div>
                   <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Average time in days between consecutive fuel refills.</p>
+                    <p class="kpi-description collapsed" data-max-lines="2">Time in days between your last two fuel refills.</p>
                     <button class="kpi-show-more" style="display: none;">Show More</button>
                   </div>
                 </div>
@@ -356,7 +365,7 @@
                   <div class="fuel-kpi-main" id="kmBetweenRecords">--</div>
                   <div class="fuel-kpi-sub">km</div>
                   <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Average distance driven between consecutive fuel refills.</p>
+                    <p class="kpi-description collapsed" data-max-lines="2">Distance driven between your last two fuel refills.</p>
                     <button class="kpi-show-more" style="display: none;">Show More</button>
                   </div>
                 </div>
@@ -369,16 +378,7 @@
                     <button class="kpi-show-more" style="display: none;">Show More</button>
                   </div>
                 </div>
-                <div class="fuel-kpi-card" data-kpi="kmSinceLastRefill">
-                  <div class="fuel-kpi-label">Kilometers Since Last Refill</div>
-                  <div class="fuel-kpi-main" id="kmSinceLastRefill">--</div>
-                  <div class="fuel-kpi-sub">km</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Distance driven since your last fuel refill.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
-                </div>
-              </div>
+                              </div>
             </div>
           </section>
 
@@ -454,16 +454,6 @@
                 <button id="fuelNextPageBtn" class="pagination-btn">
                   Next <i class="fas fa-chevron-right"></i>
                 </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Last Refill Info -->
-          <section class="last-refill-section">
-            <h2>Last Refill</h2>
-            <div class="panel-content">
-              <div id="lastRefillInfo">
-                <p class="empty-text">No refill recorded</p>
               </div>
             </div>
           </section>
