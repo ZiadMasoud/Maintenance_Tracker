@@ -140,7 +140,7 @@ body {
 .sidebar {
   width: var(--sidebar-width);
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-light);
+  border-right: none;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -158,7 +158,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: none;
   height: var(--header-height);
   flex-shrink: 0;
 }
@@ -508,7 +508,7 @@ body {
 header {
   height: var(--header-height);
   background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -736,6 +736,37 @@ section h2::before {
   gap: var(--space-4);
 }
 
+@media (max-width: 768px) {
+  .car-info-body {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .license-expiry-box {
+    order: 1;
+    width: 100%;
+    min-width: auto;
+  }
+
+  .car-info-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    gap: var(--space-2) var(--space-4);
+    order: 2;
+  }
+
+  .car-info-item {
+    gap: var(--space-1);
+  }
+
+  .car-info-item:nth-child(1) { grid-row: 1; grid-column: 1; }
+  .car-info-item:nth-child(2) { grid-row: 2; grid-column: 1; }
+  .car-info-item:nth-child(3) { grid-row: 1; grid-column: 2; }
+  .car-info-item:nth-child(4) { grid-row: 2; grid-column: 2; }
+}
+
 .car-info-main {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -764,7 +795,7 @@ section h2::before {
 }
 
 .license-expiry-box {
-  background: var(--bg-hover);
+  background: #ffffff;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
@@ -772,6 +803,7 @@ section h2::before {
   flex-direction: column;
   gap: var(--space-1);
   min-width: 140px;
+  box-shadow: var(--shadow-sm);
 }
 
 .license-label {
@@ -1018,15 +1050,17 @@ section h2::before {
   align-items: center;
   padding: var(--space-2) 0;
   font-size: 0.875rem;
+  font-weight: 400;
 }
 
 .item-row span:first-child {
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .item-row span:last-child {
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .category-badge {
@@ -1034,9 +1068,10 @@ section h2::before {
   padding: 2px 8px;
   border-radius: var(--radius-md);
   font-size: 0.6875rem;
-  font-weight: 900;
+  font-weight: 600;
   color: white;
   margin-left: var(--space-2);
+  background: var(--color-primary);
 }
 
 .session-total {
@@ -2076,12 +2111,13 @@ section h2::before {
 .session-total-details {
   margin-top: var(--space-4);
   padding: var(--space-4);
-  background: var(--bg-active);
-  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
   text-align: center;
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-primary);
+  box-shadow: var(--shadow-md);
 }
 
 /* ========================================
