@@ -773,8 +773,6 @@ class FuelUIRenderer {
           <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
           <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
           <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
-        </div>
-        <div class="fuel-history-cost">
           <span class="total">${parseFloat(record.totalCost).toLocaleString()} EGP</span>
         </div>
       </div>
@@ -981,8 +979,14 @@ class FuelEntryForm {
       liters: document.getElementById('fuelLiters'),
       totalCost: document.getElementById('fuelTotalCost'),
       isFullTank: document.getElementById('fuelFullTank'),
-      notes: document.getElementById('fuelNotes')
+      notes: document.getElementById('fuelNotes'),
+      tripDistance: document.getElementById('tripDistance'),
+      deductFromFunds: document.getElementById('fuelDeductFromFunds')
     };
+    this.tripEstimateDisplay = document.getElementById('tripEstimateDisplay');
+    this.estimatedLiters = document.getElementById('estimatedLiters');
+    this.estimatedCost = document.getElementById('estimatedCost');
+    this.consumptionRate = document.getElementById('consumptionRate');
     this.errorContainer = document.getElementById('fuelFormErrors');
     this.submitBtn = document.getElementById('saveFuelBtn');
 
@@ -1005,8 +1009,19 @@ class FuelEntryForm {
       }
     }
 
+    // Initialize checkbox states
+    if (this.inputs.deductFromFunds) {
+      this.inputs.deductFromFunds.checked = false;
+    }
+    if (this.inputs.isFullTank) {
+      this.inputs.isFullTank.checked = false;
+    }
+
     // Auto-calculate liters from total cost
     this.setupAutoCalculation();
+
+    // Setup trip cost calculator
+    this.setupTripCostCalculator();
 
     // Form submission
     this.form.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -1033,6 +1048,86 @@ class FuelEntryForm {
     };
 
     this.inputs.totalCost?.addEventListener('input', calculateLiters);
+  }
+
+  setupTripCostCalculator() {
+    const calculateTripCost = async () => {
+      const distance = parseFloat(this.inputs.tripDistance?.value) || 0;
+      
+      if (distance <= 0) {
+        if (this.tripEstimateDisplay) {
+          this.tripEstimateDisplay.style.display = 'none';
+        }
+        return;
+      }
+
+      // Get historical consumption data from analytics
+      const analytics = this.stateManager.getAnalytics();
+      const avgConsumption = analytics?.avgConsumption || 0; // L/100km
+      
+      const pricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
+
+      if (avgConsumption > 0 && pricePerLiter > 0) {
+        // Calculate: Liters = (Distance * Consumption) / 100
+        const litersNeeded = (distance * avgConsumption) / 100;
+        const tripCost = litersNeeded * pricePerLiter;
+
+        if (this.estimatedLiters) {
+          this.estimatedLiters.textContent = `${litersNeeded.toFixed(2)} L`;
+        }
+        if (this.estimatedCost) {
+          this.estimatedCost.textContent = `${tripCost.toFixed(2)} EGP`;
+        }
+        if (this.consumptionRate) {
+          this.consumptionRate.textContent = `${avgConsumption.toFixed(1)} L/100km (historical avg)`;
+        }
+        if (this.tripEstimateDisplay) {
+          this.tripEstimateDisplay.style.display = 'block';
+        }
+      } else if (avgConsumption <= 0) {
+        // No historical data yet
+        if (this.estimatedLiters) {
+          this.estimatedLiters.textContent = 'No data';
+        }
+        if (this.estimatedCost) {
+          this.estimatedCost.textContent = 'Need more fuel records';
+        }
+        if (this.consumptionRate) {
+          this.consumptionRate.textContent = 'Record at least 2 fuel entries';
+        }
+        if (this.tripEstimateDisplay) {
+          this.tripEstimateDisplay.style.display = 'block';
+        }
+      } else if (pricePerLiter <= 0) {
+        // Price not set
+        if (this.estimatedLiters) {
+          this.estimatedLiters.textContent = `${((distance * avgConsumption) / 100).toFixed(2)} L`;
+        }
+        if (this.estimatedCost) {
+          this.estimatedCost.textContent = 'Set fuel price first';
+        }
+        if (this.consumptionRate) {
+          this.consumptionRate.textContent = `${avgConsumption.toFixed(1)} L/100km`;
+        }
+        if (this.tripEstimateDisplay) {
+          this.tripEstimateDisplay.style.display = 'block';
+        }
+      }
+    };
+
+    this.inputs.tripDistance?.addEventListener('input', calculateTripCost);
+
+    // Setup clear button for trip distance
+    const clearTripBtn = document.getElementById('clearTripDistance');
+    if (clearTripBtn && this.inputs.tripDistance) {
+      clearTripBtn.addEventListener('click', () => {
+        this.inputs.tripDistance.value = '';
+        if (this.tripEstimateDisplay) {
+          this.tripEstimateDisplay.style.display = 'none';
+        }
+        this.inputs.tripDistance.focus();
+      });
+    }
   }
 
   setupValidation() {
@@ -1082,8 +1177,8 @@ class FuelEntryForm {
       } else {
         const newRecord = await this.stateManager.addRecord(formData);
         
-        // Add finance record for fuel
-        if (typeof window.addFuelExpense === 'function' && newRecord) {
+        // Add finance record for fuel (only if deductFromFunds is checked)
+        if (typeof window.addFuelExpense === 'function' && newRecord && formData.deductFromFunds) {
           await window.addFuelExpense(newRecord);
         }
         
@@ -1108,6 +1203,7 @@ class FuelEntryForm {
     const totalCost = parseFloat(this.inputs.totalCost?.value) || 0;
     const pricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
     const liters = pricePerLiter > 0 ? totalCost / pricePerLiter : 0;
+    const deductFromFunds = this.inputs.deductFromFunds?.checked ?? true;
     
     return {
       date: this.inputs.date?.value,
@@ -1116,7 +1212,8 @@ class FuelEntryForm {
       pricePerLiter: pricePerLiter,
       totalCost: totalCost,
       isFullTank: this.inputs.isFullTank?.checked || false,
-      notes: this.inputs.notes?.value || ''
+      notes: this.inputs.notes?.value || '',
+      deductFromFunds: deductFromFunds
     };
   }
 
@@ -1151,6 +1248,15 @@ class FuelEntryForm {
 
   resetForm() {
     this.form.reset();
+    
+    // Ensure checkbox states are correct after reset
+    if (this.inputs.deductFromFunds) {
+      this.inputs.deductFromFunds.checked = false;
+    }
+    if (this.inputs.isFullTank) {
+      this.inputs.isFullTank.checked = false;
+    }
+    
     if (this.inputs.date) {
       this.inputs.date.valueAsDate = new Date();
     }

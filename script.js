@@ -568,6 +568,16 @@ function initializeEventListeners() {
 
   // Initialize finance event listeners
   initializeFinanceEventListeners();
+
+  // Clear button for Record tab odometer
+  const clearSessionOdometerBtn = document.getElementById('clearSessionOdometer');
+  const sessionOdometerInput = document.getElementById('sessionOdometer');
+  if (clearSessionOdometerBtn && sessionOdometerInput) {
+    clearSessionOdometerBtn.addEventListener('click', () => {
+      sessionOdometerInput.value = '';
+      sessionOdometerInput.focus();
+    });
+  }
 }
 
 // ================================
@@ -1111,6 +1121,7 @@ function saveSession() {
   const odometer = parseInt(document.getElementById("sessionOdometer").value) || 0;
   const merchant = document.getElementById("sessionMerchant").value.trim();
   const notes = document.getElementById("sessionNotes").value.trim();
+  const deductFromFunds = document.getElementById("deductFromFunds")?.checked ?? true;
 
   if (odometer && odometer > currentOdometer) {
     currentOdometer = odometer;
@@ -1158,9 +1169,9 @@ function saveSession() {
       const newSessionId = e.target.result;
       items.forEach(i => itemStore.add(i));
 
-      // Add finance expense record for new session
+      // Add finance expense record for new session (only if deductFromFunds is checked)
       const totalCost = items.reduce((sum, i) => sum + (i.price || 0), 0);
-      if (totalCost > 0) {
+      if (totalCost > 0 && deductFromFunds) {
         addMaintenanceExpense(newSessionId, date, items, merchant);
       }
     };
@@ -3285,8 +3296,6 @@ function renderFuelPage() {
         <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
         <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
         <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
-      </div>
-      <div class="fuel-history-cost">
         <span class="total">${parseFloat(record.totalCost).toLocaleString()} EGP</span>
       </div>
     </div>

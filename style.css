@@ -1666,7 +1666,6 @@ section h2::before {
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
-  margin-bottom: 1rem;
 }
 
 .primary-btn:hover {
@@ -2207,22 +2206,138 @@ body.modal-open .floating-btn {
   align-items: start;
 }
 
+/* Inline Actions Row - Checkboxes and Save Button on Same Line */
+.inline-actions-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--space-4) !important;
+  margin-bottom: var(--space-4) !important;
+}
+
+.inline-checkboxes {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: var(--space-4) !important;
+  margin-bottom: 0 !important;
+}
+
+.inline-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-top: var(--space-2) !important;
+  margin-bottom: var(--space-2) !important;
+}
+
 .full-tank-group {
   padding-top: var(--space-2);
 }
 
-.full-tank-label {
+.checkbox-wrapper {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.checkbox-wrapper .checkbox-label {
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.checkbox-wrapper .help-text {
+  margin-left: 0;
+  padding-left: 0;
+  margin-top: 0;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
   cursor: pointer;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--text-primary);
   font-weight: 500;
   user-select: none;
+  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
-.full-tank-label input[type="checkbox"] {
+/* Input with clear button */
+.input-with-clear {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-clear input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.input-with-clear input[type="number"] {
+  padding-right: 40px;
+  /* Hide spinners */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input-with-clear input[type="number"]::-webkit-outer-spin-button,
+.input-with-clear input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.clear-input-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+  z-index: 2;
+}
+
+.clear-input-btn:hover {
+  background: var(--bg-hover);
+  color: var(--color-danger);
+}
+
+/* Mobile clear button */
+@media only screen and (max-width: 768px) {
+  .clear-input-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+    right: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: var(--space-1);
+  }
+
+  .input-with-clear input {
+    padding-right: 40px;
+  }
+}
+
+.checkbox-label input[type="checkbox"] {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -2231,11 +2346,11 @@ body.modal-open .floating-btn {
 }
 
 .checkmark {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: var(--bg-card);
   border: 2px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2246,29 +2361,31 @@ body.modal-open .floating-btn {
 .checkmark::after {
   content: "✓";
   color: white;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: bold;
   opacity: 0;
   transform: scale(0.5);
   transition: all var(--transition-fast);
 }
 
-.full-tank-label input[type="checkbox"]:checked+.checkmark {
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
   background: var(--color-success);
   border-color: var(--color-success);
 }
 
-.full-tank-label input[type="checkbox"]:checked+.checkmark::after {
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
   opacity: 1;
   transform: scale(1);
 }
 
-.full-tank-label:hover .checkmark {
+.checkbox-label:hover .checkmark {
   border-color: var(--color-primary);
 }
 
-.full-tank-text {
+.full-tank-text,
+.fund-deduction-text {
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Form Errors and Success Messages */
@@ -2416,7 +2533,7 @@ body.modal-open .floating-btn {
   padding: 0 var(--space-4);
 }
 
-.fuel-history-cost .total {
+.fuel-history-details .total {
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-primary);
@@ -2583,6 +2700,128 @@ body.modal-open .floating-btn {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: var(--radius-full);
+}
+
+/* Trip Cost Calculator Styles */
+.trip-calculator-row {
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.trip-distance-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.trip-distance-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.trip-distance-group label i {
+  color: var(--color-primary);
+}
+
+.trip-distance-group .help-text {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.trip-estimate-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.trip-estimate-display {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.estimate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+  font-size: 0.875rem;
+}
+
+.estimate-row.highlight {
+  background: rgba(139, 92, 246, 0.08);
+  margin: var(--space-1) calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
+
+.estimate-row.consumption-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px dashed var(--border-light);
+  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.estimate-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.estimate-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.estimate-value.cost {
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Mobile adjustments for trip calculator */
+@media (max-width: 767px) {
+  .trip-calculator-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .trip-estimate-display {
+    margin-top: var(--space-2);
+  }
+
+  /* Mobile adjustments for inline actions row */
+  .inline-actions-row {
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+  }
+
+  .inline-checkboxes {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-3) !important;
+    width: 100% !important;
+    margin-top: var(--space-2) !important;
+  }
+
+  .inline-actions {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+
+  .inline-actions .primary-btn {
+    width: 100% !important;
+  }
 }
 
 /* ========================================
@@ -2907,11 +3146,53 @@ body.modal-open .floating-btn {
   /* Full tank checkbox on mobile */
   .fuel-form-row {
     grid-template-columns: 1fr;
+    gap: var(--space-3);
+    justify-content: start;
+  }
+
+  .checkbox-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
   }
 
   .full-tank-group {
     padding-top: 0;
-    padding-bottom: var(--space-2);
+    padding-bottom: 0;
+  }
+
+  /* Mobile checkbox label adjustments */
+  .checkbox-label {
+    font-size: 0.8125rem;
+    gap: var(--space-1);
+  }
+
+  .checkmark {
+    width: 18px;
+    height: 18px;
+  }
+
+  .checkmark::after {
+    font-size: 10px;
+  }
+
+  /* Mobile clear button */
+  .clear-input-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 0.7rem;
+  }
+
+  .input-with-clear input {
+    padding-right: 32px;
+  }
+
+  /* Ensure checkboxes stay inline */
+  .full-tank-text,
+  .fund-deduction-text {
+    white-space: nowrap;
   }
 
   .kpi-card {
@@ -3145,29 +3426,28 @@ body.modal-open .floating-btn {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%);
   transition: all var(--transition-normal);
+}
+
+/* KPI specific accent colors - always visible */
+.finance-kpi-card.kpi-savings::before {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.finance-kpi-card.kpi-income::before {
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.finance-kpi-card.kpi-expenses::before {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+}
+
+.finance-kpi-card.kpi-balance::before {
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
 }
 
 .finance-kpi-card:hover::before {
   height: 6px;
-}
-
-/* KPI specific accent colors on hover */
-.finance-kpi-card.kpi-savings:hover::before {
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-}
-
-.finance-kpi-card.kpi-income:hover::before {
-  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
-}
-
-.finance-kpi-card.kpi-expenses:hover::before {
-  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-}
-
-.finance-kpi-card.kpi-balance:hover::before {
-  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
 }
 
 /* KPI Icons */
@@ -3864,20 +4144,30 @@ body.modal-open .floating-btn {
   background-color: var(--danger-50);
 }
 
-/* Full Tank Checkbox Layout Fix */
-.full-tank-label {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: var(--space-2) !important;
+/* Fund Deduction Checkbox - Uses shared .checkbox-label styles */
+.fund-deduction-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   cursor: pointer;
 }
 
-.full-tank-label input[type="checkbox"] {
+.fund-deduction-text {
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Checkbox group styling */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0;
 }
 
-.full-tank-text {
-  display: inline;
-  white-space: nowrap;
+.checkbox-group .help-text {
+  margin-left: calc(var(--space-2) + 20px);
+  margin-top: 0;
+  font-size: 0.75rem;
 }

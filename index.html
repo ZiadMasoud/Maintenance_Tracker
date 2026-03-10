@@ -411,24 +411,61 @@
                   </div>
                 </div>
 
-                <div class="form-row fuel-form-row">
-                  <div class="form-group checkbox-group full-tank-group">
+                <div class="form-group notes-group">
+                  <label for="fuelNotes">Notes (optional):</label>
+                  <textarea id="fuelNotes" placeholder="e.g., Premium fuel, highway driving..."></textarea>
+                </div>
+
+                <div class="form-row inline-actions-row">
+                  <div class="checkbox-wrapper inline-checkboxes">
                     <label class="checkbox-label full-tank-label">
                       <input type="checkbox" id="fuelFullTank" />
                       <span class="checkmark"></span>
                       <span class="full-tank-text">Full Tank Refill</span>
                     </label>
+                    <label class="checkbox-label fund-deduction-label">
+                      <input type="checkbox" id="fuelDeductFromFunds" />
+                      <span class="checkmark"></span>
+                      <span class="fund-deduction-text">Deduct from funds</span>
+                    </label>
                   </div>
-                  <div class="form-group notes-group">
-                    <label for="fuelNotes">Notes (optional):</label>
-                    <textarea id="fuelNotes" placeholder="e.g., Premium fuel, highway driving..."></textarea>
+                  <div class="actions inline-actions">
+                    <button type="submit" id="saveFuelBtn" class="primary-btn">
+                      Save Fuel Entry
+                    </button>
                   </div>
                 </div>
 
-                <div class="actions">
-                  <button type="submit" id="saveFuelBtn" class="primary-btn">
-                    Save Fuel Entry
-                  </button>
+                <!-- Trip Cost Calculator -->
+                <div class="form-row trip-calculator-row">
+                  <div class="form-group trip-distance-group">
+                    <label for="tripDistance">
+                      <i class="fas fa-route"></i> Trip Distance (km):
+                    </label>
+                    <div class="input-with-clear">
+                      <input type="number" id="tripDistance" placeholder="e.g., 250" min="1" step="1" />
+                      <button type="button" id="clearTripDistance" class="clear-input-btn" title="Clear">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <p class="help-text">Enter trip distance to estimate fuel cost based on your car's historical consumption</p>
+                  </div>
+                  <div class="form-group trip-estimate-group">
+                    <div class="trip-estimate-display" id="tripEstimateDisplay" style="display: none;">
+                      <div class="estimate-row">
+                        <span class="estimate-label">Estimated Liters:</span>
+                        <span class="estimate-value" id="estimatedLiters">--</span>
+                      </div>
+                      <div class="estimate-row highlight">
+                        <span class="estimate-label">Estimated Cost:</span>
+                        <span class="estimate-value cost" id="estimatedCost">--</span>
+                      </div>
+                      <div class="estimate-row consumption-info">
+                        <span class="estimate-label">Based on:</span>
+                        <span class="estimate-value" id="consumptionRate">--</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </form>
             </div>
@@ -573,7 +610,12 @@
 
               <div class="form-group">
                 <label>ODO (km):</label>
-                <input type="number" id="sessionOdometer" placeholder="Enter odometer reading" class="styled-input" />
+                <div class="input-with-clear">
+                  <input type="number" id="sessionOdometer" placeholder="Enter odometer reading" class="styled-input" />
+                  <button type="button" id="clearSessionOdometer" class="clear-input-btn" title="Clear">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
               </div>
 
               <div class="form-group">
@@ -584,6 +626,15 @@
               <div class="form-group">
                 <label>Notes:</label>
                 <textarea id="sessionNotes" placeholder="Optional" class="styled-input"></textarea>
+              </div>
+
+              <div class="form-group checkbox-wrapper">
+                <label class="checkbox-label fund-deduction-label">
+                  <input type="checkbox" id="deductFromFunds" />
+                  <span class="checkmark"></span>
+                  <span class="fund-deduction-text">Deduct from funds</span>
+                </label>
+                <p class="help-text">Uncheck to exclude this record from finance tracking</p>
               </div>
 
               <h3 class="items-section-title">Items / Services</h3>
