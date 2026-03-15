@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Car Maintenance Tracker</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -1019,8 +1019,29 @@
       </div>
     </div>
 
-  <script src="fuel-analytics.js"></script>
-  <script src="script.js"></script>
+    <!-- Floating Card Component -->
+    <div id="floatingCard" class="floating-card" style="display: none;">
+      <div class="floating-card-overlay"></div>
+      <div class="floating-card-container">
+        <div class="floating-card-header">
+          <h3 class="floating-card-title" id="floatingCardTitle">Confirm</h3>
+          <button class="floating-card-close" id="floatingCardClose">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="floating-card-body">
+          <p class="floating-card-message" id="floatingCardMessage">Are you sure?</p>
+          <input type="text" id="floatingCardInput" class="floating-card-input" style="display: none;" placeholder="Type to confirm">
+        </div>
+        <div class="floating-card-actions">
+          <button class="floating-card-btn floating-card-btn-cancel" id="floatingCardCancel">Cancel</button>
+          <button class="floating-card-btn floating-card-btn-confirm" id="floatingCardConfirm">OK</button>
+        </div>
+      </div>
+    </div>
+
+  <script src="js/fuel-analytics.js"></script>
+  <script src="js/script.js"></script>
 </body>
 
 </html>

@@ -50,6 +50,28 @@ A modern, feature-rich web application for tracking your car's maintenance histo
 
 ## 🚀 Getting Started
 
+### Project structure
+
+```
+Maintenance_Tracker/
+├── index.html          # Main app entry
+├── css/
+│   └── style.css       # Styles
+├── js/
+│   ├── script.js       # Main app logic
+│   └── fuel-analytics.js
+├── data/
+│   └── car-maintenance-data-2026-03-15.json  # Sample/seed data
+└── README.md
+```
+
+### See the app with sample data
+
+1. Open `index.html` in your browser.
+2. Go to **Settings** (gear icon).
+3. Under **Data Management**, click **Import** and choose `data/car-maintenance-data-2026-03-15.json`.
+4. Confirm the import. The app will show sample sessions, upcoming maintenance, fuel records, and car info.
+
 ## 📖 Usage
 
 ### Adding a Maintenance Session

@@ -1,0 +1,348 @@
+{
+  "sessions": [
+    {
+      "id": 1,
+      "date": "2024-06-10",
+      "odometer": 72000,
+      "merchant": "Quick Lube Center",
+      "notes": "First service at this mileage"
+    },
+    {
+      "id": 2,
+      "date": "2024-09-15",
+      "odometer": 85000,
+      "merchant": "Quick Lube Center",
+      "notes": "Annual service"
+    },
+    {
+      "id": 3,
+      "date": "2024-12-20",
+      "odometer": 93500,
+      "merchant": "AutoCare Pro",
+      "notes": "Pre-winter check"
+    },
+    {
+      "id": 4,
+      "date": "2025-01-20",
+      "odometer": 102000,
+      "merchant": "AutoCare Pro",
+      "notes": "Oil change and filter"
+    },
+    {
+      "id": 5,
+      "date": "2025-04-05",
+      "odometer": 110200,
+      "merchant": "City Garage",
+      "notes": "Tire rotation"
+    },
+    {
+      "id": 6,
+      "date": "2025-06-10",
+      "odometer": 118500,
+      "merchant": "City Garage",
+      "notes": "Brake inspection and tire rotation"
+    },
+    {
+      "id": 7,
+      "date": "2025-09-22",
+      "odometer": 121000,
+      "merchant": "Quick Lube Center",
+      "notes": "Oil top-up and filter check"
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "sessionId": 1,
+      "categoryId": 1,
+      "name": "Engine oil synthetic 5W-30",
+      "price": 420,
+      "interval": 10000,
+      "intervalMonths": 12,
+      "nextDueKm": 82000,
+      "merchant": "Quick Lube",
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "sessionId": 1,
+      "categoryId": 1,
+      "name": "Oil filter",
+      "price": 110,
+      "interval": 10000,
+      "intervalMonths": 12,
+      "nextDueKm": 82000,
+      "merchant": "",
+      "notes": ""
+    },
+    {
+      "id": 3,
+      "sessionId": 2,
+      "categoryId": 1,
+      "name": "Engine oil synthetic 5W-30",
+      "price": 450,
+      "interval": 10000,
+      "intervalMonths": 12,
+      "nextDueKm": 130000,
+      "merchant": "Quick Lube",
+      "notes": ""
+    },
+    {
+      "id": 4,
+      "sessionId": 2,
+      "categoryId": 1,
+      "name": "Oil filter",
+      "price": 120,
+      "interval": 10000,
+      "intervalMonths": 12,
+      "nextDueKm": 130000,
+      "merchant": "",
+      "notes": ""
+    },
+    {
+      "id": 5,
+      "sessionId": 3,
+      "categoryId": 5,
+      "name": "Cabin air filter",
+      "price": 95,
+      "interval": 20000,
+      "intervalMonths": 24,
+      "nextDueKm": 113500,
+      "merchant": "AutoCare Pro",
+      "notes": ""
+    },
+    {
+      "id": 6,
+      "sessionId": 4,
+      "categoryId": 1,
+      "name": "Oil helix H6 15-W50",
+      "price": 520,
+      "interval": 15000,
+      "intervalMonths": 12,
+      "nextDueKm": 117000,
+      "merchant": "AutoCare Pro",
+      "notes": ""
+    },
+    {
+      "id": 7,
+      "sessionId": 4,
+      "categoryId": 4,
+      "name": "Air filter replacement",
+      "price": 180,
+      "interval": 30000,
+      "intervalMonths": 24,
+      "nextDueKm": 132000,
+      "merchant": "",
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "sessionId": 5,
+      "categoryId": 3,
+      "name": "Tire rotation and balance",
+      "price": 150,
+      "interval": 10000,
+      "intervalMonths": 6,
+      "nextDueKm": 120200,
+      "merchant": "City Garage",
+      "notes": ""
+    },
+    {
+      "id": 9,
+      "sessionId": 6,
+      "categoryId": 2,
+      "name": "Brake pads (front)",
+      "price": 1200,
+      "interval": 50000,
+      "intervalMonths": 36,
+      "nextDueKm": 168500,
+      "merchant": "City Garage",
+      "notes": ""
+    },
+    {
+      "id": 10,
+      "sessionId": 6,
+      "categoryId": 3,
+      "name": "Timing belt / سيور",
+      "price": 2500,
+      "interval": 60000,
+      "intervalMonths": 48,
+      "nextDueKm": 154300,
+      "merchant": "",
+      "notes": "Due at 154k km"
+    },
+    {
+      "id": 11,
+      "sessionId": 6,
+      "categoryId": 1,
+      "name": "Oil and filter",
+      "price": 580,
+      "interval": 10000,
+      "intervalMonths": 12,
+      "nextDueKm": 128500,
+      "merchant": "City Garage",
+      "notes": ""
+    },
+    {
+      "id": 12,
+      "sessionId": 7,
+      "categoryId": 1,
+      "name": "Oil top-up",
+      "price": 280,
+      "interval": 5000,
+      "intervalMonths": 6,
+      "nextDueKm": 126000,
+      "merchant": "Quick Lube",
+      "notes": "Partial change"
+    }
+  ],
+  "categories": [
+    { "id": 1, "name": "Oil Change", "color": "#667eea" },
+    { "id": 2, "name": "Brake Service", "color": "#f56565" },
+    { "id": 3, "name": "Tire Service", "color": "#ed8936" },
+    { "id": 4, "name": "Engine Repair", "color": "#48bb78" },
+    { "id": 5, "name": "General Maintenance", "color": "#764ba2" }
+  ],
+  "fuelRecords": [
+    {
+      "id": "fuel-1",
+      "sessionId": "default",
+      "date": "2025-10-12",
+      "odometer": 115000,
+      "liters": 45,
+      "pricePerLiter": 21.5,
+      "totalCost": 967.5,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2025-10-12T08:00:00.000Z"
+    },
+    {
+      "id": "fuel-2",
+      "sessionId": "default",
+      "date": "2025-10-28",
+      "odometer": 117200,
+      "liters": 41,
+      "pricePerLiter": 22,
+      "totalCost": 902,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2025-10-28T17:30:00.000Z"
+    },
+    {
+      "id": "fuel-3",
+      "sessionId": "default",
+      "date": "2025-11-15",
+      "odometer": 119500,
+      "liters": 39.5,
+      "pricePerLiter": 22,
+      "totalCost": 869,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2025-11-15T09:00:00.000Z"
+    },
+    {
+      "id": "fuel-4",
+      "sessionId": "default",
+      "date": "2025-11-28",
+      "odometer": 120800,
+      "liters": 35,
+      "pricePerLiter": 21.8,
+      "totalCost": 763,
+      "isFullTank": false,
+      "notes": "Partial fill",
+      "createdAt": "2025-11-28T14:00:00.000Z"
+    },
+    {
+      "id": "fuel-5",
+      "sessionId": "default",
+      "date": "2025-12-01",
+      "odometer": 122000,
+      "liters": 42.5,
+      "pricePerLiter": 22.5,
+      "totalCost": 956.25,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2025-12-01T10:00:00.000Z"
+    },
+    {
+      "id": "fuel-6",
+      "sessionId": "default",
+      "date": "2025-12-18",
+      "odometer": 124100,
+      "liters": 38,
+      "pricePerLiter": 22.5,
+      "totalCost": 855,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2025-12-18T14:30:00.000Z"
+    },
+    {
+      "id": "fuel-7",
+      "sessionId": "default",
+      "date": "2026-01-05",
+      "odometer": 125800,
+      "liters": 40,
+      "pricePerLiter": 23,
+      "totalCost": 920,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2026-01-05T09:15:00.000Z"
+    },
+    {
+      "id": "fuel-8",
+      "sessionId": "default",
+      "date": "2026-01-22",
+      "odometer": 127400,
+      "liters": 41,
+      "pricePerLiter": 23.5,
+      "totalCost": 963.5,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2026-01-22T11:00:00.000Z"
+    },
+    {
+      "id": "fuel-9",
+      "sessionId": "default",
+      "date": "2026-02-08",
+      "odometer": 129100,
+      "liters": 39,
+      "pricePerLiter": 23,
+      "totalCost": 897,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2026-02-08T16:45:00.000Z"
+    },
+    {
+      "id": "fuel-10",
+      "sessionId": "default",
+      "date": "2026-03-01",
+      "odometer": 130500,
+      "liters": 43,
+      "pricePerLiter": 23.5,
+      "totalCost": 1010.5,
+      "isFullTank": true,
+      "notes": "",
+      "createdAt": "2026-03-01T08:30:00.000Z"
+    }
+  ],
+  "fuelSessions": [
+    {
+      "id": "default",
+      "vehicleId": "default",
+      "createdAt": "2026-03-15T05:22:11.384Z",
+      "updatedAt": "2026-03-15T05:22:11.384Z",
+      "records": []
+    }
+  ],
+  "currentOdometer": 130500,
+  "fuelPricePerLiter": 23.5,
+  "carInfo": {
+    "manufacturer": "Toyota",
+    "model": "Corolla",
+    "year": "2020",
+    "plate": "ABC 1234",
+    "color": "#00677f",
+    "licenseExpiry": "2026-12-31"
+  },
+  "exportDate": "2026-03-15T12:00:00.000Z"
+}

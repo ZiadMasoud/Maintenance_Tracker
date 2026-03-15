@@ -1,4 +1,239 @@
 // ================================
+// Floating Card Component
+// ================================
+class FloatingCard {
+  constructor() {
+    this.card = document.getElementById('floatingCard');
+    this.title = document.getElementById('floatingCardTitle');
+    this.message = document.getElementById('floatingCardMessage');
+    this.input = document.getElementById('floatingCardInput');
+    this.cancelBtn = document.getElementById('floatingCardCancel');
+    this.confirmBtn = document.getElementById('floatingCardConfirm');
+    this.closeBtn = document.getElementById('floatingCardClose');
+    this.overlay = this.card?.querySelector('.floating-card-overlay');
+    
+    this.resolve = null;
+    this.reject = null;
+    this.isInitialized = false;
+    
+    // Try to initialize immediately
+    this.tryInitialize();
+    
+    // Also try when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.tryInitialize());
+    }
+  }
+  
+  tryInitialize() {
+    if (this.isInitialized) return;
+    
+    // Check if all required elements exist
+    if (!this.card || !this.title || !this.message || !this.cancelBtn || !this.confirmBtn || !this.closeBtn) {
+      return; // Elements not ready yet
+    }
+    
+    this.isInitialized = true;
+    this.initializeEventListeners();
+  }
+  
+  initializeEventListeners() {
+    if (!this.closeBtn || !this.cancelBtn || !this.confirmBtn) {
+      console.error('Missing buttons for event listeners');
+      return;
+    }
+    
+    // Remove existing listeners to prevent duplicates
+    this.closeBtn.removeEventListener('click', this.hideHandler);
+    this.cancelBtn.removeEventListener('click', this.hideHandler);
+    this.confirmBtn.removeEventListener('click', this.confirmHandler);
+    if (this.overlay) {
+      this.overlay.removeEventListener('click', this.hideHandler);
+    }
+    
+    // Bind handlers to maintain context
+    this.hideHandler = () => {
+      this.hide();
+    };
+    
+    this.confirmHandler = () => {
+      this.confirm();
+    };
+    
+    // Add new listeners
+    this.closeBtn.addEventListener('click', this.hideHandler);
+    this.cancelBtn.addEventListener('click', this.hideHandler);
+    this.confirmBtn.addEventListener('click', this.confirmHandler);
+    if (this.overlay) {
+      this.overlay.addEventListener('click', this.hideHandler);
+    }
+    
+    // Close on Escape key
+    this.escapeHandler = (e) => {
+      if (e.key === 'Escape' && this.card && this.card.style.display !== 'none') {
+        this.hide();
+      }
+    };
+    
+    document.addEventListener('keydown', this.escapeHandler);
+  }
+  
+  show(options = {}) {
+    console.log('FloatingCard.show() called with:', options);
+    console.log('isInitialized:', this.isInitialized);
+    console.log('Elements:', {
+      card: !!this.card,
+      title: !!this.title,
+      message: !!this.message,
+      cancelBtn: !!this.cancelBtn,
+      confirmBtn: !!this.confirmBtn
+    });
+    
+    return new Promise((resolve, reject) => {
+      // Ensure initialization
+      if (!this.isInitialized) {
+        console.log('Trying to initialize floating card...');
+        this.tryInitialize();
+        if (!this.isInitialized) {
+          console.error('Floating card: Cannot initialize - DOM elements not found');
+          // Fallback to native dialogs
+          const { type = 'confirm', message = '', title = '' } = options;
+          if (type === 'alert') {
+            alert(message);
+            resolve();
+          } else {
+            resolve(confirm(message) ? 'true' : null);
+          }
+          return;
+        }
+      }
+      
+      console.log('Floating card initialized, showing modal...');
+      this.resolve = resolve;
+      this.reject = reject;
+      
+      const {
+        title = 'Confirm',
+        message = 'Are you sure?',
+        type = 'confirm', // 'alert' or 'confirm'
+        confirmText = 'OK',
+        cancelText = 'Cancel',
+        requireInput = false,
+        inputPlaceholder = 'Type to confirm',
+        inputValue = ''
+      } = options;
+      
+      // Store the type and requireInput for later use in confirm()
+      this.currentType = type;
+      this.requireInput = !!requireInput;
+      
+      // Set content
+      this.title.textContent = title;
+      this.message.textContent = message;
+      this.confirmBtn.textContent = confirmText;
+      this.cancelBtn.textContent = cancelText;
+      
+      // Handle input field
+      if (requireInput && this.input) {
+        this.input.style.display = 'block';
+        this.input.placeholder = inputPlaceholder;
+        this.input.value = inputValue;
+        this.input.focus();
+      } else if (this.input) {
+        this.input.style.display = 'none';
+      }
+      
+      // Handle alert mode (hide cancel button)
+      if (type === 'alert') {
+        this.cancelBtn.style.display = 'none';
+        this.confirmBtn.style.backgroundColor = '';
+      } else {
+        this.cancelBtn.style.display = 'block';
+      }
+      
+      // Show card
+      this.card.style.display = 'flex';
+      document.body.classList.add('modal-open');
+      
+      // Focus management
+      setTimeout(() => {
+        if (requireInput && this.input) {
+          this.input.focus();
+        } else {
+          this.confirmBtn.focus();
+        }
+      }, 100);
+    });
+  }
+  
+  hide() {
+    if (!this.card) {
+      return;
+    }
+    
+    this.card.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    if (this.input) this.input.value = '';
+    
+    if (this.reject) {
+      console.log('Rejecting with false');
+      this.reject(false);
+      this.resolve = null;
+      this.reject = null;
+    }
+  }
+  
+  confirm() {
+    if (!this.card) {
+      return;
+    }
+    
+    this.card.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    const inputValue = this.input ? this.input.value : '';
+    if (this.input) this.input.value = '';
+    
+    if (this.resolve) {
+      let result;
+      if (this.currentType === 'alert') {
+        result = undefined; // Alerts don't need a return value
+      } else if (this.requireInput && this.input) {
+        result = inputValue; // Input dialogs return the input value
+      } else {
+        result = true; // Confirm dialogs return true
+      }
+      
+      console.log('Resolving with:', result);
+      this.resolve(result);
+      this.resolve = null;
+      this.reject = null;
+    }
+  }
+}
+
+// Initialize floating card immediately
+const floatingCard = new FloatingCard();
+
+// Global functions to replace alert and confirm
+function showAlert(message, title = 'Alert') {
+  return floatingCard.show({
+    title,
+    message,
+    type: 'alert',
+    confirmText: 'OK'
+  });
+}
+
+function showConfirm(message, title = 'Confirm', options = {}) {
+  return floatingCard.show({
+    title,
+    message,
+    type: 'confirm',
+    ...options
+  });
+}
+
+// ================================
 // IndexedDB Setup
 // ================================
 let db;
@@ -80,7 +315,7 @@ request.onsuccess = function (e) {
 };
 
 request.onerror = function () {
-  alert("Database failed to open");
+  showAlert("Database failed to open");
 };
 
 // ================================
@@ -742,9 +977,9 @@ function saveFuelSettings() {
   if (price && price > 0) {
     fuelPricePerLiter = price;
     localStorage.setItem('fuelPricePerLiter', price.toString());
-    alert('Fuel settings saved successfully!');
+    showAlert('Fuel settings saved successfully!');
   } else {
-    alert('Please enter a valid price per liter.');
+    showAlert('Please enter a valid price per liter.');
   }
 }
 
@@ -848,12 +1083,12 @@ if (addCategoryBtn) {
     const color = newCategoryColor.value;
 
     if (!name) {
-      alert("Please enter a category name");
+      showAlert("Please enter a category name");
       return;
     }
 
     if (!db) {
-      alert("Database not initialized. Please refresh the page.");
+      showAlert("Database not initialized. Please refresh the page.");
       return;
     }
 
@@ -869,7 +1104,7 @@ if (addCategoryBtn) {
     };
 
     tx.onerror = () => {
-      alert("Category with this name already exists");
+      showAlert("Category with this name already exists");
     };
   });
 }
@@ -976,7 +1211,7 @@ function saveCategoryEdit() {
   const newColor = editCategoryColor.value;
 
   if (!newName) {
-    alert("Please enter a category name");
+    showAlert("Please enter a category name");
     return;
   }
 
@@ -998,7 +1233,7 @@ function saveCategoryEdit() {
   };
 
   tx.onerror = () => {
-    alert("Category with this name already exists");
+    showAlert("Category with this name already exists");
   };
 }
 
@@ -1007,14 +1242,16 @@ function editCategory(id) {
 }
 
 function deleteCategory(id) {
-  if (!confirm("Are you sure you want to delete this category? Items with this category will have no category assigned.")) return;
-  if (!db) return;
-  const tx = db.transaction("categories", "readwrite");
-  tx.objectStore("categories").delete(id);
-  tx.oncomplete = () => {
-    loadCategoriesList();
-    loadCategoriesForFilter();
-  };
+  showConfirm("Are you sure you want to delete this category? Items with this category will have no category assigned.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+    const tx = db.transaction("categories", "readwrite");
+    tx.objectStore("categories").delete(id);
+    tx.oncomplete = () => {
+      loadCategoriesList();
+      loadCategoriesForFilter();
+    };
+  });
 }
 
 // ================================
@@ -1107,7 +1344,7 @@ if (saveSessionBtn) {
 
 function saveSession() {
   if (!db) {
-    alert("Database not initialized. Please refresh the page.");
+    showAlert("Database not initialized. Please refresh the page.");
     return;
   }
 
@@ -1615,7 +1852,6 @@ function renderUpcomingPage() {
 
         div.innerHTML = `
           <div class="upcoming-content">
-            <span class="urgency-badge ${status}">${urgencyText}</span>
             <div class="upcoming-info">
               <div class="item-header-row">
                 <span class="item-name">${item.name}</span>
@@ -1627,6 +1863,7 @@ function renderUpcomingPage() {
               </div>
             </div>
             <div class="upcoming-actions">
+              <span class="urgency-badge ${status}">${urgencyText}</span>
               <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
                 <i class="fas fa-check"></i>
               </button>
@@ -1888,22 +2125,28 @@ function displaySessionDetails(session, items, categories) {
 }
 
 function markMaintenanceDone(itemId) {
-  if (!confirm("Mark this maintenance as done? It will be removed from upcoming maintenance.")) return;
-  if (!db) return;
-  const tx = db.transaction("items", "readwrite");
-  const store = tx.objectStore("items");
+  showConfirm("Mark this maintenance as done? It will be removed from upcoming maintenance.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+    const tx = db.transaction("items", "readwrite");
+    const store = tx.objectStore("items");
 
-  store.get(itemId).onsuccess = e => {
-    const item = e.target.result;
-    if (item) {
-      const updatedItem = { ...item, nextDueKm: null };
-      store.put(updatedItem);
+    store.get(itemId).onsuccess = e => {
+      const item = e.target.result;
+      if (item) {
+        const updatedItem = { ...item, nextDueKm: null };
+        store.put(updatedItem);
 
-      tx.oncomplete = () => {
-        renderAll();
-      };
-    }
-  };
+        tx.oncomplete = () => {
+          renderAll();
+        };
+      }
+    };
+
+    tx.onerror = () => {
+      console.error("Error marking maintenance as done:", tx.error);
+    };
+  });
 }
 
 function editUpcomingItem(itemId) {
@@ -1937,7 +2180,7 @@ function saveUpcomingEdit() {
   const newIntervalMonths = parseInt(editUpcomingIntervalMonths.value) || null;
 
   if (!newInterval || isNaN(newInterval) || newInterval <= 0) {
-    alert('Please enter a valid service interval');
+    showAlert('Please enter a valid service interval');
     return;
   }
 
@@ -2004,58 +2247,66 @@ function restoreUpcomingItem(itemId) {
 
   tx.onerror = () => {
     console.error("Error restoring item:", tx.error);
-    alert("Error restoring item. Please try again.");
+    showAlert("Error restoring item. Please try again.");
   };
 }
 
 function deleteCompletedItem(itemId) {
-  if (!confirm("Are you sure you want to delete this item from history? This action cannot be undone.")) {
-    return;
-  }
+  showConfirm("Are you sure you want to delete this item from history? This action cannot be undone.").then(confirmed => {
+    if (!confirmed) {
+      return;
+    }
 
-  if (!db) {
-    console.error("Database not initialized");
-    return;
-  }
+    if (!db) {
+      console.error("Database not initialized");
+      return;
+    }
 
-  const tx = db.transaction("items", "readwrite");
-  const itemStore = tx.objectStore("items");
+    const tx = db.transaction("items", "readwrite");
+    const itemStore = tx.objectStore("items");
 
-  itemStore.delete(itemId);
+    itemStore.delete(itemId);
 
-  tx.oncomplete = () => {
-    renderAll();
-  };
+    tx.oncomplete = () => {
+      renderAll();
+    };
 
-  tx.onerror = () => {
-    console.error("Error deleting item:", tx.error);
-    alert("Error deleting item. Please try again.");
-  };
+    tx.onerror = () => {
+      console.error("Error deleting item:", tx.error);
+      showAlert("Error deleting item. Please try again.");
+    };
+  });
 }
 
 function deleteSession(id) {
-  if (!confirm("Delete this session permanently?")) return;
-  if (!db) return;
+  showConfirm("Delete this session permanently?").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
 
-  // Delete finance records first
-  deleteFinanceRecordsBySession(id).then(() => {
-    const tx = db.transaction(["sessions", "items"], "readwrite");
-    tx.objectStore("sessions").delete(id);
-    const itemStore = tx.objectStore("items");
-    itemStore.openCursor().onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor) {
-        if (cursor.value.sessionId === id) cursor.delete();
-        cursor.continue();
-      }
-    };
-    tx.oncomplete = () => {
-      renderAll();
-      // Refresh finance records if on finance tab
-      if (document.body.getAttribute('data-active-tab') === 'finance') {
-        loadFinanceRecords();
-      }
-    };
+    // Delete finance records first
+    deleteFinanceRecordsBySession(id).then(() => {
+      const tx = db.transaction(["sessions", "items"], "readwrite");
+      tx.objectStore("sessions").delete(id);
+      const itemStore = tx.objectStore("items");
+      itemStore.openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.value.sessionId === id) cursor.delete();
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => {
+        renderAll();
+        // Refresh finance records if on finance tab
+        if (document.body.getAttribute('data-active-tab') === 'finance') {
+          loadFinanceRecords();
+        }
+      };
+      tx.onerror = () => {
+        console.error("Error deleting session:", tx.error);
+        showAlert("Error deleting session. Please try again.");
+      };
+    });
   });
 }
 
@@ -2973,7 +3224,7 @@ function renderCarInfo() {
 // ================================
 function exportAllData() {
   if (!db) {
-    alert("Database not initialized. Please refresh the page.");
+    showAlert("Database not initialized. Please refresh the page.");
     return;
   }
   const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readonly");
@@ -3075,13 +3326,12 @@ function handleImportData(e) {
     try {
       const importData = JSON.parse(event.target.result);
 
-      if (!confirm(`This will replace all existing data with the imported data. Are you sure you want to continue?`)) {
-        return;
-      }
-
-      importAllData(importData);
+      showConfirm(`This will replace all existing data with the imported data. Are you sure you want to continue?`).then(confirmed => {
+        if (!confirmed) return;
+        importAllData(importData);
+      });
     } catch (error) {
-      alert('Error reading file. Please make sure it\'s a valid JSON file.');
+      showAlert('Error reading file. Please make sure it\'s a valid JSON file.');
     }
   };
 
@@ -3091,7 +3341,7 @@ function handleImportData(e) {
 
 function importAllData(importData) {
   if (!db) {
-    alert("Database not initialized. Please refresh the page.");
+    showAlert("Database not initialized. Please refresh the page.");
     return;
   }
   const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readwrite");
@@ -3160,93 +3410,87 @@ function importAllData(importData) {
       fuelApp.stateManager.loadSession('default');
     }
 
-    alert('Data imported successfully!');
+    showAlert('Data imported successfully!');
     renderAll();
     loadCategoriesForFilter();
   };
 
   tx.onerror = () => {
-    alert('Error importing data. Please try again.');
+    showAlert('Error importing data. Please try again.');
   };
 }
 
 function resetAllData() {
-  if (!confirm('Are you sure you want to reset ALL data? This action cannot be undone!')) {
-    return;
-  }
+  showConfirm('Are you sure you want to reset ALL data? This action cannot be undone!').then(confirmed => {
+    if (!confirmed) return;
 
-  if (!confirm('This will permanently delete all sessions, items, categories, fuel records, and finance records. Type "RESET" to confirm.')) {
-    return;
-  }
+    return showConfirm('This will permanently delete all sessions, items, categories, fuel records, and finance records. Are you sure?', 'Confirm');
+  }).then(confirmed => {
+    if (!confirmed) return;
 
-  if (!db) {
-    alert("Database not initialized. Please refresh the page.");
-    return;
-  }
+    if (!db) {
+      showAlert("Database not initialized. Please refresh the page.");
+      return;
+    }
 
-  const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords"], "readwrite");
-
-  tx.objectStore("sessions").clear();
-  tx.objectStore("items").clear();
-  tx.objectStore("categories").clear();
-  tx.objectStore("fuelRecords").clear();
-  tx.objectStore("fuelSessions").clear();
-  tx.objectStore("financeRecords").clear();
-
-  tx.oncomplete = () => {
-    currentOdometer = 0;
-    localStorage.setItem('currentOdometer', '0');
-    if (odometerValue) odometerValue.textContent = '0';
-
-    fuelPricePerLiter = 0;
-    localStorage.setItem('fuelPricePerLiter', '0');
-    loadFuelSettings();
-
-    searchTerm = '';
-    selectedCategoryFilter = '';
-    selectedDateFilter = '';
-    currentPage = 1;
-    sessionSearch.value = '';
-    categoryFilter.value = '';
-    dateFilter.value = '';
-
-    carInfo = {
-      manufacturer: '',
-      model: '',
-      year: '',
-      plate: '',
-      color: '#3b82f6',
-      licenseExpiry: ''
-    };
     try {
-      localStorage.removeItem('carInfo');
-    } catch (e) {
-      console.error('Failed to remove carInfo from localStorage', e);
+      const storeNames = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords"];
+      const tx = db.transaction(storeNames, "readwrite");
+
+      tx.oncomplete = () => {
+        // Reset odometer
+        currentOdometer = 0;
+        localStorage.setItem('currentOdometer', '0');
+        if (odometerValue) odometerValue.textContent = '0';
+
+        // Reset car info
+        carInfo = {
+          manufacturer: '',
+          model: '',
+          year: '',
+          plate: '',
+          color: '#3b82f6',
+          licenseExpiry: ''
+        };
+        localStorage.removeItem('carInfo');
+
+        // Reset fuel price per liter
+        fuelPricePerLiter = 0;
+        localStorage.removeItem('fuelPricePerLiter');
+        loadFuelSettings();
+
+        // Reset fuel analytics
+        if (typeof fuelApp !== 'undefined' && fuelApp) {
+          fuelApp.stateManager.loadSession('default');
+        }
+
+        // Reset finance records
+        allFinanceRecords = [];
+        financeCurrentPage = 1;
+
+        showAlert('All data has been reset!');
+        renderAll();
+        loadCategoriesForFilter();
+
+        // Refresh finance if on finance tab
+        if (document.body.getAttribute('data-active-tab') === 'finance') {
+          loadFinanceRecords();
+        }
+      };
+
+      tx.onerror = () => {
+        showAlert('Error resetting data: ' + (tx.error ? tx.error.message : 'Please try again.'));
+      };
+
+      storeNames.forEach(name => {
+        if (db.objectStoreNames.contains(name)) {
+          tx.objectStore(name).clear();
+        }
+      });
+    } catch (err) {
+      showAlert('Error resetting data: ' + (err && err.message ? err.message : 'Please try again.'));
     }
-    renderCarInfo();
-
-    // Reset fuel analytics
-    if (typeof fuelApp !== 'undefined' && fuelApp) {
-      fuelApp.stateManager.loadSession('default');
-    }
-
-    // Reset finance records
-    allFinanceRecords = [];
-    financeCurrentPage = 1;
-
-    alert('All data has been reset!');
-    renderAll();
-    loadCategoriesForFilter();
-
-    // Refresh finance if on finance tab
-    if (document.body.getAttribute('data-active-tab') === 'finance') {
-      loadFinanceRecords();
-    }
-  };
-
-  tx.onerror = () => {
-    alert('Error resetting data. Please try again.');
-  };
+  }).catch(() => {});
 }
 
 // ================================
@@ -3429,13 +3673,13 @@ function saveFund() {
   const notes = fundNotes?.value?.trim();
 
   if (!date || isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid date and amount');
+    showAlert('Please enter a valid date and amount');
     saveFund.isSubmitting = false;
     return;
   }
 
   if (!source) {
-    alert('Please enter a source/description');
+    showAlert('Please enter a source/description');
     saveFund.isSubmitting = false;
     return;
   }
@@ -3472,7 +3716,7 @@ function saveFund() {
   };
 
   tx.onerror = () => {
-    alert('Error saving fund. Please try again.');
+    showAlert('Error saving fund. Please try again.');
     saveFund.isSubmitting = false;
   };
 }
@@ -3789,20 +4033,22 @@ function deleteFinanceRecordsBySession(sessionId) {
 function deleteFinanceRecord(recordId) {
   if (!db) return;
 
-  if (!confirm('Are you sure you want to delete this transaction?')) return;
+  showConfirm('Are you sure you want to delete this transaction?').then(confirmed => {
+    if (!confirmed) return;
 
-  const tx = db.transaction('financeRecords', 'readwrite');
-  const store = tx.objectStore('financeRecords');
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
 
-  store.delete(recordId);
+    store.delete(recordId);
 
-  tx.oncomplete = () => {
-    loadFinanceRecords();
-  };
+    tx.oncomplete = () => {
+      loadFinanceRecords();
+    };
 
-  tx.onerror = () => {
-    alert('Error deleting record. Please try again.');
-  };
+    tx.onerror = () => {
+      showAlert('Error deleting record. Please try again.');
+    };
+  });
 }
 
 // Edit Finance Record - Open Popup
@@ -3850,12 +4096,12 @@ function saveTransactionEdit() {
   const notes = editTransactionNotes?.value?.trim();
 
   if (!date || isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid date and amount');
+    showAlert('Please enter a valid date and amount');
     return;
   }
 
   if (!description) {
-    alert('Please enter a description');
+    showAlert('Please enter a description');
     return;
   }
 
@@ -3865,7 +4111,7 @@ function saveTransactionEdit() {
   store.get(id).onsuccess = e => {
     const record = e.target.result;
     if (!record) {
-      alert('Record not found');
+      showAlert('Record not found');
       return;
     }
 
@@ -3889,7 +4135,7 @@ function saveTransactionEdit() {
   };
 
   tx.onerror = () => {
-    alert('Error saving changes. Please try again.');
+    showAlert('Error saving changes. Please try again.');
   };
 }
 
