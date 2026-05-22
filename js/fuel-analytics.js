@@ -256,6 +256,18 @@ class FuelDataManager {
     return this._db;
   }
 
+  // Close any open database connection used by fuel analytics
+  static async closeDatabase() {
+    if (this._db) {
+      try {
+        this._db.close();
+      } catch (e) {
+        console.warn('FuelDataManager closeDatabase error:', e);
+      }
+      this._db = null;
+    }
+  }
+
   // Generate unique ID
   static generateId() {
     return `fuel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -333,7 +345,7 @@ class FuelDataManager {
   // Update a record
   static async updateRecord(recordId, updates) {
     const db = await this.getDB();
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.STORE_FUEL], 'readwrite');
       const store = transaction.objectStore(this.STORE_FUEL);
       
@@ -384,21 +396,20 @@ class FuelDataManager {
   // Get or create session
   static async getSession(sessionId = 'default') {
     const db = await this.getDB();
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.STORE_FUEL_SESSIONS], 'readonly');
       const store = transaction.objectStore(this.STORE_FUEL_SESSIONS);
       const request = store.get(sessionId);
 
-      request.onsuccess = async () => {
+      request.onsuccess = () => {
         if (request.result) {
-          // Get associated records
-          const records = await this.getRecordsBySession(sessionId);
-          resolve({
-            ...request.result,
-            records
-          });
+          this.getRecordsBySession(sessionId)
+            .then(records => resolve({
+              ...request.result,
+              records
+            }))
+            .catch(reject);
         } else {
-          // Create default session
           const newSession = {
             id: sessionId,
             vehicleId: 'default',
@@ -406,8 +417,9 @@ class FuelDataManager {
             updatedAt: new Date().toISOString(),
             records: []
           };
-          await this.saveSession(newSession);
-          resolve(newSession);
+          this.saveSession(newSession)
+            .then(() => resolve(newSession))
+            .catch(reject);
         }
       };
       request.onerror = () => reject(request.error);
@@ -1400,37 +1412,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Update Fuel KPIs on Main Dashboard
 // ================================
 function updateFuelKPIsOnDashboard() {
-  const dbRequest = indexedDB.open('carMaintainDB', 7); // Must match DB_VERSION constant
-  
-  dbRequest.onsuccess = function(e) {
-    const db = e.target.result;
-    const tx = db.transaction('fuelRecords', 'readonly');
-    
-    // Add transaction error handling
+  const renderKPIs = (dbConnection, closeAfterRender = false) => {
+    const tx = dbConnection.transaction('fuelRecords', 'readonly');
     tx.onerror = (error) => {
       console.error('Fuel KPI transaction error:', error);
     };
-    
+
     const store = tx.objectStore('fuelRecords');
     const records = [];
-    
-    store.openCursor().onsuccess = function(event) {
+    const cursorRequest = store.openCursor();
+
+    cursorRequest.onsuccess = function(event) {
       const cursor = event.target.result;
       if (cursor) {
         records.push(cursor.value);
         cursor.continue();
       } else {
-        // Calculate and update KPIs - exclude first record's liters (baseline fill)
         if (records.length >= 2) {
           const sortedRecords = records.sort((a, b) => a.odometer - b.odometer);
           const totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
-          // Sum liters from records[1] onwards - fuel actually consumed to travel the distance
           const totalLiters = sortedRecords.slice(1).reduce((sum, r) => sum + r.liters, 0);
           const avgConsumption = totalDistance > 0 ? (totalLiters / totalDistance) * 100 : 0;
-          
+
           const kpiAvgFuelValue = document.getElementById('kpiAvgFuelValue');
           const kpiAvgFuelSub = document.getElementById('kpiAvgFuelSub');
-          
+
           if (kpiAvgFuelValue) {
             kpiAvgFuelValue.textContent = `${avgConsumption.toFixed(1)}`;
           }
@@ -1438,9 +1444,48 @@ function updateFuelKPIsOnDashboard() {
             kpiAvgFuelSub.textContent = 'L/100km';
           }
         }
+
+        if (closeAfterRender) {
+          try {
+            dbConnection.close();
+          } catch (e) {
+            console.warn('Failed to close temporary fuel KPI database connection:', e);
+          }
+        }
+      }
+    };
+
+    cursorRequest.onerror = function(event) {
+      console.error('Fuel KPI cursor error:', event.target.error);
+      if (closeAfterRender) {
+        try {
+          dbConnection.close();
+        } catch (e) {
+          console.warn('Failed to close temporary fuel KPI database connection:', e);
+        }
       }
     };
   };
+
+  if (typeof db !== 'undefined' && db && isDbHealthy) {
+    renderKPIs(db, false);
+  } else if (typeof FuelDataManager !== 'undefined' && FuelDataManager && typeof FuelDataManager.getDB === 'function') {
+    FuelDataManager.getDB().then(dbConnection => renderKPIs(dbConnection, false)).catch(error => {
+      console.error('Failed to open fuel database for KPI update:', error);
+    });
+  } else {
+    const dbRequest = indexedDB.open('carMaintainDB', 7);
+    dbRequest.onsuccess = function(e) {
+      const tempDb = e.target.result;
+      renderKPIs(tempDb, true);
+    };
+    dbRequest.onerror = function(e) {
+      console.error('Fuel KPI database open error:', e.target.error);
+    };
+    dbRequest.onblocked = function() {
+      console.warn('Fuel KPI database open blocked');
+    };
+  }
 }
 
 // Export for module usage
