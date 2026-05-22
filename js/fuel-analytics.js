@@ -207,7 +207,7 @@ class FuelStateManager {
 // ================================
 class FuelDataManager {
   static DB_NAME = 'carMaintainDB';
-  static DB_VERSION = 5; // Incremented to match main DB version with finance store
+  static DB_VERSION = 6; // Incremented to match main DB version
   static STORE_FUEL = 'fuelRecords';
   static STORE_FUEL_SESSIONS = 'fuelSessions';
 
@@ -1391,7 +1391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Update Fuel KPIs on Main Dashboard
 // ================================
 function updateFuelKPIsOnDashboard() {
-  const dbRequest = indexedDB.open('carMaintainDB', 5);
+  const dbRequest = indexedDB.open('carMaintainDB', 6);
   
   dbRequest.onsuccess = function(e) {
     const db = e.target.result;

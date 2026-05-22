@@ -351,8 +351,9 @@ request.onsuccess = function (e) {
   initializeHeaderActions();
 };
 
-request.onerror = function () {
-  showAlert("Database failed to open");
+request.onerror = function (e) {
+  console.error("Database failed to open:", e.target.error);
+  showAlert("Database failed to open: " + e.target.error.message);
 };
 
 // ================================
