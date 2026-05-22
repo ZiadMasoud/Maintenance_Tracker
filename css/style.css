@@ -15,11 +15,11 @@
   
   /* Background Colors (blue-tinted neutrals) */
   --bg-page: #f0f4f6;
-  --bg-sidebar: #ffffff;
+  --bg-sidebar: #eaf9fc;
   --bg-card: #ffffff;
   --bg-hover: #e8eef2;
   --bg-active: #b8dce4;
-  --bg-mobile-nav: #ffffff;
+  --bg-mobile-nav: #eaf9fc;
   
   /* Text Colors */
   --text-primary: #1e3a47;
@@ -470,6 +470,22 @@ body {
   color: var(--color-primary);
 }
 
+.activate-reminder-btn .fa-play {
+  color: white;
+}
+
+.activate-reminder-btn:hover .fa-play {
+  color: white;
+}
+
+.undo-activation-btn .fa-undo {
+  color: white;
+}
+
+.undo-activation-btn:hover .fa-undo {
+  color: white;
+}
+
 .mobile-overlay {
   display: none;
   position: fixed;
@@ -644,6 +660,7 @@ section h2::before {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: none;
+  position: relative;
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -696,6 +713,7 @@ section h2::before {
 /* Car Info Card Specific */
 .car-info-card {
   position: relative;
+  border: 1px solid var(--border-subtle);
 }
 
 .edit-car-info-btn {
@@ -999,28 +1017,42 @@ section h2::before {
 .delete-btn {
   position: absolute;
   top: var(--space-4);
-  background: none;
-  border: none;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
   cursor: pointer;
   padding: var(--space-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   font-size: 1rem;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-btn {
-  right: 48px;
+  right: 60px;
+  background: rgba(0, 103, 127, 0.15);
   color: var(--color-primary);
 }
 
 .delete-btn {
   right: var(--space-4);
+  background: rgba(220, 38, 38, 0.15);
   color: var(--color-danger);
 }
 
-.edit-btn:hover,
+.edit-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 .delete-btn:hover {
-  background: var(--bg-hover);
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
 }
 
 .session-card p {
@@ -1201,6 +1233,11 @@ section h2::before {
   animation: pulse 2s infinite;
 }
 
+.urgency-badge.status-standby {
+  background: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}
+
 @keyframes pulse {
 
   0%,
@@ -1211,6 +1248,17 @@ section h2::before {
   50% {
     opacity: 0.7;
   }
+}
+
+/* Standby state for not installed parts */
+.upcoming-item.status-standby {
+  background: #d1d5db;
+  opacity: 0.8;
+}
+
+.upcoming-item.status-standby:hover {
+  background: #e5e7eb;
+  opacity: 1;
 }
 
 .item-details {
@@ -1232,9 +1280,11 @@ section h2::before {
 }
 
 .mark-done-btn,
-.edit-upcoming-btn {
-  width: 32px;
-  height: 32px;
+.edit-upcoming-btn,
+.activate-reminder-btn,
+.undo-activation-btn {
+  width: 38px;
+  height: 38px;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -1245,7 +1295,7 @@ section h2::before {
 }
 
 .mark-done-btn {
-  background: var(--color-success);
+  background: #10b981;
   color: white;
 }
 
@@ -1255,12 +1305,32 @@ section h2::before {
 
 .edit-upcoming-btn {
   background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
 }
 
 .edit-upcoming-btn:hover {
-  background: var(--border-light);
-  color: var(--text-primary);
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.activate-reminder-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.activate-reminder-btn:hover {
+  background: #2563eb;
+}
+
+.undo-activation-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.undo-activation-btn:hover {
+  background: #d97706;
 }
 
 .progress-container {
@@ -1329,15 +1399,15 @@ section h2::before {
 
 .restore-btn,
 .delete-completed-btn {
-  width: 28px;
-  height: 28px;
+  width: 38px;
+  height: 38px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   transition: all var(--transition-fast);
 }
 
@@ -1601,9 +1671,28 @@ section h2::before {
   position: relative;
 }
 
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: auto;
+}
+
+.item-number {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
 .item-inputs {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
@@ -1637,26 +1726,96 @@ section h2::before {
   gap: var(--space-3);
 }
 
+.item-reminder-section {
+  margin-bottom: var(--space-3);
+}
+
+.reminder-header {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reminder-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.item-installation-section {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.installation-status-btn {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.installation-status-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.installation-status-btn.installed {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.installation-status-btn.installed:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.installation-status-btn.not-installed {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.installation-status-btn.not-installed:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
 .delete-item-btn {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 30px;
   background: var(--color-danger);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .delete-item-btn:hover {
   background: #dc2626;
+  transform: scale(1.05);
 }
 
 /* ========================================
@@ -1977,6 +2136,7 @@ section h2::before {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
   z-index: 200;
   align-items: center;
   justify-content: center;
@@ -2473,28 +2633,42 @@ body.modal-open {
 .fuel-history-header .delete-btn {
   position: absolute;
   top: 0;
-  background: none;
-  border: none;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
   cursor: pointer;
   padding: var(--space-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   font-size: 1rem;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .fuel-history-header .edit-btn {
-  right: 48px;
+  right: 60px;
+  background: rgba(0, 103, 127, 0.15);
   color: var(--color-primary);
 }
 
 .fuel-history-header .delete-btn {
   right: var(--space-4);
+  background: rgba(220, 38, 38, 0.15);
   color: var(--color-danger);
 }
 
-.fuel-history-header .edit-btn:hover,
+.fuel-history-header .edit-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 .fuel-history-header .delete-btn:hover {
-  background: var(--bg-hover);
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
 }
 
 .fuel-history-details {
@@ -2559,10 +2733,10 @@ body.modal-open {
 
 .fuel-history-actions .edit-btn,
 .fuel-history-actions .delete-btn {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   background: var(--bg-hover);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
@@ -2573,6 +2747,7 @@ body.modal-open {
 }
 
 .fuel-history-actions .edit-btn {
+  background: rgba(0, 103, 127, 0.15);
   color: var(--color-primary);
 }
 
@@ -2583,6 +2758,7 @@ body.modal-open {
 }
 
 .fuel-history-actions .delete-btn {
+  background: rgba(220, 38, 38, 0.15);
   color: var(--color-danger);
 }
 
@@ -3089,6 +3265,15 @@ body.modal-open {
     grid-template-columns: 1fr;
   }
 
+  .reminder-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .item-installation-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   /* Ensure touch targets are large enough */
   .nav-link {
     min-height: 48px;
@@ -3147,13 +3332,13 @@ body.modal-open {
   .secondary-btn,
   .small-btn,
   .danger-btn {
-    min-height: 44px;
+    min-height: 30px;
   }
 
   .edit-btn,
   .delete-btn {
-    min-width: 36px;
-    min-height: 36px;
+    min-width: 38px;
+    min-height: 38px;
   }
 
   /* Full tank checkbox on mobile */
@@ -3263,6 +3448,15 @@ body.modal-open {
     grid-template-columns: 1fr;
   }
 
+  .reminder-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .item-installation-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .actions {
     flex-direction: column;
   }
@@ -3309,7 +3503,7 @@ body.modal-open {
   }
 
   .fuel-history-header .edit-btn {
-    right: 48px !important;
+    right: 60px !important;
   }
 
   .fuel-history-header .delete-btn {
@@ -3624,108 +3818,6 @@ body.modal-open {
 }
 
 /* ========================================
-   KPI Descriptions with Show More
-   ======================================== */
-.kpi-description-container {
-  margin-top: var(--space-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: 1.2rem;
-}
-
-.kpi-description {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  margin: 0;
-  transition: all var(--transition-normal);
-}
-
-.kpi-description.collapsed {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kpi-description.expanded {
-  display: block;
-  -webkit-line-clamp: unset;
-  line-clamp: unset;
-}
-
-.kpi-show-more {
-  background: rgba(0, 103, 127, 0.08);
-  border: 1px solid var(--border-subtle);
-  color: var(--color-primary);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: var(--space-1) var(--space-2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  transition: all var(--transition-fast);
-  align-self: center;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.02em;
-}
-
-.kpi-show-more:hover {
-  background: rgba(0, 103, 127, 0.15);
-  color: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 103, 127, 0.15);
-}
-
-.kpi-show-more:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-/* Fuel KPI cards description adjustments */
-.fuel-kpi-card .kpi-description-container {
-  margin-top: var(--space-2);
-}
-
-.fuel-kpi-card .kpi-description {
-  font-size: 0.6875rem;
-}
-
-.fuel-kpi-card .kpi-show-more {
-  font-size: 0.625rem;
-  align-self: center;
-}
-
-/* Finance KPI cards description adjustments */
-.finance-kpi-card .kpi-description-container {
-  margin-top: 0;
-  margin-bottom: 0;
-  padding-top: var(--space-1);
-}
-
-.finance-kpi-card .kpi-description {
-  font-size: 0.6875rem;
-  line-height: 1.3;
-}
-
-.finance-kpi-card .kpi-show-more {
-  font-size: 0.625rem;
-  align-self: center;
-  margin-top: 0;
-}
-
-/* Home KPI cards specific adjustments */
-.kpi-card .kpi-description-container {
-  margin-top: var(--space-1);
-  padding-top: var(--space-1);
-}
-
-/* ========================================
    Fuel Efficiency Indicator
    ======================================== */
 .fuel-efficiency-indicator {
@@ -3733,11 +3825,16 @@ body.modal-open {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  margin-top: var(--space-2);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.kpi-fuel .fuel-efficiency-indicator {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
 }
 
 .efficiency-badge {
@@ -3805,10 +3902,6 @@ body.modal-open {
 
 /* Fuel KPI card adjustments */
 .fuel-kpi-card .fuel-efficiency-indicator {
-  margin-top: var(--space-2);
-}
-
-.kpi-card .fuel-efficiency-indicator {
   margin-top: var(--space-2);
 }
 
@@ -4046,8 +4139,8 @@ body.modal-open {
   }
 
   .finance-table td.actions-cell .action-btn {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     background: var(--bg-hover);
     border-radius: var(--radius-md);
   }
@@ -4201,40 +4294,45 @@ body.modal-open {
 }
 
 .finance-table .action-btn {
-  background: none;
-  border: none;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
   cursor: pointer;
   padding: var(--space-1);
   margin: 0 2px;
-  border-radius: var(--radius-sm);
-  transition: background-color 0.2s ease;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
+  width: 38px;
+  height: 38px;
   margin-left: 10px;
 }
 
 .finance-table .action-btn:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-active);
 }
 
 .finance-table .action-btn.edit-btn {
+  background: rgba(0, 103, 127, 0.15);
   color: var(--color-primary);
 }
 
 .finance-table .action-btn.edit-btn:hover {
-  background-color: var(--bg-active);
-  color: var(--color-primary-dark);
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
 }
 
 .finance-table .action-btn.delete-btn {
+  background: rgba(220, 38, 38, 0.15);
   color: var(--color-danger);
 }
 
 .finance-table .action-btn.delete-btn:hover {
-  background-color: var(--danger-50);
+  background-color: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
 }
 
 /* Fund Deduction Checkbox - Uses shared .checkbox-label styles */
@@ -4455,5 +4553,152 @@ body.modal-open {
   
   .floating-card-btn {
     width: 100%;
+  }
+}
+
+/* ========================================
+   Header Actions, Blur and Export Styles
+   ======================================== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  height: 38px;
+}
+
+.header-btn:hover {
+  background: var(--bg-active);
+  color: var(--color-primary);
+}
+
+#headerExportBtn,
+#headerBlurBtn {
+  background: transparent;
+}
+
+#headerExportBtn:hover,
+#headerBlurBtn:hover {
+  background: var(--bg-active);
+}
+
+.header-btn i {
+  font-size: 0.95rem;
+}
+
+.export-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: 38px;
+  border: none;
+  transition: all var(--transition-normal);
+}
+
+.export-safe {
+  background: rgba(13, 148, 136, 0.15);
+  color: var(--color-success);
+}
+
+.export-warning {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--color-warning);
+}
+
+.export-danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--color-danger);
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+/* Data Blur Transitions and Styles */
+.kpi-main,
+.kpi-sub,
+.fuel-kpi-main,
+.fuel-kpi-sub,
+.car-info-value,
+.license-value,
+.session-card h3,
+.session-card p,
+.session-card .item-list,
+.session-card .session-total,
+.session-card .time-context,
+.upcoming-item .upcoming-info,
+.completed-item .completed-info,
+#financeTableBody td:not(.actions-cell),
+.fuel-history-details,
+.fuel-history-header-main,
+.estimate-value,
+canvas,
+.chart-container {
+  transition: filter var(--transition-normal);
+}
+
+body.data-blurred .kpi-main,
+body.data-blurred .kpi-sub,
+body.data-blurred .fuel-kpi-main,
+body.data-blurred .fuel-kpi-sub,
+body.data-blurred .car-info-value,
+body.data-blurred .license-value,
+body.data-blurred .session-card h3,
+body.data-blurred .session-card p,
+body.data-blurred .session-card .item-list,
+body.data-blurred .session-card .session-total,
+body.data-blurred .session-card .time-context,
+body.data-blurred .upcoming-item .upcoming-info,
+body.data-blurred .completed-item .completed-info,
+body.data-blurred #financeTableBody td:not(.actions-cell),
+body.data-blurred .fuel-history-details,
+body.data-blurred .fuel-history-header-main,
+body.data-blurred .estimate-value,
+body.data-blurred canvas,
+body.data-blurred .chart-container {
+  filter: blur(10px) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Responsive adjustment for mobile header actions */
+@media (max-width: 576px) {
+  .header-btn span {
+    display: none;
+  }
+  .header-btn {
+    padding: var(--space-2);
+    width: 38px;
+    justify-content: center;
+  }
+  .header-actions {
+    gap: var(--space-2);
   }
 }

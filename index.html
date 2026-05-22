@@ -69,7 +69,22 @@
           <h1 id="pageTitle">Dashboard</h1>
         </div>
         <div class="header-right">
-          <!-- Future actions area -->
+          <div class="header-actions">
+            <!-- Last Export Counter -->
+            <div id="exportCounter" class="export-counter" title="Days since last export">
+              <i class="fas fa-history"></i>
+              <span id="exportCounterDays">Never</span>
+            </div>
+            <!-- Export Button -->
+            <button id="headerExportBtn" class="header-btn" title="Export Site Data">
+              <i class="fas fa-file-export"></i>
+              <span>Export</span>
+            </button>
+            <!-- Eye Icon (Blur Toggle) -->
+            <button id="headerBlurBtn" class="header-btn" title="Toggle Blur Sensitive Data">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -123,11 +138,6 @@
                     <span class="kpi-main" id="odometerValue">0</span>
                     <span class="kpi-sub">km</span>
                   </button>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed " data-max-lines="2">Current vehicle mileage reading from the
-                      odometer. Track your total distance traveled.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
 
                 <!-- Total Spent KPI -->
@@ -135,31 +145,20 @@
                   <div class="kpi-label">Total Spent</div>
                   <div class="kpi-main" id="kpiTotalSpentValue">0</div>
                   <div class="kpi-sub">EGP</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Cumulative amount spent on all maintenance
-                      sessions, fuel, and car-related expenses.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
 
                 <!-- Fuel Consumption KPI -->
                 <div class="kpi-card kpi-fuel" data-kpi="avgFuel">
                   <div class="kpi-label">Avg Fuel Consumption</div>
+                  <div class="fuel-efficiency-indicator" id="homeFuelEfficiencyIndicator" style="display: none;">
+                    <span class="efficiency-badge"></span>
+                    <span class="efficiency-text"></span>
+                  </div>
                   <div class="kpi-value-row">
                     <div class="kpi-value-left">
                       <div class="kpi-main" id="kpiAvgFuelValue">—</div>
                       <div class="kpi-sub" id="kpiAvgFuelSub">L/100km</div>
                     </div>
-                    <div class="fuel-efficiency-indicator" id="homeFuelEfficiencyIndicator" style="display: none;">
-                      <span class="efficiency-badge"></span>
-                      <span class="efficiency-text"></span>
-                    </div>
-                  </div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Average fuel efficiency based on your
-                      refueling history. Lower values indicate better fuel economy. Good: 6-8L/100km, Average:
-                      8-10L/100km, High: >10L/100km.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
                   </div>
                 </div>
               </div>
@@ -284,41 +283,21 @@
                     <span class="efficiency-badge"></span>
                     <span class="efficiency-text"></span>
                   </div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Average liters of fuel consumed per 100
-                      kilometers driven. Good: 6-8L/100km, Average: 8-10L/100km, High: >10L/100km.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                 <div class="fuel-kpi-card" data-kpi="fuelCostPerKm">
                   <div class="fuel-kpi-label">Cost per Kilometer</div>
                   <div class="fuel-kpi-main" id="costPerKm">--</div>
                   <div class="fuel-kpi-sub">EGP/km</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Average cost in Egyptian Pounds for each
-                      kilometer driven, based on fuel prices and consumption.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                 <div class="fuel-kpi-card" data-kpi="fuelTotal">
                   <div class="fuel-kpi-label">Total Fuel Added</div>
                   <div class="fuel-kpi-main" id="totalFuel">--</div>
                   <div class="fuel-kpi-sub">Liters</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Total liters of fuel added to your vehicle
-                      across all recorded refueling sessions.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                 <div class="fuel-kpi-card" data-kpi="fuelTotalDistance">
                   <div class="fuel-kpi-label">Total Distance</div>
                   <div class="fuel-kpi-main" id="totalDistance">--</div>
                   <div class="fuel-kpi-sub">km</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Total distance driven between your first and
-                      last fuel entry, calculated from odometer readings.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
               </div>
 
@@ -355,28 +334,16 @@
                   <div class="fuel-kpi-label">Time Between Records</div>
                   <div class="fuel-kpi-main" id="timeBetweenRecords">--</div>
                   <div class="fuel-kpi-sub">days</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Time in days between your last two fuel refills.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                 <div class="fuel-kpi-card" data-kpi="kmBetweenRecords">
                   <div class="fuel-kpi-label">Kilometers Between Records</div>
                   <div class="fuel-kpi-main" id="kmBetweenRecords">--</div>
                   <div class="fuel-kpi-sub">km</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Distance driven between your last two fuel refills.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                 <div class="fuel-kpi-card" data-kpi="lastRefillDays">
                   <div class="fuel-kpi-label">Days Since Last Refill</div>
                   <div class="fuel-kpi-main" id="lastRefillDays">--</div>
                   <div class="fuel-kpi-sub">days</div>
-                  <div class="kpi-description-container">
-                    <p class="kpi-description collapsed" data-max-lines="2">Number of days since your last fuel refill.</p>
-                    <button class="kpi-show-more" style="display: none;">Show More</button>
-                  </div>
                 </div>
                               </div>
             </div>
@@ -505,48 +472,21 @@
                 <div class="finance-kpi-label">Total Savings</div>
                 <div class="finance-kpi-main" id="financeTotalSavings">0</div>
                 <div class="finance-kpi-sub">EGP</div>
-                <div class="kpi-description-container">
-                  <p class="kpi-description collapsed" data-max-lines="2">Total funds you have saved and allocated for
-                    car-related expenses and maintenance. This includes all money set aside for future repairs, routine
-                    maintenance, fuel costs, and unexpected vehicle expenses that may arise throughout the year.</p>
-                  <button class="kpi-show-more" style="display: none;">Show More</button>
-                </div>
               </div>
               <div class="finance-kpi-card kpi-income" data-kpi="monthlyIncome">
                 <div class="finance-kpi-label">Monthly Income</div>
                 <div class="finance-kpi-main" id="financeMonthlyIncome">0</div>
                 <div class="finance-kpi-sub">EGP</div>
-                <div class="kpi-description-container">
-                  <p class="kpi-description collapsed" data-max-lines="2">Total funds added this month from all sources
-                    including savings, bonuses, and refunds. This encompasses any money deposited into your car
-                    maintenance fund, whether from regular monthly savings contributions, work bonuses, tax refunds, or
-                    other income sources specifically designated for vehicle expenses.</p>
-                  <button class="kpi-show-more" style="display: none;">Show More</button>
-                </div>
               </div>
               <div class="finance-kpi-card kpi-expenses" data-kpi="monthlyExpenses">
                 <div class="finance-kpi-label">Monthly Expenses</div>
                 <div class="finance-kpi-main" id="financeMonthlyExpenses">0</div>
                 <div class="finance-kpi-sub">EGP</div>
-                <div class="kpi-description-container">
-                  <p class="kpi-description collapsed" data-max-lines="2">Total car-related expenses spent this month
-                    including maintenance and fuel costs. This covers all outflows from your vehicle fund, such as
-                    routine maintenance services, unexpected repairs, fuel purchases, oil changes, tire replacements,
-                    and any other costs associated with keeping your vehicle operational and well-maintained.</p>
-                  <button class="kpi-show-more" style="display: none;">Show More</button>
-                </div>
               </div>
               <div class="finance-kpi-card kpi-balance" data-kpi="netBalance">
                 <div class="finance-kpi-label">Net Balance</div>
                 <div class="finance-kpi-main" id="financeNetBalance">0</div>
                 <div class="finance-kpi-sub">EGP</div>
-                <div class="kpi-description-container">
-                  <p class="kpi-description collapsed" data-max-lines="2">Difference between monthly income and
-                    expenses. Positive means surplus, negative means deficit. This metric helps you understand whether
-                    you're saving more than you're spending on your vehicle, indicating good financial health, or if
-                    expenses are exceeding income, suggesting a need to adjust your budget or spending habits.</p>
-                  <button class="kpi-show-more" style="display: none;">Show More</button>
-                </div>
               </div>
             </div>
           </section>
@@ -705,6 +645,9 @@
                   </div>
                   <button id="addCategoryBtn" class="primary-btn">
                     Add Category
+                  </button>
+                  <button id="restoreDefaultCategoriesBtn" class="secondary-btn" style="margin-top: var(--space-2)">
+                    <i class="fas fa-undo"></i> Restore Default Categories
                   </button>
                 </div>
                 <div id="categoriesList" class="categories-list"></div>

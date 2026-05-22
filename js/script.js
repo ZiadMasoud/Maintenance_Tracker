@@ -237,7 +237,7 @@ function showConfirm(message, title = 'Confirm', options = {}) {
 // IndexedDB Setup
 // ================================
 let db;
-const request = indexedDB.open("carMaintainDB", 5);
+const request = indexedDB.open("carMaintainDB", 6);
 
 request.onupgradeneeded = function (e) {
   db = e.target.result;
@@ -259,7 +259,17 @@ request.onupgradeneeded = function (e) {
       { name: "Brake Service", color: "#f56565" },
       { name: "Tire Service", color: "#ed8936" },
       { name: "Engine Repair", color: "#48bb78" },
-      { name: "General Maintenance", color: "#764ba2" }
+      { name: "General Maintenance", color: "#764ba2" },
+      { name: "Battery", color: "#38b2ac" },
+      { name: "Transmission", color: "#9f7aea" },
+      { name: "Suspension", color: "#ed64a6" },
+      { name: "Cooling System", color: "#4299e1" },
+      { name: "Exhaust", color: "#f6ad55" },
+      { name: "Air Filter", color: "#68d391" },
+      { name: "Spark Plugs", color: "#fc8181" },
+      { name: "Belts & Hoses", color: "#63b3ed" },
+      { name: "Lights & Electrical", color: "#f687b3" },
+      { name: "AC & Heating", color: "#4fd1c5" }
     ];
     defaultCategories.forEach(cat => categoryStore.add(cat));
   }
@@ -290,6 +300,32 @@ request.onupgradeneeded = function (e) {
     financeStore.createIndex("type", "type", { unique: false });
     financeStore.createIndex("sessionId", "sessionId", { unique: false });
   }
+
+  // Add additional default categories (version 6)
+  if (oldVersion < 6 && db.objectStoreNames.contains("categories")) {
+    const categoryStore = db.transaction("categories", "readwrite").objectStore("categories");
+    const additionalCategories = [
+      { name: "Battery", color: "#38b2ac" },
+      { name: "Transmission", color: "#9f7aea" },
+      { name: "Suspension", color: "#ed64a6" },
+      { name: "Cooling System", color: "#4299e1" },
+      { name: "Exhaust", color: "#f6ad55" },
+      { name: "Air Filter", color: "#68d391" },
+      { name: "Spark Plugs", color: "#fc8181" },
+      { name: "Belts & Hoses", color: "#63b3ed" },
+      { name: "Lights & Electrical", color: "#f687b3" },
+      { name: "AC & Heating", color: "#4fd1c5" }
+    ];
+    additionalCategories.forEach(cat => {
+      // Check if category already exists before adding
+      const request = categoryStore.index("name").get(cat.name);
+      request.onsuccess = () => {
+        if (!request.result) {
+          categoryStore.add(cat);
+        }
+      };
+    });
+  }
 };
 
 request.onsuccess = function (e) {
@@ -312,6 +348,7 @@ request.onsuccess = function (e) {
   initializeCharts();
   startLiveTime();
   renderCarInfo();
+  initializeHeaderActions();
 };
 
 request.onerror = function () {
@@ -851,6 +888,7 @@ const carNameDisplay = document.getElementById("carNameDisplay");
 const newCategoryName = document.getElementById("newCategoryName");
 const newCategoryColor = document.getElementById("newCategoryColor");
 const addCategoryBtn = document.getElementById("addCategoryBtn");
+const restoreDefaultCategoriesBtn = document.getElementById("restoreDefaultCategoriesBtn");
 const categoriesList = document.getElementById("categoriesList");
 
 // Category pagination elements
@@ -1109,6 +1147,64 @@ if (addCategoryBtn) {
   });
 }
 
+// Restore default categories
+if (restoreDefaultCategoriesBtn) {
+  restoreDefaultCategoriesBtn.addEventListener("click", restoreDefaultCategories);
+}
+
+function restoreDefaultCategories() {
+  if (!db) {
+    showAlert("Database not initialized. Please refresh the page.");
+    return;
+  }
+
+  const defaultCategories = [
+    { name: "Oil Change", color: "#667eea" },
+    { name: "Brake Service", color: "#f56565" },
+    { name: "Tire Service", color: "#ed8936" },
+    { name: "Engine Repair", color: "#48bb78" },
+    { name: "General Maintenance", color: "#764ba2" },
+    { name: "Battery", color: "#38b2ac" },
+    { name: "Transmission", color: "#9f7aea" },
+    { name: "Suspension", color: "#ed64a6" },
+    { name: "Cooling System", color: "#4299e1" },
+    { name: "Exhaust", color: "#f6ad55" },
+    { name: "Air Filter", color: "#68d391" },
+    { name: "Spark Plugs", color: "#fc8181" },
+    { name: "Belts & Hoses", color: "#63b3ed" },
+    { name: "Lights & Electrical", color: "#f687b3" },
+    { name: "AC & Heating", color: "#4fd1c5" }
+  ];
+
+  const tx = db.transaction("categories", "readwrite");
+  const store = tx.objectStore("categories");
+  let addedCount = 0;
+
+  defaultCategories.forEach(cat => {
+    const request = store.index("name").get(cat.name);
+    request.onsuccess = () => {
+      if (!request.result) {
+        store.add(cat);
+        addedCount++;
+      }
+    };
+  });
+
+  tx.oncomplete = () => {
+    if (addedCount > 0) {
+      showAlert(`Restored ${addedCount} default categories`);
+    } else {
+      showAlert("All default categories already exist");
+    }
+    loadCategoriesList();
+    loadCategoriesForFilter();
+  };
+
+  tx.onerror = () => {
+    showAlert("Error restoring default categories");
+  };
+}
+
 // ================================
 // Category Pagination
 // ================================
@@ -1291,26 +1387,82 @@ if (addItemBtn) {
 function addItemField(item = {}) {
   const div = document.createElement("div");
   div.classList.add("item-form");
+  
+  // Get merchant from top field if not provided
+  const topMerchant = document.getElementById("sessionMerchant").value.trim();
+  const merchantValue = item.merchant || topMerchant || "";
+  
+  // Calculate item number
+  const itemNumber = itemsContainer.querySelectorAll(".item-form").length + 1;
+  
   div.innerHTML = `
-    <div class="item-inputs">
-      <input type="text" class="itemName styled-input" placeholder="Item / Service" value="${item.name || ""}">
-      <input type="number" class="itemPrice styled-input" placeholder="Price (EGP)" value="${item.price || ""}">
-      <input type="number" class="itemInterval styled-input" placeholder="Interval (km)" value="${item.interval || ""}">
-      <input type="number" class="itemIntervalMonths styled-input" placeholder="Interval (months)" value="${item.intervalMonths || ""}" min="1">
+    <div class="item-header">
+      <span class="item-number">Item ${itemNumber}</span>
+      <button class="delete-item-btn">✕</button>
     </div>
-    <div class="item-notes">
+    <div class="item-inputs">
       <select class="itemCategory styled-input">
         <option value="">Select Category</option>
       </select>
-      <input type="text" class="itemMerchant styled-input" placeholder="Merchant (optional)" value="${item.merchant || ""}">
+      <input type="text" class="itemName styled-input" placeholder="Item / Service" value="${item.name || ""}">
+      <input type="number" class="itemPrice styled-input" placeholder="Price (EGP)" value="${item.price || ""}">
+    </div>
+    <div class="item-reminder-section">
+      <div class="reminder-header">Remind me once I reach</div>
+      <div class="reminder-inputs">
+        <input type="number" class="itemInterval styled-input" placeholder="Interval (km)" value="${item.interval || ""}">
+        <input type="number" class="itemIntervalMonths styled-input" placeholder="Interval (months)" value="${item.intervalMonths || ""}" min="1">
+      </div>
+      <div class="item-installation-section">
+        <button type="button" class="installation-status-btn ${item.installed !== false ? 'installed' : 'not-installed'}" data-installed="${item.installed !== false ? 'true' : 'false'}">
+          <i class="fas ${item.installed !== false ? 'fa-check' : 'fa-bell'}"></i>
+          <span>${item.installed !== false ? 'Part Installed' : 'Activate Reminder'}</span>
+        </button>
+      </div>
+    </div>
+    <div class="item-notes">
+      <input type="text" class="itemMerchant styled-input" placeholder="Merchant (optional)" value="${merchantValue}">
       <textarea class="itemNotes styled-input" placeholder="Notes (optional)">${item.notes || ""}</textarea>
     </div>
-    <button class="delete-item-btn">✕</button>
   `;
-  div.querySelector(".delete-item-btn").onclick = () => div.remove();
+  
+  div.querySelector(".delete-item-btn").onclick = () => {
+    div.remove();
+    updateItemNumbers();
+  };
+  
+  // Handle installation status button
+  const statusBtn = div.querySelector(".installation-status-btn");
+  statusBtn.onclick = () => {
+    const isInstalled = statusBtn.dataset.installed === 'true';
+    statusBtn.dataset.installed = isInstalled ? 'false' : 'true';
+    
+    if (isInstalled) {
+      statusBtn.classList.remove('installed');
+      statusBtn.classList.add('not-installed');
+      statusBtn.querySelector('i').className = 'fas fa-bell';
+      statusBtn.querySelector('span').textContent = 'Activate Reminder';
+    } else {
+      statusBtn.classList.remove('not-installed');
+      statusBtn.classList.add('installed');
+      statusBtn.querySelector('i').className = 'fas fa-check';
+      statusBtn.querySelector('span').textContent = 'Part Installed';
+    }
+  };
+  
   itemsContainer.appendChild(div);
 
   loadCategoriesForSelect(div.querySelector(".itemCategory"), item.categoryId);
+}
+
+function updateItemNumbers() {
+  const items = itemsContainer.querySelectorAll(".item-form");
+  items.forEach((item, index) => {
+    const numberSpan = item.querySelector(".item-number");
+    if (numberSpan) {
+      numberSpan.textContent = `Item ${index + 1}`;
+    }
+  });
 }
 
 // ================================
@@ -1371,16 +1523,22 @@ function saveSession() {
   const itemEls = itemsContainer.querySelectorAll(".item-form");
   const items = Array.from(itemEls).map(el => {
     const intervalVal = parseFloat(el.querySelector(".itemInterval").value);
+    const intervalMonthsVal = parseInt(el.querySelector(".itemIntervalMonths").value) || null;
     const categoryId = parseInt(el.querySelector(".itemCategory").value) || null;
+    const statusBtn = el.querySelector(".installation-status-btn");
+    const installed = statusBtn ? statusBtn.dataset.installed === 'true' : true;
+    
     return {
       sessionId: sessionObj.id,
       name: el.querySelector(".itemName").value.trim(),
       price: parseFloat(el.querySelector(".itemPrice").value) || 0,
       interval: intervalVal || null,
+      intervalMonths: intervalMonthsVal,
       merchant: el.querySelector(".itemMerchant").value.trim(),
       notes: el.querySelector(".itemNotes").value.trim(),
       categoryId: categoryId,
-      nextDueKm: intervalVal ? odometer + intervalVal : null
+      installed: installed,
+      nextDueKm: intervalVal && installed ? odometer + intervalVal : null
     };
   });
 
@@ -1723,7 +1881,8 @@ function toggleCompletedItems() {
 
 function displayCompletedItems(items) {
   if (!completedItems || !toggleCompletedBtn) return;
-  const completed = items.filter(i => i.interval && !i.nextDueKm);
+  // Only show items that were installed and then marked as done (not items that were never installed)
+  const completed = items.filter(i => i.interval && !i.nextDueKm && i.installed !== false);
 
   if (completed.length === 0) {
     toggleCompletedBtn.style.display = 'none';
@@ -1733,47 +1892,114 @@ function displayCompletedItems(items) {
   toggleCompletedBtn.style.display = 'block';
   completedItems.innerHTML = "";
 
-  completed.forEach(item => {
-    const div = document.createElement("div");
-    div.classList.add("completed-item");
-    div.innerHTML = `
-      <div class="completed-content">
-        <div class="completed-info">
-          <span class="item-name">${item.name}</span>
-          <span class="interval-info">Interval: ${item.interval.toLocaleString()} km</span>
-        </div>
-        <div class="completed-actions">
-          <button class="restore-btn" onclick="restoreUpcomingItem(${item.id})" title="Restore to Upcoming">
-            ↶
-          </button>
-          <button class="delete-completed-btn" onclick="deleteCompletedItem(${item.id})" title="Delete from History">
-            🗑
-          </button>
-        </div>
-      </div>
-    `;
-    completedItems.appendChild(div);
-  });
+  // Load sessions to get dates for sorting
+  const tx = db.transaction("sessions", "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const sessions = {};
+
+  sessionStore.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      sessions[cursor.value.id] = cursor.value;
+      cursor.continue();
+    } else {
+      // Sort by session date (oldest to newest)
+      completed.sort((a, b) => {
+        const sessionA = sessions[a.sessionId];
+        const sessionB = sessions[b.sessionId];
+        const dateA = sessionA ? new Date(sessionA.date) : new Date(0);
+        const dateB = sessionB ? new Date(sessionB.date) : new Date(0);
+        return dateA - dateB;
+      });
+
+      completed.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("completed-item");
+        div.innerHTML = `
+          <div class="completed-content">
+            <div class="completed-info">
+              <span class="item-name">${item.name}</span>
+              <span class="interval-info">Interval: ${item.interval.toLocaleString()} km</span>
+            </div>
+            <div class="completed-actions">
+              <button class="restore-btn" onclick="restoreUpcomingItem(${item.id})" title="Restore to Upcoming">
+                ↶
+              </button>
+              <button class="delete-completed-btn" onclick="deleteCompletedItem(${item.id})" title="Delete from History">
+                🗑
+              </button>
+            </div>
+          </div>
+        `;
+        completedItems.appendChild(div);
+      });
+    }
+  };
 }
 
 function displayUpcoming(items) {
   if (!upcomingList || !db) return;
   upcomingList.innerHTML = "";
-  const filtered = items.filter(i => i.nextDueKm && i.interval && i.interval > 0);
-  filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
-
-  upcomingItemsAll = filtered;
-  upcomingCurrentPage = 1;
-  renderUpcomingPage();
+  // Include items with interval set and nextDueKm not null (exclude completed items)
+  const filtered = items.filter(i => i.interval && i.interval > 0 && i.nextDueKm !== null);
+  
+  // Load sessions to get dates for sorting
+  const tx = db.transaction("sessions", "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const sessions = {};
+  
+  sessionStore.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      sessions[cursor.value.id] = cursor.value;
+      cursor.continue();
+    } else {
+      // Sort by session date (oldest to newest)
+      filtered.sort((a, b) => {
+        const sessionA = sessions[a.sessionId];
+        const sessionB = sessions[b.sessionId];
+        const dateA = sessionA ? new Date(sessionA.date) : new Date(0);
+        const dateB = sessionB ? new Date(sessionB.date) : new Date(0);
+        return dateA - dateB;
+      });
+      
+      upcomingItemsAll = filtered;
+      upcomingCurrentPage = 1;
+      renderUpcomingPage();
+    }
+  };
 }
 
 function prepareUpcomingPagination(items) {
   if (!upcomingList || !db) return;
-  const filtered = items.filter(i => i.nextDueKm && i.interval && i.interval > 0);
-  filtered.sort((a, b) => a.nextDueKm - b.nextDueKm);
-  upcomingItemsAll = filtered;
-  upcomingCurrentPage = 1;
-  renderUpcomingPage();
+  // Include items with interval set and nextDueKm not null (exclude completed items)
+  const filtered = items.filter(i => i.interval && i.interval > 0 && i.nextDueKm !== null);
+  
+  // Load sessions to get dates for sorting
+  const tx = db.transaction("sessions", "readonly");
+  const sessionStore = tx.objectStore("sessions");
+  const sessions = {};
+  
+  sessionStore.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      sessions[cursor.value.id] = cursor.value;
+      cursor.continue();
+    } else {
+      // Sort by session date (oldest to newest)
+      filtered.sort((a, b) => {
+        const sessionA = sessions[a.sessionId];
+        const sessionB = sessions[b.sessionId];
+        const dateA = sessionA ? new Date(sessionA.date) : new Date(0);
+        const dateB = sessionB ? new Date(sessionB.date) : new Date(0);
+        return dateA - dateB;
+      });
+      
+      upcomingItemsAll = filtered;
+      upcomingCurrentPage = 1;
+      renderUpcomingPage();
+    }
+  };
 }
 
 function renderUpcomingPage() {
@@ -1812,43 +2038,85 @@ function renderUpcomingPage() {
       pageItems.forEach(item => {
         if (!item.interval || item.interval <= 0) return;
 
-        const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
-        const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
-        const kmRemaining = item.nextDueKm - currentOdometer;
-
-        let status = "status-ok";
-        let progressColor = "#10b981";
-        let urgencyText = "Good";
-
-        if (progressPercent >= 100) {
-          status = "status-danger";
-          progressColor = "#ef4444";
-          urgencyText = "Overdue";
-        } else if (progressPercent >= 80) {
-          status = "status-warning";
-          progressColor = "#f59e0b";
-          urgencyText = "Urgent";
-        } else if (progressPercent >= 60) {
-          status = "status-caution";
-          progressColor = "#f59e0b";
-          urgencyText = "Soon";
-        }
-
+        const isInstalled = item.installed !== false;
         const session = sessions[item.sessionId];
         const sessionDate = session ? session.date : null;
         const relativeTime = sessionDate ? getRelativeTime(sessionDate) : '';
         const timeContextColor = sessionDate ? getTimeContextColor(sessionDate) : 'neutral';
         const tooltipDate = sessionDate ? formatDateForTooltip(sessionDate) : '';
 
+        let status, progressColor, urgencyText, progressBar, kmInfo, nextDue;
+
+        if (!isInstalled) {
+          // Standby/Pending state for not installed parts
+          status = "status-standby";
+          progressColor = "#9ca3af";
+          urgencyText = "Pending";
+          progressBar = '';
+          kmInfo = `Interval: ${item.interval.toLocaleString()} km`;
+          nextDue = 'Waiting for activation';
+        } else {
+          // Normal state for installed parts
+          const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
+          const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
+          const kmRemaining = item.nextDueKm - currentOdometer;
+
+          status = "status-ok";
+          progressColor = "#10b981";
+          urgencyText = "Good";
+
+          if (progressPercent >= 100) {
+            status = "status-danger";
+            progressColor = "#ef4444";
+            urgencyText = "Overdue";
+          } else if (progressPercent >= 80) {
+            status = "status-warning";
+            progressColor = "#f59e0b";
+            urgencyText = "Urgent";
+          } else if (progressPercent >= 60) {
+            status = "status-caution";
+            progressColor = "#f59e0b";
+            urgencyText = "Soon";
+          }
+
+          progressBar = `
+            <div class="progress-container">
+              <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
+              </div>
+            </div>
+          `;
+          kmInfo = `${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km`;
+          nextDue = `Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})`;
+        }
+
         const div = document.createElement("div");
         div.classList.add("upcoming-item", status);
 
-        const progressBar = `
-          <div class="progress-container">
-            <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
-            </div>
-          </div>
-        `;
+        // Action buttons based on installation status
+        let actionButtons = '';
+        if (!isInstalled) {
+          actionButtons = `
+            <button class="activate-reminder-btn" onclick="activateReminder(${item.id})" title="Activate Reminder">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+          `;
+        } else {
+          actionButtons = `
+            <span class="urgency-badge ${status}">${urgencyText}</span>
+            <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
+              <i class="fas fa-check"></i>
+            </button>
+            <button class="undo-activation-btn" onclick="undoActivation(${item.id})" title="Undo Activation">
+              <i class="fas fa-undo"></i>
+            </button>
+            <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+          `;
+        }
 
         div.innerHTML = `
           <div class="upcoming-content">
@@ -1858,18 +2126,12 @@ function renderUpcomingPage() {
                 ${relativeTime ? `<span class="time-context time-context-${timeContextColor}" title="Recorded on ${tooltipDate}">${relativeTime}</span>` : ''}
               </div>
               <div class="item-details">
-                <span class="km-info">${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km</span>
-                <span class="next-due">Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})</span>
+                <span class="km-info">${kmInfo}</span>
+                <span class="next-due">${nextDue}</span>
               </div>
             </div>
             <div class="upcoming-actions">
-              <span class="urgency-badge ${status}">${urgencyText}</span>
-              <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
-                <i class="fas fa-check"></i>
-              </button>
-              <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
-                <i class="fas fa-edit"></i>
-              </button>
+              ${actionButtons}
             </div>
           </div>
           ${progressBar}
@@ -2190,11 +2452,12 @@ function saveUpcomingEdit() {
   store.get(editingUpcomingItemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
+      const isInstalled = item.installed !== false;
       const updatedItem = {
         ...item,
         interval: newInterval,
         intervalMonths: newIntervalMonths,
-        nextDueKm: currentOdometer + newInterval
+        nextDueKm: isInstalled ? currentOdometer + newInterval : null
       };
       store.put(updatedItem);
     }
@@ -2207,48 +2470,52 @@ function saveUpcomingEdit() {
 }
 
 function restoreUpcomingItem(itemId) {
-  if (!db) {
-    console.error("Database not initialized");
-    return;
-  }
-
-  const tx = db.transaction(["items", "sessions"], "readwrite");
-  const itemStore = tx.objectStore("items");
-  const sessionStore = tx.objectStore("sessions");
-
-  itemStore.get(itemId).onsuccess = e => {
-    const item = e.target.result;
-    if (item) {
-      sessionStore.get(item.sessionId).onsuccess = sessionEvent => {
-        const session = sessionEvent.target.result;
-        let nextDueKm;
-
-        if (session && session.odometer) {
-          nextDueKm = session.odometer + item.interval;
-        } else {
-          nextDueKm = currentOdometer + item.interval;
-        }
-
-        const updatedItem = {
-          ...item,
-          nextDueKm: nextDueKm
-        };
-
-        itemStore.put(updatedItem);
-      };
-    } else {
-      console.error("Item not found:", itemId);
+  showConfirm("Restore this item to upcoming maintenance? This will recalculate the next due date.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) {
+      console.error("Database not initialized");
+      return;
     }
-  };
 
-  tx.oncomplete = () => {
-    renderAll();
-  };
+    const tx = db.transaction(["items", "sessions"], "readwrite");
+    const itemStore = tx.objectStore("items");
+    const sessionStore = tx.objectStore("sessions");
 
-  tx.onerror = () => {
-    console.error("Error restoring item:", tx.error);
-    showAlert("Error restoring item. Please try again.");
-  };
+    itemStore.get(itemId).onsuccess = e => {
+      const item = e.target.result;
+      if (item) {
+        sessionStore.get(item.sessionId).onsuccess = sessionEvent => {
+          const session = sessionEvent.target.result;
+          let nextDueKm;
+
+          if (session && session.odometer) {
+            nextDueKm = session.odometer + item.interval;
+          } else {
+            nextDueKm = currentOdometer + item.interval;
+          }
+
+          const updatedItem = {
+            ...item,
+            installed: true,
+            nextDueKm: nextDueKm
+          };
+
+          itemStore.put(updatedItem);
+        };
+      } else {
+        console.error("Item not found:", itemId);
+      }
+    };
+
+    tx.oncomplete = () => {
+      renderAll();
+    };
+
+    tx.onerror = () => {
+      console.error("Error restoring item:", tx.error);
+      showAlert("Error restoring item. Please try again.");
+    };
+  });
 }
 
 function deleteCompletedItem(itemId) {
@@ -2274,6 +2541,68 @@ function deleteCompletedItem(itemId) {
     tx.onerror = () => {
       console.error("Error deleting item:", tx.error);
       showAlert("Error deleting item. Please try again.");
+    };
+  });
+}
+
+function activateReminder(itemId) {
+  showConfirm("Activate this reminder? This will mark the part as installed and start tracking maintenance.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+
+    const tx = db.transaction("items", "readwrite");
+    const store = tx.objectStore("items");
+
+    store.get(itemId).onsuccess = e => {
+      const item = e.target.result;
+      if (item) {
+        const updatedItem = {
+          ...item,
+          installed: true,
+          nextDueKm: currentOdometer + item.interval
+        };
+        store.put(updatedItem);
+      }
+    };
+
+    tx.oncomplete = () => {
+      renderAll();
+    };
+
+    tx.onerror = () => {
+      console.error("Error activating reminder:", tx.error);
+      showAlert("Error activating reminder. Please try again.");
+    };
+  });
+}
+
+function undoActivation(itemId) {
+  showConfirm("Undo activation? This will mark the part as not installed and stop tracking maintenance.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+
+    const tx = db.transaction("items", "readwrite");
+    const store = tx.objectStore("items");
+
+    store.get(itemId).onsuccess = e => {
+      const item = e.target.result;
+      if (item) {
+        const updatedItem = {
+          ...item,
+          installed: false,
+          nextDueKm: null
+        };
+        store.put(updatedItem);
+      }
+    };
+
+    tx.oncomplete = () => {
+      renderAll();
+    };
+
+    tx.onerror = () => {
+      console.error("Error undoing activation:", tx.error);
+      showAlert("Error undoing activation. Please try again.");
     };
   });
 }
@@ -3263,6 +3592,11 @@ function exportAllData() {
       link.href = URL.createObjectURL(dataBlob);
       link.download = `car-maintenance-data-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
+
+      localStorage.setItem('lastExportDate', exportData.exportDate);
+      if (typeof updateLastExportCounter === 'function') {
+        updateLastExportCounter();
+      }
     }
   };
 
@@ -3408,6 +3742,15 @@ function importAllData(importData) {
     // Reload fuel analytics if fuel app is initialized
     if (typeof fuelApp !== 'undefined' && fuelApp) {
       fuelApp.stateManager.loadSession('default');
+    }
+
+    if (importData.exportDate) {
+      localStorage.setItem('lastExportDate', importData.exportDate);
+    } else {
+      localStorage.setItem('lastExportDate', new Date().toISOString());
+    }
+    if (typeof updateLastExportCounter === 'function') {
+      updateLastExportCounter();
     }
 
     showAlert('Data imported successfully!');
@@ -4327,3 +4670,86 @@ window.deleteFinanceRecord = deleteFinanceRecord;
 window.editFinanceRecord = editFinanceRecord;
 window.closeEditTransactionPopup = closeEditTransactionPopup;
 window.saveTransactionEdit = saveTransactionEdit;
+window.updateLastExportCounter = updateLastExportCounter;
+
+// ========================================
+// Header Actions: Data Blur & Export
+// ========================================
+function initializeHeaderActions() {
+  const blurBtn = document.getElementById("headerBlurBtn");
+  const exportBtn = document.getElementById("headerExportBtn");
+
+  if (blurBtn) {
+    // Load initial blur state
+    const isBlurred = localStorage.getItem("siteDataBlurred") === "true";
+    if (isBlurred) {
+      document.body.classList.add("data-blurred");
+      const icon = blurBtn.querySelector("i");
+      if (icon) {
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      }
+    }
+
+    // Toggle blur state
+    blurBtn.addEventListener("click", () => {
+      const currentlyBlurred = document.body.classList.toggle("data-blurred");
+      localStorage.setItem("siteDataBlurred", currentlyBlurred.toString());
+
+      const icon = blurBtn.querySelector("i");
+      if (icon) {
+        if (currentlyBlurred) {
+          icon.classList.remove("fa-eye");
+          icon.classList.add("fa-eye-slash");
+        } else {
+          icon.classList.remove("fa-eye-slash");
+          icon.classList.add("fa-eye");
+        }
+      }
+    });
+  }
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      exportAllData();
+    });
+  }
+
+  updateLastExportCounter();
+}
+
+function updateLastExportCounter() {
+  const counterEl = document.getElementById("exportCounter");
+  const daysEl = document.getElementById("exportCounterDays");
+
+  if (!counterEl || !daysEl) return;
+
+  const lastExportDate = localStorage.getItem("lastExportDate");
+
+  // Reset classes
+  counterEl.classList.remove("export-safe", "export-warning", "export-danger");
+
+  if (!lastExportDate) {
+    daysEl.textContent = "Never";
+    counterEl.classList.add("export-danger");
+    return;
+  }
+
+  const exportTime = new Date(lastExportDate).getTime();
+  const now = new Date().getTime();
+  const diffTime = now - exportTime;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // If for some reason clock skew puts export in the future, treat as 0
+  const days = Math.max(0, diffDays);
+
+  daysEl.textContent = days.toString();
+  if (days <= 7) {
+    counterEl.classList.add("export-safe");
+  } else if (days <= 14) {
+    counterEl.classList.add("export-warning");
+  } else {
+    counterEl.classList.add("export-danger");
+  }
+}
+
