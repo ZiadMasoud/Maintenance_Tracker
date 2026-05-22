@@ -1,0 +1,373 @@
+{
+  "sessions": [
+    {
+      "id": 1760183088088,
+      "date": "2025-10-08",
+      "odometer": 112677,
+      "merchant": "",
+      "notes": ""
+    },
+    {
+      "id": 1760467339617,
+      "date": "2022-06-03",
+      "odometer": 0,
+      "merchant": "شركة البطل الروماني لإطارات",
+      "notes": ""
+    },
+    {
+      "id": 1760467545852,
+      "date": "2021-09-28",
+      "odometer": 0,
+      "merchant": "العالميه MSK",
+      "notes": ""
+    },
+    {
+      "id": 1760481842562,
+      "date": "2025-02-22",
+      "odometer": 0,
+      "merchant": "صيانه دوريه التبريد",
+      "notes": ""
+    },
+    {
+      "id": 1761662619069,
+      "date": "2020-10-01",
+      "odometer": 87124,
+      "merchant": "Modern Service",
+      "notes": "صيانه 85,000"
+    },
+    {
+      "id": 1768181843344,
+      "date": "2021-08-31",
+      "odometer": 94300,
+      "merchant": "Unknown",
+      "notes": "Old Maintenance"
+    }
+  ],
+  "items": [
+    {
+      "sessionId": 1760183088088,
+      "name": "Oil filter",
+      "price": 220,
+      "interval": 5000,
+      "merchant": "نافع",
+      "notes": "فلتر اصلي",
+      "categoryId": 1,
+      "nextDueKm": 117677,
+      "id": 1
+    },
+    {
+      "sessionId": 1760183088088,
+      "name": "Oil helix h6 15-w50",
+      "price": 1150,
+      "interval": 5000,
+      "merchant": "Shell",
+      "notes": "التغير وحش حط ٤ لتر بدل ٣.٥",
+      "categoryId": 1,
+      "nextDueKm": 117677,
+      "id": 2
+    },
+    {
+      "sessionId": 1760183088088,
+      "name": "اريال",
+      "price": 200,
+      "interval": null,
+      "merchant": "نافع",
+      "notes": "",
+      "categoryId": 5,
+      "nextDueKm": null,
+      "id": 3
+    },
+    {
+      "sessionId": 1760183088088,
+      "name": "لمبه إشارة امامي شمال",
+      "price": 40,
+      "interval": null,
+      "merchant": "المدينه مصر الجديده",
+      "notes": "",
+      "categoryId": 5,
+      "nextDueKm": null,
+      "id": 4
+    },
+    {
+      "sessionId": 1760183088088,
+      "name": "مصنعيه اريال و لمبه",
+      "price": 120,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 5,
+      "nextDueKm": null,
+      "id": 5
+    },
+    {
+      "sessionId": 1760467339617,
+      "name": "175/70/R13 82T عدد ٤ إطارمقاس",
+      "price": 3300,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 3,
+      "nextDueKm": null,
+      "id": 7
+    },
+    {
+      "sessionId": 1760467545852,
+      "name": "عدد ٢ مساعدين خلفي يباني",
+      "price": 1080,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 5,
+      "nextDueKm": null,
+      "id": 9
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "زيت شيل ٤ لتر",
+      "price": 633,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 1,
+      "nextDueKm": null,
+      "id": 34
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "فلتر زيت",
+      "price": 106,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 1,
+      "nextDueKm": null,
+      "id": 35
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "اسطوانه دبرايج",
+      "price": 1050,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 9,
+      "nextDueKm": null,
+      "id": 36
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "دسك دبرياج هيونداي",
+      "price": 850,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 9,
+      "nextDueKm": null,
+      "id": 37
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "بليه دبرياج",
+      "price": 500,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 9,
+      "nextDueKm": null,
+      "id": 38
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "زيت فتيس",
+      "price": 97,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 9,
+      "nextDueKm": null,
+      "id": 39
+    },
+    {
+      "sessionId": 1761662619069,
+      "name": "مصنعيه تغيير طقم دبرياج",
+      "price": 850,
+      "interval": null,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 9,
+      "nextDueKm": null,
+      "id": 40
+    },
+    {
+      "sessionId": 1760481842562,
+      "name": "Led lights",
+      "price": 1450,
+      "interval": null,
+      "merchant": "Super solar",
+      "notes": "مش حلوه اوي",
+      "categoryId": 5,
+      "nextDueKm": null,
+      "id": 49
+    },
+    {
+      "sessionId": 1760481842562,
+      "name": "دوره مياه",
+      "price": 300,
+      "interval": null,
+      "merchant": "الفلافلي اسلام ردياتير الحي السابع",
+      "notes": "سئ المياه بتنقص",
+      "categoryId": 6,
+      "nextDueKm": null,
+      "id": 50
+    },
+    {
+      "sessionId": 1760481842562,
+      "name": "غطاء ردياتير",
+      "price": 200,
+      "interval": null,
+      "merchant": "الفلافلي اسلام ردياتير الحي السابع",
+      "notes": "",
+      "categoryId": 6,
+      "nextDueKm": null,
+      "id": 51
+    },
+    {
+      "sessionId": 1760481842562,
+      "name": "كاوتش حامل ردياتير",
+      "price": 80,
+      "interval": null,
+      "merchant": "الفلافلي اسلام ردياتير الحي السابع",
+      "notes": "",
+      "categoryId": 6,
+      "nextDueKm": null,
+      "id": 52
+    },
+    {
+      "sessionId": 1760481842562,
+      "name": "Mobil coolent",
+      "price": 600,
+      "interval": null,
+      "merchant": "Tantawy طنطاوى الحي السابع",
+      "notes": "",
+      "categoryId": 6,
+      "nextDueKm": null,
+      "id": 53
+    },
+    {
+      "sessionId": 1768181843344,
+      "name": "سيور",
+      "price": 0,
+      "interval": 60000,
+      "merchant": "",
+      "notes": "",
+      "categoryId": 10,
+      "nextDueKm": 154300,
+      "id": 54
+    }
+  ],
+  "categories": [
+    {
+      "name": "Oil change",
+      "color": "#667eea",
+      "id": 1
+    },
+    {
+      "name": "Brake Service",
+      "color": "#f56565",
+      "id": 2
+    },
+    {
+      "name": "Tire Service",
+      "color": "#ed8936",
+      "id": 3
+    },
+    {
+      "name": "Engine Repair",
+      "color": "#48bb78",
+      "id": 4
+    },
+    {
+      "name": "General Maintenance",
+      "color": "#764ba2",
+      "id": 5
+    },
+    {
+      "name": "Coolent",
+      "color": "#0000ff",
+      "id": 6
+    },
+    {
+      "name": "Fuel",
+      "color": "#d1b741",
+      "id": 8
+    },
+    {
+      "name": "Gearbox",
+      "color": "#c440e6",
+      "id": 9
+    },
+    {
+      "name": "Belt",
+      "color": "#b155f2",
+      "id": 10
+    }
+  ],
+  "fuelRecords": [
+    {
+      "id": "fuel_1771504309962_7npd9kpd9",
+      "sessionId": "default",
+      "date": "2026-02-19",
+      "odometer": 114442,
+      "liters": 15.19,
+      "pricePerLiter": 19.75,
+      "totalCost": 300,
+      "isFullTank": false,
+      "notes": "",
+      "createdAt": "2026-02-19T12:31:49.962Z"
+    },
+    {
+      "id": "fuel_1772311293797_no5f5az8v",
+      "sessionId": "default",
+      "date": "2026-02-28",
+      "odometer": 114695,
+      "liters": 15.19,
+      "pricePerLiter": 19.75,
+      "totalCost": 300,
+      "isFullTank": false,
+      "notes": "",
+      "createdAt": "2026-02-28T20:41:33.797Z"
+    },
+    {
+      "id": "fuel_1772826357602_m0b1iux9k",
+      "sessionId": "default",
+      "date": "2026-03-06",
+      "odometer": 114887,
+      "liters": 17.72,
+      "pricePerLiter": 19.75,
+      "totalCost": 350,
+      "isFullTank": false,
+      "notes": "",
+      "createdAt": "2026-03-06T19:45:57.602Z"
+    }
+  ],
+  "fuelSessions": [
+    {
+      "id": "default",
+      "vehicleId": "default",
+      "createdAt": "2026-02-19T12:30:08.608Z",
+      "updatedAt": "2026-02-19T12:30:08.611Z",
+      "records": []
+    }
+  ],
+  "currentOdometer": 114887,
+  "fuelPricePerLiter": 22.25,
+  "carInfo": {
+    "manufacturer": "Hyundai",
+    "model": "Verna",
+    "year": "2008",
+    "plate": "د ص ا - 541",
+    "color": "#ff0000",
+    "licenseExpiry": "2026-07-15"
+  },
+  "exportDate": "2026-03-15T05:06:34.906Z"
+}

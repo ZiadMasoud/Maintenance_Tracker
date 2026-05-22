@@ -236,12 +236,159 @@ function showConfirm(message, title = 'Confirm', options = {}) {
 // ================================
 // IndexedDB Setup
 // ================================
+// Centralized database version to prevent mismatches
+const DB_NAME = "carMaintainDB";
+const DB_VERSION = 7;
+
 let db;
-const request = indexedDB.open("carMaintainDB", 7);
+let dbOpenPromise = null;
+let isDbHealthy = true;
+
+// Database health check
+function checkDatabaseHealth() {
+  if (!db) return false;
+  
+  try {
+    // Check if all required object stores exist
+    const requiredStores = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords"];
+    for (const storeName of requiredStores) {
+      if (!db.objectStoreNames.contains(storeName)) {
+        console.error(`Missing required object store: ${storeName}`);
+        return false;
+      }
+    }
+    return true;
+  } catch (e) {
+    console.error("Database health check failed:", e);
+    return false;
+  }
+}
+
+// Safe database open with error handling
+function openDatabase() {
+  if (dbOpenPromise) return dbOpenPromise;
+  
+  dbOpenPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = function (e) {
+      const database = e.target.result;
+      const oldVersion = e.oldVersion;
+      console.log(`Database upgrade from version ${oldVersion} to ${DB_VERSION}`);
+
+      // Add transaction error handling
+      database.onerror = (event) => {
+        console.error("Database error during upgrade:", event.target.error);
+        isDbHealthy = false;
+      };
+
+      if (!database.objectStoreNames.contains("sessions")) {
+        database.createObjectStore("sessions", { keyPath: "id", autoIncrement: true });
+      }
+      if (!database.objectStoreNames.contains("items")) {
+        database.createObjectStore("items", { keyPath: "id", autoIncrement: true });
+      }
+      if (!database.objectStoreNames.contains("categories")) {
+        const categoryStore = database.createObjectStore("categories", { keyPath: "id", autoIncrement: true });
+        categoryStore.createIndex("name", "name", { unique: true });
+
+        // Add default categories
+        const defaultCategories = [
+          { name: "Oil Change", color: "#667eea" },
+          { name: "Brake Service", color: "#f56565" },
+          { name: "Tire Service", color: "#ed8936" },
+          { name: "Engine Repair", color: "#48bb78" },
+          { name: "General Maintenance", color: "#764ba2" },
+          { name: "Battery", color: "#38b2ac" },
+          { name: "Transmission", color: "#9f7aea" },
+          { name: "Suspension", color: "#ed64a6" },
+          { name: "Cooling System", color: "#4299e1" },
+          { name: "Exhaust", color: "#f6ad55" },
+          { name: "Air Filter", color: "#68d391" },
+          { name: "Spark Plugs", color: "#fc8181" },
+          { name: "Belts & Hoses", color: "#63b3ed" },
+          { name: "Lights & Electrical", color: "#f687b3" },
+          { name: "AC & Heating", color: "#4fd1c5" }
+        ];
+        defaultCategories.forEach(cat => categoryStore.add(cat));
+      }
+
+      // Create fuel records store (new in version 3)
+      if (!database.objectStoreNames.contains("fuelRecords")) {
+        const fuelStore = database.createObjectStore("fuelRecords", { keyPath: "id" });
+        fuelStore.createIndex("sessionId", "sessionId", { unique: false });
+        fuelStore.createIndex("date", "date", { unique: false });
+        fuelStore.createIndex("odometer", "odometer", { unique: false });
+      }
+
+      // Create fuel sessions store (new in version 3)
+      if (!database.objectStoreNames.contains("fuelSessions")) {
+        const fuelSessionStore = database.createObjectStore("fuelSessions", { keyPath: "id" });
+        fuelSessionStore.createIndex("vehicleId", "vehicleId", { unique: false });
+      }
+
+      // Create settings store (new in version 4)
+      if (!database.objectStoreNames.contains("settings")) {
+        database.createObjectStore("settings", { keyPath: "key" });
+      }
+
+      // Create finance records store (new in version 5)
+      if (!database.objectStoreNames.contains("financeRecords")) {
+        const financeStore = database.createObjectStore("financeRecords", { keyPath: "id", autoIncrement: true });
+        financeStore.createIndex("date", "date", { unique: false });
+        financeStore.createIndex("type", "type", { unique: false });
+        financeStore.createIndex("sessionId", "sessionId", { unique: false });
+      }
+
+      // Version 7 - clean migration to fix transaction abort issues
+      if (oldVersion < 7) {
+        console.log("Performing version 7 migration - no schema changes needed");
+      }
+    };
+
+    request.onsuccess = function (e) {
+      db = e.target.result;
+      isDbHealthy = checkDatabaseHealth();
+      
+      if (!isDbHealthy) {
+        console.error("Database health check failed after opening");
+        reject(new Error("Database health check failed"));
+        return;
+      }
+      
+      console.log("Database opened successfully, version:", db.version);
+      resolve(db);
+    };
+
+    request.onerror = function (e) {
+      console.error("Database failed to open:", e.target.error);
+      const errorMsg = e.target.error ? e.target.error.message : "Unknown error";
+      isDbHealthy = false;
+      reject(new Error("Database failed to open: " + errorMsg));
+    };
+    
+    request.onblocked = function (e) {
+      console.warn("Database open blocked - another connection may be open");
+      isDbHealthy = false;
+    };
+  });
+  
+  return dbOpenPromise;
+}
+
+// Initialize database
+const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 request.onupgradeneeded = function (e) {
   db = e.target.result;
   const oldVersion = e.oldVersion;
+  console.log(`Database upgrade from version ${oldVersion} to ${DB_VERSION}`);
+
+  // Add transaction error handling
+  db.onerror = (event) => {
+    console.error("Database error during upgrade:", event.target.error);
+    isDbHealthy = false;
+  };
 
   if (!db.objectStoreNames.contains("sessions")) {
     db.createObjectStore("sessions", { keyPath: "id", autoIncrement: true });
@@ -301,16 +448,24 @@ request.onupgradeneeded = function (e) {
     financeStore.createIndex("sessionId", "sessionId", { unique: false });
   }
 
-  // Version 6 migration removed - categories already included in default list
-  
   // Version 7 - clean migration to fix transaction abort issues
   if (oldVersion < 7) {
-    // No schema changes needed, just version bump to clear previous issues
+    console.log("Performing version 7 migration - no schema changes needed");
   }
 };
 
 request.onsuccess = function (e) {
   db = e.target.result;
+  isDbHealthy = checkDatabaseHealth();
+  
+  if (!isDbHealthy) {
+    console.error("Database health check failed after opening");
+    showAlert("Database health check failed. Please use 'Delete Database' option in Settings.");
+    return;
+  }
+  
+  console.log("Database opened successfully, version:", db.version);
+  
   // Initialize sidebar first
   initializeSidebar();
   // Initialize odometer display
@@ -334,8 +489,120 @@ request.onsuccess = function (e) {
 
 request.onerror = function (e) {
   console.error("Database failed to open:", e.target.error);
-  showAlert("Database failed to open: " + e.target.error.message);
+  const errorMsg = e.target.error ? e.target.error.message : "Unknown error";
+  isDbHealthy = false;
+  showAlert("Database failed to open: " + errorMsg + "\n\nPlease clear browser data or use the 'Delete Database' option in Settings.");
 };
+
+request.onblocked = function (e) {
+  console.warn("Database open blocked - another connection may be open");
+  showAlert("Database is blocked. Please close other tabs and refresh.");
+};
+
+// ================================
+// Safe Transaction Wrapper
+// ================================
+// Helper function to create transactions with automatic error handling
+function safeTransaction(storeNames, mode = "readonly") {
+  if (!db || !isDbHealthy) {
+    console.error("Cannot create transaction: database not healthy");
+    return null;
+  }
+  
+  try {
+    const tx = db.transaction(storeNames, mode);
+    
+    // Add error handling to the transaction
+    tx.onerror = (event) => {
+      console.error("Transaction error:", event.target.error);
+      // Don't alert for every transaction error to avoid spam
+      // Log it for debugging
+    };
+    
+    tx.onabort = (event) => {
+      console.warn("Transaction aborted:", event.target.error);
+    };
+    
+    return tx;
+  } catch (e) {
+    console.error("Failed to create transaction:", e);
+    return null;
+  }
+}
+
+// Validate data before saving to prevent corruption
+function validateSessionData(session) {
+  if (!session || typeof session !== 'object') return false;
+  if (!session.date || !/^\d{4}-\d{2}-\d{2}$/.test(session.date)) return false;
+  if (session.odometer !== undefined && (typeof session.odometer !== 'number' || session.odometer < 0)) return false;
+  return true;
+}
+
+function validateItemData(item) {
+  if (!item || typeof item !== 'object') return false;
+  if (!item.name || typeof item.name !== 'string') return false;
+  if (item.price !== undefined && (typeof item.price !== 'number' || item.price < 0)) return false;
+  if (item.interval !== undefined && (typeof item.interval !== 'number' || item.interval < 0)) return false;
+  return true;
+}
+
+// ================================
+// Auto Backup System
+// ================================
+// Automatically backup data before critical operations
+let lastAutoBackup = null;
+const AUTO_BACKUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+
+async function autoBackupData() {
+  const now = Date.now();
+  // Only backup if 24 hours have passed since last backup
+  if (lastAutoBackup && now - lastAutoBackup < AUTO_BACKUP_INTERVAL) {
+    return;
+  }
+  
+  try {
+    const data = await exportAllDataInternal();
+    const backupKey = `auto_backup_${new Date().toISOString().split('T')[0]}`;
+    localStorage.setItem(backupKey, JSON.stringify(data));
+    lastAutoBackup = now;
+    console.log("Auto backup created:", backupKey);
+    
+    // Keep only last 7 backups
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('auto_backup_'));
+    if (keys.length > 7) {
+      keys.sort().slice(0, keys.length - 7).forEach(k => localStorage.removeItem(k));
+    }
+  } catch (e) {
+    console.error("Auto backup failed:", e);
+  }
+}
+
+// Restore from auto backup
+function restoreFromAutoBackup() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('auto_backup_'));
+  if (keys.length === 0) {
+    showAlert("No auto backups found");
+    return;
+  }
+  
+  keys.sort();
+  const latestBackup = keys[keys.length - 1];
+  const backupData = localStorage.getItem(latestBackup);
+  
+  if (backupData) {
+    showConfirm(`Restore from backup: ${latestBackup.replace('auto_backup_', '')}?`).then(confirmed => {
+      if (confirmed) {
+        try {
+          const data = JSON.parse(backupData);
+          importDataInternal(data);
+          showAlert("Backup restored successfully");
+        } catch (e) {
+          showAlert("Failed to restore backup");
+        }
+      }
+    });
+  }
+}
 
 // ================================
 // Date Format Helper Functions
@@ -749,6 +1016,8 @@ function initializeEventListeners() {
   if (exportDataBtn) exportDataBtn.addEventListener('click', exportAllData);
   if (importDataBtn) importDataBtn.addEventListener('click', () => importFileInput.click());
   if (importFileInput) importFileInput.addEventListener('change', handleImportData);
+  if (restoreBackupBtn) restoreBackupBtn.addEventListener('click', restoreFromAutoBackup);
+  if (deleteDatabaseBtn) deleteDatabaseBtn.addEventListener('click', deleteDatabase);
   if (resetAllDataBtn) resetAllDataBtn.addEventListener('click', resetAllData);
 
   // Fuel settings
@@ -923,6 +1192,8 @@ const kpiAvgFuelSub = document.getElementById("kpiAvgFuelSub");
 const exportDataBtn = document.getElementById("exportDataBtn");
 const importDataBtn = document.getElementById("importDataBtn");
 const importFileInput = document.getElementById("importFileInput");
+const restoreBackupBtn = document.getElementById("restoreBackupBtn");
+const deleteDatabaseBtn = document.getElementById("deleteDatabaseBtn");
 const resetAllDataBtn = document.getElementById("resetAllDataBtn");
 const fuelPricePerLiterInput = document.getElementById("fuelPricePerLiter");
 const saveFuelSettingsBtn = document.getElementById("saveFuelSettingsBtn");
@@ -1481,6 +1752,9 @@ function saveSession() {
     showAlert("Database not initialized. Please refresh the page.");
     return;
   }
+
+  // Auto-backup before saving
+  autoBackupData();
 
   let date = document.getElementById("sessionDate").value;
 
@@ -3533,104 +3807,123 @@ function renderCarInfo() {
 // ================================
 // Export/Import Functions
 // ================================
+// Internal export function that returns data (for auto-backup)
+async function exportAllDataInternal() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+    
+    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readonly");
+    const sessionStore = tx.objectStore("sessions");
+    const itemStore = tx.objectStore("items");
+    const categoryStore = tx.objectStore("categories");
+    const fuelRecordStore = tx.objectStore("fuelRecords");
+    const fuelSessionStore = tx.objectStore("fuelSessions");
+
+    const sessions = [];
+    const items = [];
+    const categories = [];
+    const fuelRecords = [];
+    const fuelSessions = [];
+
+    let completed = 0;
+    const checkComplete = () => {
+      completed++;
+      if (completed === 5) {
+        const exportData = {
+          sessions,
+          items,
+          categories,
+          fuelRecords,
+          fuelSessions,
+          currentOdometer,
+          fuelPricePerLiter,
+          carInfo,
+          exportDate: new Date().toISOString()
+        };
+        resolve(exportData);
+      }
+    };
+
+    tx.onerror = () => reject(tx.error);
+
+    sessionStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        sessions.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+
+    itemStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        items.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+
+    categoryStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        categories.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+
+    fuelRecordStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        fuelRecords.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+
+    fuelSessionStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        fuelSessions.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+  });
+}
+
 function exportAllData() {
   if (!db) {
     showAlert("Database not initialized. Please refresh the page.");
     return;
   }
-  const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readonly");
-  const sessionStore = tx.objectStore("sessions");
-  const itemStore = tx.objectStore("items");
-  const categoryStore = tx.objectStore("categories");
-  const fuelRecordStore = tx.objectStore("fuelRecords");
-  const fuelSessionStore = tx.objectStore("fuelSessions");
+  
+  exportAllDataInternal().then(exportData => {
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
-  const sessions = [];
-  const items = [];
-  const categories = [];
-  const fuelRecords = [];
-  const fuelSessions = [];
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `car-maintenance-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
 
-  let completed = 0;
-  const checkComplete = () => {
-    completed++;
-    if (completed === 5) {
-      const exportData = {
-        sessions,
-        items,
-        categories,
-        fuelRecords,
-        fuelSessions,
-        currentOdometer,
-        fuelPricePerLiter,
-        carInfo,
-        exportDate: new Date().toISOString()
-      };
-
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(dataBlob);
-      link.download = `car-maintenance-data-${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-
-      localStorage.setItem('lastExportDate', exportData.exportDate);
-      if (typeof updateLastExportCounter === 'function') {
-        updateLastExportCounter();
-      }
+    localStorage.setItem('lastExportDate', exportData.exportDate);
+    if (typeof updateLastExportCounter === 'function') {
+      updateLastExportCounter();
     }
-  };
-
-  sessionStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      sessions.push(cursor.value);
-      cursor.continue();
-    } else {
-      checkComplete();
-    }
-  };
-
-  itemStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      items.push(cursor.value);
-      cursor.continue();
-    } else {
-      checkComplete();
-    }
-  };
-
-  categoryStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      categories.push(cursor.value);
-      cursor.continue();
-    } else {
-      checkComplete();
-    }
-  };
-
-  fuelRecordStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      fuelRecords.push(cursor.value);
-      cursor.continue();
-    } else {
-      checkComplete();
-    }
-  };
-
-  fuelSessionStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      fuelSessions.push(cursor.value);
-      cursor.continue();
-    } else {
-      checkComplete();
-    }
-  };
+  }).catch(error => {
+    console.error("Export failed:", error);
+    showAlert("Export failed: " + error.message);
+  });
 }
 
 function handleImportData(e) {
@@ -3655,72 +3948,79 @@ function handleImportData(e) {
   e.target.value = '';
 }
 
-function importAllData(importData) {
-  if (!db) {
-    showAlert("Database not initialized. Please refresh the page.");
-    return;
-  }
-  const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readwrite");
+// Internal import function (for auto-backup restore)
+function importDataInternal(importData) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+    
+    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions"], "readwrite");
 
-  tx.objectStore("sessions").clear();
-  tx.objectStore("items").clear();
-  tx.objectStore("categories").clear();
-  tx.objectStore("fuelRecords").clear();
-  tx.objectStore("fuelSessions").clear();
+    tx.onerror = () => reject(tx.error);
 
-  if (importData.categories) {
-    importData.categories.forEach(category => {
-      tx.objectStore("categories").add(category);
-    });
-  }
+    tx.objectStore("sessions").clear();
+    tx.objectStore("items").clear();
+    tx.objectStore("categories").clear();
+    tx.objectStore("fuelRecords").clear();
+    tx.objectStore("fuelSessions").clear();
 
-  if (importData.sessions) {
-    importData.sessions.forEach(session => {
-      tx.objectStore("sessions").add(session);
-    });
-  }
-
-  if (importData.items) {
-    importData.items.forEach(item => {
-      tx.objectStore("items").add(item);
-    });
-  }
-
-  if (importData.fuelRecords) {
-    importData.fuelRecords.forEach(record => {
-      tx.objectStore("fuelRecords").add(record);
-    });
-  }
-
-  if (importData.fuelSessions) {
-    importData.fuelSessions.forEach(session => {
-      tx.objectStore("fuelSessions").add(session);
-    });
-  }
-
-  tx.oncomplete = () => {
-    if (importData.currentOdometer) {
-      currentOdometer = importData.currentOdometer;
-      localStorage.setItem('currentOdometer', currentOdometer.toString());
-      if (odometerValue) odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
+    if (importData.categories) {
+      importData.categories.forEach(category => {
+        tx.objectStore("categories").add(category);
+      });
     }
 
-    if (importData.fuelPricePerLiter) {
-      fuelPricePerLiter = importData.fuelPricePerLiter;
-      localStorage.setItem('fuelPricePerLiter', fuelPricePerLiter.toString());
-      loadFuelSettings();
+    if (importData.sessions) {
+      importData.sessions.forEach(session => {
+        tx.objectStore("sessions").add(session);
+      });
     }
 
-    if (importData.carInfo) {
-      carInfo = importData.carInfo;
-      try {
-        localStorage.setItem('carInfo', JSON.stringify(carInfo));
-      } catch (e) {
-        console.error('Failed to save imported carInfo to localStorage', e);
+    if (importData.items) {
+      importData.items.forEach(item => {
+        tx.objectStore("items").add(item);
+      });
+    }
+
+    if (importData.fuelRecords) {
+      importData.fuelRecords.forEach(record => {
+        tx.objectStore("fuelRecords").add(record);
+      });
+    }
+
+    if (importData.fuelSessions) {
+      importData.fuelSessions.forEach(session => {
+        tx.objectStore("fuelSessions").add(session);
+      });
+    }
+
+    tx.oncomplete = () => {
+      if (importData.currentOdometer) {
+        currentOdometer = importData.currentOdometer;
+        localStorage.setItem('currentOdometer', currentOdometer.toString());
+        if (odometerValue) odometerValue.textContent = `${currentOdometer.toLocaleString()}`;
       }
-      renderCarInfo();
-    }
 
+      if (importData.fuelPricePerLiter) {
+        fuelPricePerLiter = importData.fuelPricePerLiter;
+        localStorage.setItem('fuelPricePerLiter', fuelPricePerLiter.toString());
+        loadFuelSettings();
+      }
+
+      if (importData.carInfo) {
+        carInfo = importData.carInfo;
+        localStorage.setItem('carInfo', JSON.stringify(carInfo));
+      }
+      
+      resolve();
+    };
+  });
+}
+
+function importAllData(importData) {
+  importDataInternal(importData).then(() => {
     // Reload fuel analytics if fuel app is initialized
     if (typeof fuelApp !== 'undefined' && fuelApp) {
       fuelApp.stateManager.loadSession('default');
@@ -3738,11 +4038,37 @@ function importAllData(importData) {
     showAlert('Data imported successfully!');
     renderAll();
     loadCategoriesForFilter();
-  };
-
-  tx.onerror = () => {
+  }).catch(error => {
+    console.error("Import failed:", error);
     showAlert('Error importing data. Please try again.');
-  };
+  });
+}
+
+// Function to delete the entire database (useful when database is corrupted)
+function deleteDatabase() {
+  showConfirm('This will delete the entire database and reload the page. You will need to import your data afterwards. Continue?', 'Delete Database').then(confirmed => {
+    if (!confirmed) return;
+
+    const deleteReq = indexedDB.deleteDatabase("carMaintainDB");
+    
+    deleteReq.onsuccess = function() {
+      console.log("Database deleted successfully");
+      showAlert("Database deleted. Page will reload now.");
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    };
+    
+    deleteReq.onerror = function() {
+      console.error("Error deleting database:", deleteReq.error);
+      showAlert("Error deleting database: " + deleteReq.error.message);
+    };
+    
+    deleteReq.onblocked = function() {
+      console.warn("Database deletion blocked - close other tabs");
+      showAlert("Database deletion blocked. Please close other tabs and try again.");
+    };
+  });
 }
 
 function resetAllData() {

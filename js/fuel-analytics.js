@@ -206,8 +206,9 @@ class FuelStateManager {
 // FUEL DATA MANAGER (IndexedDB)
 // ================================
 class FuelDataManager {
+  // Use centralized database constants to prevent version mismatches
   static DB_NAME = 'carMaintainDB';
-  static DB_VERSION = 7; // Database version
+  static DB_VERSION = 7; // Must match main DB_VERSION in script.js
   static STORE_FUEL = 'fuelRecords';
   static STORE_FUEL_SESSIONS = 'fuelSessions';
 
@@ -218,6 +219,11 @@ class FuelDataManager {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        
+        // Add error handling for upgrade transaction
+        db.onerror = (error) => {
+          console.error('Fuel database upgrade error:', error);
+        };
 
         // Create fuel records store
         if (!db.objectStoreNames.contains(this.STORE_FUEL)) {
@@ -236,6 +242,9 @@ class FuelDataManager {
 
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
+      request.onblocked = () => {
+        console.warn('Fuel database open blocked');
+      };
     });
   }
 
@@ -1391,11 +1400,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Update Fuel KPIs on Main Dashboard
 // ================================
 function updateFuelKPIsOnDashboard() {
-  const dbRequest = indexedDB.open('carMaintainDB', 7);
+  const dbRequest = indexedDB.open('carMaintainDB', 7); // Must match DB_VERSION constant
   
   dbRequest.onsuccess = function(e) {
     const db = e.target.result;
     const tx = db.transaction('fuelRecords', 'readonly');
+    
+    // Add transaction error handling
+    tx.onerror = (error) => {
+      console.error('Fuel KPI transaction error:', error);
+    };
+    
     const store = tx.objectStore('fuelRecords');
     const records = [];
     
