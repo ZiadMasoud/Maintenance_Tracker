@@ -3883,7 +3883,7 @@ body.modal-open {
 /* KPI Value Row - for side-by-side layout (value + efficiency badge) */
 .kpi-value-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
 }
@@ -3894,10 +3894,23 @@ body.modal-open {
   gap: var(--space-2);
 }
 
+.kpi-value-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 10rem;
+}
+
 .kpi-value-row .fuel-efficiency-indicator {
-  margin-top: var(--space-1);
+  margin-top: 0;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.kpi-fuel .fuel-efficiency-indicator {
+  position: static;
+  top: auto;
+  right: auto;
 }
 
 /* Fuel KPI card adjustments */

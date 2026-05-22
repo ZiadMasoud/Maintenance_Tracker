@@ -1573,10 +1573,9 @@ function updateFuelKPIs() {
       // Calculate fuel analytics - exclude first record's liters (baseline fill)
       if (records.length >= 2) {
         const sortedRecords = records.sort((a, b) => a.odometer - b.odometer);
-        const totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
-        // Sum liters from records[1] onwards - fuel actually consumed to travel the distance
-        const totalLiters = sortedRecords.slice(1).reduce((sum, r) => sum + r.liters, 0);
-        const avgConsumption = totalDistance > 0 ? (totalLiters / totalDistance) * 100 : 0;
+        const analyticsEngine = new FuelAnalyticsEngine();
+        const analytics = analyticsEngine.computeAnalytics(sortedRecords);
+        const avgConsumption = analytics.avgConsumption;
 
         if (kpiAvgFuelValue) {
           kpiAvgFuelValue.textContent = `${avgConsumption.toFixed(1)}`;
@@ -1585,11 +1584,17 @@ function updateFuelKPIs() {
           kpiAvgFuelSub.textContent = 'L/100km';
         }
 
-        // Update fuel efficiency indicator
-        updateFuelEfficiencyIndicator(avgConsumption, 'homeFuelEfficiencyIndicator');
+        if (avgConsumption > 0) {
+          updateFuelEfficiencyIndicator(avgConsumption, 'homeFuelEfficiencyIndicator');
+        }
       } else {
         if (kpiAvgFuelValue) kpiAvgFuelValue.textContent = '—';
         if (kpiAvgFuelSub) kpiAvgFuelSub.textContent = 'L/100km';
+
+        const indicator = document.getElementById('homeFuelEfficiencyIndicator');
+        if (indicator) {
+          indicator.style.display = 'none';
+        }
       }
     }
   };

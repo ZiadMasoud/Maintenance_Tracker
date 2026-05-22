@@ -494,6 +494,7 @@ class FuelAnalyticsEngine {
 
     // Basic totals - use consumed fuel (excluding baseline) for consumption metrics
     const totalFuelConsumed = this.computeTotalFuelConsumed(sortedRecords);
+    const totalFuel = this.computeTotalFuel(sortedRecords);
     const totalFuelCost = this.computeTotalCost(sortedRecords);
     const totalDistance = this.computeTotalDistance(sortedRecords);
 
@@ -512,6 +513,7 @@ class FuelAnalyticsEngine {
 
     return {
       totalFuelConsumed: this.round(totalFuelConsumed, 2),
+      totalFuel: this.round(totalFuel, 2),
       totalFuelCost: this.round(totalFuelCost, 2),
       totalDistance: this.round(totalDistance, 1),
       avgConsumption: this.round(avgConsumption, 2),
@@ -526,6 +528,7 @@ class FuelAnalyticsEngine {
   getEmptyAnalytics() {
     return {
       totalFuelConsumed: 0,
+      totalFuel: 0,
       totalFuelCost: 0,
       totalDistance: 0,
       avgConsumption: 0,
@@ -727,8 +730,8 @@ class FuelUIRenderer {
       ? `${analytics.costPerKm}` 
       : '--');
     
-    this.updateElement('totalFuel', analytics.totalFuelConsumed > 0 
-      ? `${analytics.totalFuelConsumed}` 
+    this.updateElement('totalFuel', analytics.totalFuel > 0 
+      ? `${analytics.totalFuel}` 
       : '--');
     
     this.updateElement('totalDistance', analytics.totalDistance > 0 
