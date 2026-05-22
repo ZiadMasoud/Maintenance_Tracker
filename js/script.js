@@ -237,7 +237,7 @@ function showConfirm(message, title = 'Confirm', options = {}) {
 // IndexedDB Setup
 // ================================
 let db;
-const request = indexedDB.open("carMaintainDB", 6);
+const request = indexedDB.open("carMaintainDB", 7);
 
 request.onupgradeneeded = function (e) {
   db = e.target.result;
@@ -301,30 +301,11 @@ request.onupgradeneeded = function (e) {
     financeStore.createIndex("sessionId", "sessionId", { unique: false });
   }
 
-  // Add additional default categories (version 6)
-  if (oldVersion < 6 && db.objectStoreNames.contains("categories")) {
-    const categoryStore = db.transaction("categories", "readwrite").objectStore("categories");
-    const additionalCategories = [
-      { name: "Battery", color: "#38b2ac" },
-      { name: "Transmission", color: "#9f7aea" },
-      { name: "Suspension", color: "#ed64a6" },
-      { name: "Cooling System", color: "#4299e1" },
-      { name: "Exhaust", color: "#f6ad55" },
-      { name: "Air Filter", color: "#68d391" },
-      { name: "Spark Plugs", color: "#fc8181" },
-      { name: "Belts & Hoses", color: "#63b3ed" },
-      { name: "Lights & Electrical", color: "#f687b3" },
-      { name: "AC & Heating", color: "#4fd1c5" }
-    ];
-    additionalCategories.forEach(cat => {
-      // Check if category already exists before adding
-      const request = categoryStore.index("name").get(cat.name);
-      request.onsuccess = () => {
-        if (!request.result) {
-          categoryStore.add(cat);
-        }
-      };
-    });
+  // Version 6 migration removed - categories already included in default list
+  
+  // Version 7 - clean migration to fix transaction abort issues
+  if (oldVersion < 7) {
+    // No schema changes needed, just version bump to clear previous issues
   }
 };
 
