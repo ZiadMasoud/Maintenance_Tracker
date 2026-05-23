@@ -567,15 +567,7 @@ class FuelAnalyticsEngine {
   computeAverageConsumption(records) {
     if (records.length < 2) return 0;
 
-    // Only use full tank refills for accurate consumption calculation
-    const fullTankRecords = records.filter(r => r.isFullTank);
-    
-    if (fullTankRecords.length >= 2) {
-      // Use full tank method for most accurate calculation
-      return this.computeFullTankConsumption(fullTankRecords);
-    }
-
-    // Fallback: use all records with distance-weighted average
+    // Use all records with distance-weighted average
     let totalLiters = 0;
     let totalDistance = 0;
 
@@ -631,7 +623,6 @@ class FuelAnalyticsEngine {
       const current = records[i];
       const previous = records[i - 1];
       
-      // Ensure values are numbers
       const currentOdo = parseFloat(current.odometer);
       const prevOdo = parseFloat(previous.odometer);
       const currentLiters = parseFloat(current.liters);
