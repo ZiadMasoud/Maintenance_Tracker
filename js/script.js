@@ -2417,11 +2417,22 @@ function saveUpcomingEdit() {
     const item = e.target.result;
     if (item) {
       const isInstalled = item.installed !== false;
+      let newNextDueKm;
+
+      if (isInstalled) {
+        // Preserve the last service odometer (when maintenance was done)
+        const lastServiceOdometer = item.nextDueKm - item.interval;
+        // Calculate new nextDueKm based on the same last service odometer
+        newNextDueKm = lastServiceOdometer + newInterval;
+      } else {
+        newNextDueKm = null;
+      }
+
       const updatedItem = {
         ...item,
         interval: newInterval,
         intervalMonths: newIntervalMonths,
-        nextDueKm: isInstalled ? currentOdometer + newInterval : null
+        nextDueKm: newNextDueKm
       };
       store.put(updatedItem);
     }
