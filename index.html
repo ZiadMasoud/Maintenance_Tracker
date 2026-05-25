@@ -610,33 +610,57 @@
                       entering fuel costs
                     </p>
                   </div>
-                  <button id="saveFuelSettingsBtn" class="primary-btn">
+                  <button id="saveFuelSettingsBtn" class="primary-btn full-width">
                     Save Fuel Settings
                   </button>
+                  <h4 class="section-subheader">Fuel Analysis Thresholds</h4>
+                  <div class="threshold-grid">
+                    <div class="form-group">
+                      <label for="fuelMaxIntervalKm">Max Interval To Use (km):</label>
+                      <input type="number" id="fuelMaxIntervalKm" placeholder="1000" min="1" step="1" class="styled-input" />
+                    </div>
+                    <div class="form-group">
+                      <label for="fuelMinConsumption">Min Consumption (L/100km):</label>
+                      <input type="number" id="fuelMinConsumption" placeholder="2" min="0.1" step="0.1" class="styled-input" />
+                    </div>
+                    <div class="form-group">
+                      <label for="fuelMaxConsumption">Max Consumption (L/100km):</label>
+                      <input type="number" id="fuelMaxConsumption" placeholder="25" min="0.1" step="0.1" class="styled-input" />
+                    </div>
+                  </div>
+                  <button id="saveFuelThresholdsBtn" class="primary-btn full-width">Save Thresholds</button>
                 </div>
                 <h3>Data Management</h3>
                 <div class="settings-group data-management-group">
-                  <button id="exportDataBtn" class="primary-btn">
-                    Export Data (JSON)
-                  </button>
-                  <button id="importDataBtn" class="secondary-btn">
-                    Import Data (JSON)
-                  </button>
-                  <button id="restoreBackupBtn" class="secondary-btn">
-                    Restore Auto Backup
-                  </button>
+                  <div class="settings-action-grid">
+                    <button id="exportDataBtn" class="primary-btn">Export Data (JSON)</button>
+                    <button id="importDataBtn" class="secondary-btn">Import Data (JSON)</button>
+                    <button id="restoreBackupBtn" class="secondary-btn">Restore Auto Backup</button>
+                  </div>
                   <input type="file" id="importFileInput" accept=".json" style="display: none" />
-                  <h3 style="margin-bottom: 0px">Danger Zone</h3>
-                  <button id="deleteDatabaseBtn" class="danger-btn" style="margin-bottom: 10px">
-                    Delete Database (Fix Corruption)
-                  </button>
-                  <button id="resetAllDataBtn" class="danger-btn">
-                    Reset All Data
-                  </button>
-                  <p class="warning-text">
-                    <i class="fas fa-exclamation-triangle"></i> This will permanently delete all data. This action
-                    cannot be undone!
-                  </p>
+                  <div class="danger-zone">
+                    <h4>Danger Zone</h4>
+                    <button id="deleteDatabaseBtn" class="danger-btn full-width">
+                      Delete Database (Fix Corruption)
+                    </button>
+                    <div class="selective-delete-buttons">
+                      <div class="selective-delete-label">Select stores to delete:</div>
+                      <button type="button" class="selective-store-btn danger-btn active" data-store="fuelRecords">Fuel Records</button>
+                      <button type="button" class="selective-store-btn danger-btn active" data-store="fuelSessions">Fuel Sessions</button>
+                      <button type="button" class="selective-store-btn danger-btn" data-store="financeRecords">Finance Records</button>
+                      <button type="button" class="selective-store-btn danger-btn" data-store="sessions">Sessions</button>
+                    </div>
+                    <button id="deleteSelectedBtn" class="danger-btn full-width">Delete Selected</button>
+                    <div id="selectiveBackupInfo" class="backup-info">No backup created yet</div>
+                    <button id="undoSelectiveDeleteBtn" class="secondary-btn full-width">Undo Last Selective Delete</button>
+                    <button id="resetAllDataBtn" class="danger-btn full-width">
+                      Reset All Data
+                    </button>
+                    <p class="warning-text">
+                      <i class="fas fa-exclamation-triangle"></i> This will permanently delete all data. This action
+                      cannot be undone!
+                    </p>
+                  </div>
                 </div>
               </div>
               <!-- Category Management -->

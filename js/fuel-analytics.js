@@ -482,6 +482,16 @@ class FuelValidator {
 // FUEL ANALYTICS ENGINE
 // ================================
 class FuelAnalyticsEngine {
+  constructor() {
+    // Thresholds to detect and ignore outlier intervals where users skipped recordings
+    const storedMaxInterval = parseFloat(localStorage.getItem('fuel_max_interval_km'));
+    const storedMinConsumption = parseFloat(localStorage.getItem('fuel_min_consumption'));
+    const storedMaxConsumption = parseFloat(localStorage.getItem('fuel_max_consumption'));
+
+    this.MAX_INTERVAL_KM = (!isNaN(storedMaxInterval) && storedMaxInterval > 0) ? storedMaxInterval : 1000;
+    this.MIN_CONSUMPTION_L_PER_100KM = (!isNaN(storedMinConsumption) && storedMinConsumption > 0) ? storedMinConsumption : 2;
+    this.MAX_CONSUMPTION_L_PER_100KM = (!isNaN(storedMaxConsumption) && storedMaxConsumption > 0) ? storedMaxConsumption : 25;
+  }
   // Compute all analytics from raw records
   computeAnalytics(records) {
     // Return null analytics if no records
@@ -580,6 +590,12 @@ class FuelAnalyticsEngine {
       const distance = currentOdo - prevOdo;
       
       if (distance > 0 && currentLiters > 0) {
+        const consumption = (currentLiters / distance) * 100;
+
+        // Ignore intervals that are unrealistically long or produce implausible consumption values
+        if (distance > this.MAX_INTERVAL_KM) continue;
+        if (consumption < this.MIN_CONSUMPTION_L_PER_100KM || consumption > this.MAX_CONSUMPTION_L_PER_100KM) continue;
+
         totalLiters += currentLiters;
         totalDistance += distance;
       }
@@ -605,6 +621,10 @@ class FuelAnalyticsEngine {
 
       if (distance > 0 && liters > 0) {
         const consumption = (liters / distance) * 100;
+
+        if (distance > this.MAX_INTERVAL_KM) continue;
+        if (consumption < this.MIN_CONSUMPTION_L_PER_100KM || consumption > this.MAX_CONSUMPTION_L_PER_100KM) continue;
+
         totalConsumption += consumption;
         validIntervals++;
       }
@@ -631,6 +651,11 @@ class FuelAnalyticsEngine {
       
       if (distance > 0 && currentLiters > 0) {
         const consumption = (currentLiters / distance) * 100;
+
+        // Skip intervals that likely represent missed recordings or implausible consumption
+        if (distance > this.MAX_INTERVAL_KM) continue;
+        if (consumption < this.MIN_CONSUMPTION_L_PER_100KM || consumption > this.MAX_CONSUMPTION_L_PER_100KM) continue;
+
         trend.push({
           date: current.date,
           odometer: currentOdo,
@@ -1424,18 +1449,22 @@ function updateFuelKPIsOnDashboard() {
       } else {
         if (records.length >= 2) {
           const sortedRecords = records.sort((a, b) => a.odometer - b.odometer);
-          const totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
-          const totalLiters = sortedRecords.slice(1).reduce((sum, r) => sum + r.liters, 0);
-          const avgConsumption = totalDistance > 0 ? (totalLiters / totalDistance) * 100 : 0;
+          // Use analytics engine which applies outlier filtering
+          try {
+            const engine = new FuelAnalyticsEngine();
+            const avgConsumption = engine.computeAverageConsumption(sortedRecords);
 
-          const kpiAvgFuelValue = document.getElementById('kpiAvgFuelValue');
-          const kpiAvgFuelSub = document.getElementById('kpiAvgFuelSub');
+            const kpiAvgFuelValue = document.getElementById('kpiAvgFuelValue');
+            const kpiAvgFuelSub = document.getElementById('kpiAvgFuelSub');
 
-          if (kpiAvgFuelValue) {
-            kpiAvgFuelValue.textContent = `${avgConsumption.toFixed(1)}`;
-          }
-          if (kpiAvgFuelSub) {
-            kpiAvgFuelSub.textContent = 'L/100km';
+            if (kpiAvgFuelValue) {
+              kpiAvgFuelValue.textContent = avgConsumption > 0 ? `${avgConsumption.toFixed(1)}` : '—';
+            }
+            if (kpiAvgFuelSub) {
+              kpiAvgFuelSub.textContent = 'L/100km';
+            }
+          } catch (e) {
+            console.error('Error computing avg fuel for KPIs:', e);
           }
         }
 

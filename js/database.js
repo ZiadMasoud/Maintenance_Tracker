@@ -6,6 +6,7 @@
 
 const DB_NAME = "carMaintainDB";
 const DB_VERSION = 7;
+const SELECTIVE_BACKUP_STORE = "selectiveBackups";
 
 let db;
 let dbOpenPromise = null;
@@ -92,6 +93,10 @@ function openDatabase() {
         financeStore.createIndex("date", "date", { unique: false });
         financeStore.createIndex("type", "type", { unique: false });
         financeStore.createIndex("sessionId", "sessionId", { unique: false });
+      }
+      if (!database.objectStoreNames.contains(SELECTIVE_BACKUP_STORE)) {
+        const backupStore = database.createObjectStore(SELECTIVE_BACKUP_STORE, { keyPath: "id" });
+        backupStore.createIndex("createdAt", "createdAt", { unique: false });
       }
 
       if (oldVersion < 7) {
@@ -188,6 +193,10 @@ dbInitRequest.onupgradeneeded = function (e) {
     financeStore.createIndex("date", "date", { unique: false });
     financeStore.createIndex("type", "type", { unique: false });
     financeStore.createIndex("sessionId", "sessionId", { unique: false });
+  }
+  if (!db.objectStoreNames.contains(SELECTIVE_BACKUP_STORE)) {
+    const backupStore = db.createObjectStore(SELECTIVE_BACKUP_STORE, { keyPath: "id" });
+    backupStore.createIndex("createdAt", "createdAt", { unique: false });
   }
 
   if (oldVersion < 7) {
@@ -305,3 +314,238 @@ function deleteDatabase() {
     };
   });
 }
+
+// Clear a single object store's data safely
+function clearObjectStore(storeName) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    try {
+      const tx = db.transaction([storeName], 'readwrite');
+      const store = tx.objectStore(storeName);
+      const req = store.clear();
+
+      req.onsuccess = () => resolve();
+      req.onerror = (e) => reject(e.target.error || new Error('Failed to clear store'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function saveSelectiveBackup(backup) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    try {
+      const tx = db.transaction([SELECTIVE_BACKUP_STORE], 'readwrite');
+      const store = tx.objectStore(SELECTIVE_BACKUP_STORE);
+      const record = {
+        id: `selective_backup_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        stores: Object.keys(backup.stores || {}),
+        sizeBytes: new TextEncoder().encode(JSON.stringify(backup)).length,
+        backup
+      };
+      const req = store.put(record);
+      req.onsuccess = () => resolve(record);
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => cleanupSelectiveBackups(20).catch(err => console.warn('Cleanup failed', err));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function getLatestSelectiveBackup() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    try {
+      const tx = db.transaction([SELECTIVE_BACKUP_STORE], 'readonly');
+      const store = tx.objectStore(SELECTIVE_BACKUP_STORE);
+      const index = store.index('createdAt');
+      const request = index.openCursor(null, 'prev');
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor && cursor.value) {
+          resolve(cursor.value);
+        } else {
+          resolve(null);
+        }
+      };
+      request.onerror = (event) => reject(event.target.error || new Error('Failed to read backup'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function cleanupSelectiveBackups(maxAgeDays = 20) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+    try {
+      const tx = db.transaction([SELECTIVE_BACKUP_STORE], 'readwrite');
+      const store = tx.objectStore(SELECTIVE_BACKUP_STORE);
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          const record = cursor.value;
+          const createdAt = new Date(record.createdAt).getTime();
+          if (!record.createdAt || createdAt < cutoff) {
+            cursor.delete();
+          }
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+      request.onerror = (event) => reject(event.target.error || new Error('Failed to clean backups'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+// Convenience helpers for settings UI
+function deleteFuelData() {
+  return showConfirm('Delete all fuel data? This will remove fuel history and fuel sessions. A backup will be created so you can undo.', 'Delete Fuel Data')
+    .then(confirmed => {
+      if (!confirmed) return Promise.reject(new Error('Cancelled'));
+      if (typeof exportAllDataInternal !== 'function' || typeof saveSelectiveBackup !== 'function') {
+        return Promise.reject(new Error('Backup helper unavailable'));
+      }
+
+      return exportAllDataInternal().then(fullData => {
+        const backup = {
+          stores: {
+            fuelRecords: fullData.fuelRecords || [],
+            fuelSessions: fullData.fuelSessions || []
+          },
+          meta: {
+            type: 'fuel',
+            date: new Date().toISOString()
+          }
+        };
+
+        return saveSelectiveBackup(backup).then(() => Promise.all([
+          clearObjectStore('fuelRecords'),
+          clearObjectStore('fuelSessions')
+        ]));
+      });
+    });
+}
+
+function deleteFinanceData() {
+  return showConfirm('Delete all finance records? This will remove finance history. A backup will be created so you can undo.', 'Delete Finance Data')
+    .then(confirmed => {
+      if (!confirmed) return Promise.reject(new Error('Cancelled'));
+      if (typeof exportAllDataInternal !== 'function' || typeof saveSelectiveBackup !== 'function') {
+        return Promise.reject(new Error('Backup helper unavailable'));
+      }
+
+      return exportAllDataInternal().then(fullData => {
+        const backup = {
+          stores: {
+            financeRecords: fullData.financeRecords || []
+          },
+          meta: {
+            type: 'finance',
+            date: new Date().toISOString()
+          }
+        };
+
+        return saveSelectiveBackup(backup).then(() => clearObjectStore('financeRecords'));
+      });
+    });
+}
+
+function deleteSessionsData() {
+  return showConfirm('Delete all maintenance sessions (items/categories will remain). A backup will be created so you can undo.', 'Delete Sessions')
+    .then(confirmed => {
+      if (!confirmed) return Promise.reject(new Error('Cancelled'));
+      if (typeof exportAllDataInternal !== 'function' || typeof saveSelectiveBackup !== 'function') {
+        return Promise.reject(new Error('Backup helper unavailable'));
+      }
+
+      return exportAllDataInternal().then(fullData => {
+        const backup = {
+          stores: {
+            sessions: fullData.sessions || []
+          },
+          meta: {
+            type: 'sessions',
+            date: new Date().toISOString()
+          }
+        };
+
+        return saveSelectiveBackup(backup).then(() => clearObjectStore('sessions'));
+      });
+    });
+}
+
+// Restore the last selective-delete backup (if any)
+function restoreLastSelectiveBackup() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    getLatestSelectiveBackup().then(backupRecord => {
+      if (!backupRecord || !backupRecord.backup) {
+        reject(new Error('No selective delete backup found'));
+        return;
+      }
+
+      restoreBackupObject(backupRecord.backup).then(() => {
+        resolve(backupRecord.backup.meta || {});
+      }).catch(reject);
+    }).catch(reject);
+  });
+}
+
+// Restore a backup object (writes stores back into the DB)
+function restoreBackupObject(backup) {
+  return new Promise((resolve, reject) => {
+    if (!backup || !backup.stores) return reject(new Error('Invalid backup object'));
+    if (!db) return reject(new Error('Database not initialized'));
+
+    const storeNames = Object.keys(backup.stores);
+    if (storeNames.length === 0) return reject(new Error('No stores in backup'));
+
+    const tx = db.transaction(storeNames, 'readwrite');
+    tx.oncomplete = () => resolve(backup.meta || {});
+    tx.onerror = (e) => reject(e.target.error || new Error('Restore transaction failed'));
+
+    for (const storeName of storeNames) {
+      try {
+        const store = tx.objectStore(storeName);
+        const items = backup.stores[storeName] || [];
+        items.forEach(item => {
+          try { store.put(item); } catch (e) { console.warn('Failed to put item during restore', e); }
+        });
+      } catch (e) {
+        console.warn('Restore: store not found or error:', storeName, e);
+      }
+    }
+  });
+}
+

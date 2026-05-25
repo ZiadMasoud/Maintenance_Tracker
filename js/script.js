@@ -721,10 +721,194 @@ function initializeEventListeners() {
   if (importFileInput) importFileInput.addEventListener('change', handleImportData);
   if (restoreBackupBtn) restoreBackupBtn.addEventListener('click', restoreFromAutoBackup);
   if (deleteDatabaseBtn) deleteDatabaseBtn.addEventListener('click', deleteDatabase);
+  const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+  const selectiveBackupInfo = document.getElementById('selectiveBackupInfo');
+  const chkFuelRecords = document.getElementById('chk_fuelRecords');
+  const chkFuelSessions = document.getElementById('chk_fuelSessions');
+  const chkFinanceRecords = document.getElementById('chk_financeRecords');
+  const chkSessions = document.getElementById('chk_sessions');
+
+  if (deleteSelectedBtn) deleteSelectedBtn.addEventListener('click', () => {
+    const selected = Array.from(selectiveStoreButtons)
+      .filter(btn => btn.classList.contains('active'))
+      .map(btn => btn.dataset.store)
+      .filter(Boolean);
+
+    if (selected.length === 0) {
+      showAlert('Please select at least one store to delete');
+      return;
+    }
+
+    const labelList = selected.join(', ');
+    showConfirm(`Delete selected stores: ${labelList}? A backup will be created and stored internally for up to 20 days. Proceed?`, 'Delete Selected').then(confirmed => {
+      if (!confirmed) return;
+
+      if (typeof exportAllDataInternal !== 'function') {
+        showAlert('Backup function unavailable');
+        return;
+      }
+
+      exportAllDataInternal().then(fullData => {
+        const backup = { stores: {}, meta: { date: new Date().toISOString(), stores: selected } };
+        selected.forEach(s => { backup.stores[s] = fullData[s] || []; });
+
+        if (typeof saveSelectiveBackup === 'function') {
+          saveSelectiveBackup(backup).then(() => {
+            if (selectiveBackupInfo) selectiveBackupInfo.textContent = `Backed up: ${selected.join(', ')} (stored internally)`;
+            const clearPromises = selected.map(s => clearObjectStore(s));
+            Promise.all(clearPromises).then(() => {
+              showAlert('Selected stores deleted');
+              renderAll();
+            }).catch(err => {
+              console.error('Error clearing stores:', err);
+              showAlert('Error deleting selected stores');
+            });
+          }).catch(err => {
+            console.error('Failed to save internal backup:', err);
+            showAlert('Failed to create backup — aborting delete');
+          });
+        } else {
+          showAlert('Backup helper unavailable');
+        }
+      }).catch(err => {
+        console.error('Failed to export data for backup:', err);
+        showAlert('Failed to create backup — aborting delete');
+      });
+    });
+  });
+
+  const toggleSelectiveStore = (btn) => {
+    if (!btn) return;
+    btn.classList.toggle('active');
+  };
+
+  selectiveStoreButtons.forEach(btn => {
+    btn.addEventListener('click', () => toggleSelectiveStore(btn));
+  });
+  if (deleteFuelDataBtn) deleteFuelDataBtn.addEventListener('click', () => {
+    deleteFuelData().then(() => {
+      showAlert('Fuel data deleted successfully');
+      renderAll();
+      if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.uiRenderer) {
+        fuelApp.uiRenderer.renderFuelHistory([]);
+      }
+    }).catch(err => {
+      if (err && err.message !== 'Cancelled') {
+        showAlert('Error deleting fuel data');
+        console.error(err);
+      }
+    });
+  });
+  if (deleteFinanceDataBtn) deleteFinanceDataBtn.addEventListener('click', () => {
+    deleteFinanceData().then(() => {
+      showAlert('Finance data deleted successfully');
+      renderAll();
+      loadFinanceRecords();
+    }).catch(err => {
+      if (err && err.message !== 'Cancelled') {
+        showAlert('Error deleting finance data');
+        console.error(err);
+      }
+    });
+  });
+  if (deleteSessionsDataBtn) deleteSessionsDataBtn.addEventListener('click', () => {
+    deleteSessionsData().then(() => {
+      showAlert('Sessions deleted successfully');
+      renderAll();
+    }).catch(err => {
+      if (err && err.message !== 'Cancelled') {
+        showAlert('Error deleting sessions');
+        console.error(err);
+      }
+    });
+  });
   if (resetAllDataBtn) resetAllDataBtn.addEventListener('click', resetAllData);
 
   // Fuel settings
   if (saveFuelSettingsBtn) saveFuelSettingsBtn.addEventListener('click', saveFuelSettings);
+  if (saveFuelThresholdsBtn) saveFuelThresholdsBtn.addEventListener('click', () => {
+    const maxInterval = parseInt(fuelMaxIntervalKmInput?.value);
+    const minCons = parseFloat(fuelMinConsumptionInput?.value);
+    const maxCons = parseFloat(fuelMaxConsumptionInput?.value);
+
+    if (!isNaN(maxInterval) && maxInterval > 0) {
+      localStorage.setItem('fuel_max_interval_km', maxInterval.toString());
+    }
+    if (!isNaN(minCons) && minCons > 0) {
+      localStorage.setItem('fuel_min_consumption', minCons.toString());
+    }
+    if (!isNaN(maxCons) && maxCons > 0) {
+      localStorage.setItem('fuel_max_consumption', maxCons.toString());
+    }
+
+    showAlert('Fuel thresholds saved. Charts and KPIs will update.');
+    if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.stateManager) {
+      // Recreate analytics engine so it picks up new thresholds
+      try {
+        fuelApp.stateManager.analyticsEngine = new FuelAnalyticsEngine();
+      } catch (e) {
+        console.warn('Failed to recreate analytics engine:', e);
+      }
+
+      if (fuelApp.uiRenderer) {
+        const analytics = fuelApp.stateManager.analyticsEngine.computeAnalytics(fuelApp.getRecords());
+        fuelApp.uiRenderer.renderCharts(analytics);
+        fuelApp.uiRenderer.renderAnalyticsKPIs(analytics);
+      }
+    }
+  });
+
+  if (undoSelectiveDeleteBtn) undoSelectiveDeleteBtn.addEventListener('click', () => {
+    restoreLastSelectiveBackup().then(meta => {
+      showAlert('Selective-delete backup restored');
+      renderAll();
+      if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.stateManager) {
+        try { fuelApp.stateManager.analyticsEngine = new FuelAnalyticsEngine(); } catch (e) { /* ignore */ }
+        if (fuelApp.uiRenderer) {
+          const records = fuelApp.getRecords();
+          fuelApp.uiRenderer.renderFuelHistory(records);
+          const analytics = fuelApp.stateManager.analyticsEngine.computeAnalytics(records);
+          fuelApp.uiRenderer.renderCharts(analytics);
+          fuelApp.uiRenderer.renderAnalyticsKPIs(analytics);
+        }
+      }
+    }).catch(err => {
+      if (err && err.message === 'DOWNLOAD_ONLY' && err.metadata) {
+        // Prompt user to upload backup file to restore
+        showAlert('Backup was saved as a downloaded file. Please upload that backup file to restore.');
+        const uploadInput = document.createElement('input');
+        uploadInput.type = 'file';
+        uploadInput.accept = '.json,application/json';
+        uploadInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            try {
+              const obj = JSON.parse(ev.target.result);
+              if (typeof restoreBackupObject === 'function') {
+                restoreBackupObject(obj).then(() => {
+                  showAlert('Backup restored from uploaded file');
+                  renderAll();
+                }).catch(e2 => {
+                  console.error('Restore from file failed', e2);
+                  showAlert('Restore failed: ' + (e2.message || 'Unknown error'));
+                });
+              } else {
+                showAlert('Restore helper not available');
+              }
+            } catch (e) {
+              showAlert('Invalid backup file');
+            }
+          };
+          reader.readAsText(file);
+        });
+        uploadInput.click();
+      } else {
+        showAlert(err.message || 'Failed to restore backup');
+      }
+    });
+  });
 
   // Category pagination
   if (categoryPrevPageBtn) categoryPrevPageBtn.addEventListener('click', () => changeCategoryPage(-1));
@@ -897,9 +1081,20 @@ const importDataBtn = document.getElementById("importDataBtn");
 const importFileInput = document.getElementById("importFileInput");
 const restoreBackupBtn = document.getElementById("restoreBackupBtn");
 const deleteDatabaseBtn = document.getElementById("deleteDatabaseBtn");
+const deleteFuelDataBtn = document.getElementById("deleteFuelDataBtn");
+const deleteFinanceDataBtn = document.getElementById("deleteFinanceDataBtn");
+const deleteSessionsDataBtn = document.getElementById("deleteSessionsDataBtn");
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const selectiveBackupInfo = document.getElementById('selectiveBackupInfo');
+const selectiveStoreButtons = document.querySelectorAll('.selective-store-btn');
 const resetAllDataBtn = document.getElementById("resetAllDataBtn");
 const fuelPricePerLiterInput = document.getElementById("fuelPricePerLiter");
 const saveFuelSettingsBtn = document.getElementById("saveFuelSettingsBtn");
+const fuelMaxIntervalKmInput = document.getElementById('fuelMaxIntervalKm');
+const fuelMinConsumptionInput = document.getElementById('fuelMinConsumption');
+const fuelMaxConsumptionInput = document.getElementById('fuelMaxConsumption');
+const saveFuelThresholdsBtn = document.getElementById('saveFuelThresholdsBtn');
+const undoSelectiveDeleteBtn = document.getElementById('undoSelectiveDeleteBtn');
 
 // View details modal elements
 const viewDetailsModal = document.getElementById("viewDetailsModal");
@@ -963,6 +1158,17 @@ let editingUpcomingItemId = null;
 function loadFuelSettings() {
   if (fuelPricePerLiterInput) {
     fuelPricePerLiterInput.value = fuelPricePerLiter || '';
+  }
+  // Load thresholds if present
+  try {
+    const maxInterval = localStorage.getItem('fuel_max_interval_km');
+    const minCons = localStorage.getItem('fuel_min_consumption');
+    const maxCons = localStorage.getItem('fuel_max_consumption');
+    if (fuelMaxIntervalKmInput) fuelMaxIntervalKmInput.value = maxInterval || '';
+    if (fuelMinConsumptionInput) fuelMinConsumptionInput.value = minCons || '';
+    if (fuelMaxConsumptionInput) fuelMaxConsumptionInput.value = maxCons || '';
+  } catch (e) {
+    console.warn('Failed to load fuel thresholds from storage', e);
   }
 }
 

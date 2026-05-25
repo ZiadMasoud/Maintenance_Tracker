@@ -1889,7 +1889,43 @@ section h2::before {
 }
 
 .danger-btn:hover {
-  background: #dc2626;
+  background: #b91c1c;
+}
+
+.selective-delete-buttons {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.selective-delete-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.selective-store-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+  background: #fee2e2;
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.selective-store-btn:hover {
+  background: #fef2f2;
+}
+
+.selective-store-btn.active {
+  background: var(--color-danger);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.18);
 }
 
 .actions {
@@ -1904,7 +1940,7 @@ section h2::before {
    ======================================== */
 .settings-page {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
 }
 
@@ -1914,6 +1950,51 @@ section h2::before {
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
+}
+
+.settings-section h4,
+.section-subheader {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.threshold-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.settings-action-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.danger-zone {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background: rgba(254, 226, 226, 0.35);
+}
+
+.backup-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (max-width: 940px) {
+  .settings-page {
+    grid-template-columns: 1fr;
+  }
 }
 
 .settings-section h3 {
