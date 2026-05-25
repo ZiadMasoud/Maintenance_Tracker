@@ -1952,24 +1952,33 @@ section h2::before {
   box-shadow: var(--shadow-sm);
 }
 
+.settings-section h3,
 .settings-section h4,
-.section-subheader {
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin: 0;
+.settings-section .section-subheader {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   color: var(--text-primary);
-  margin-bottom: var(--space-3);
+  margin: 0 0 var(--space-5) 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .threshold-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .settings-action-grid {
   display: grid;
   gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+#saveFuelThresholdsBtn {
+  margin-bottom: var(--space-5);
 }
 
 .danger-zone {
@@ -1995,15 +2004,6 @@ section h2::before {
   .settings-page {
     grid-template-columns: 1fr;
   }
-}
-
-.settings-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border-light);
 }
 
 .settings-group {
