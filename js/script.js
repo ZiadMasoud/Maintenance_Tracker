@@ -2110,8 +2110,11 @@ function displayCompletedItems(items) {
 function displayUpcoming(items) {
   if (!upcomingList || !db) return;
   upcomingList.innerHTML = "";
-  // Include items with interval set and nextDueKm not null (exclude completed items)
-  const filtered = items.filter(i => i.interval && i.interval > 0 && i.nextDueKm !== null);
+  // Include items with interval set (km or months) and either installed with nextDueKm set, or not installed (exclude completed items)
+  const filtered = items.filter(i => 
+    (i.interval && i.interval > 0 || i.intervalMonths && i.intervalMonths > 0) && 
+    (i.nextDueKm !== null || i.installed === false)
+  );
   
   // Load sessions to get dates for sorting
   const tx = db.transaction("sessions", "readonly");
@@ -2142,8 +2145,11 @@ function displayUpcoming(items) {
 
 function prepareUpcomingPagination(items) {
   if (!upcomingList || !db) return;
-  // Include items with interval set and nextDueKm not null (exclude completed items)
-  const filtered = items.filter(i => i.interval && i.interval > 0 && i.nextDueKm !== null);
+  // Include items with interval set (km or months) and either installed with nextDueKm set, or not installed (exclude completed items)
+  const filtered = items.filter(i => 
+    (i.interval && i.interval > 0 || i.intervalMonths && i.intervalMonths > 0) && 
+    (i.nextDueKm !== null || i.installed === false)
+  );
   
   // Load sessions to get dates for sorting
   const tx = db.transaction("sessions", "readonly");
@@ -2206,7 +2212,7 @@ function renderUpcomingPage() {
       cursor.continue();
     } else {
       pageItems.forEach(item => {
-        if (!item.interval || item.interval <= 0) return;
+        if ((!item.interval || item.interval <= 0) && (!item.intervalMonths || item.intervalMonths <= 0)) return;
 
         const isInstalled = item.installed !== false;
         const session = sessions[item.sessionId];
@@ -2216,6 +2222,8 @@ function renderUpcomingPage() {
         const tooltipDate = sessionDate ? formatDateForTooltip(sessionDate) : '';
 
         let status, progressColor, urgencyText, progressBar, kmInfo, nextDue;
+        const isKmInterval = item.interval && item.interval > 0;
+        const isMonthsInterval = item.intervalMonths && item.intervalMonths > 0;
 
         if (!isInstalled) {
           // Standby/Pending state for not installed parts
@@ -2223,40 +2231,57 @@ function renderUpcomingPage() {
           progressColor = "#9ca3af";
           urgencyText = "Pending";
           progressBar = '';
-          kmInfo = `Interval: ${item.interval.toLocaleString()} km`;
+          if (isKmInterval && isMonthsInterval) {
+            kmInfo = `Interval: ${item.interval.toLocaleString()} km / ${item.intervalMonths} months`;
+          } else if (isKmInterval) {
+            kmInfo = `Interval: ${item.interval.toLocaleString()} km`;
+          } else if (isMonthsInterval) {
+            kmInfo = `Interval: ${item.intervalMonths} months`;
+          }
           nextDue = 'Waiting for activation';
         } else {
           // Normal state for installed parts
-          const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
-          const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
-          const kmRemaining = item.nextDueKm - currentOdometer;
+          if (isKmInterval) {
+            const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
+            const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
+            const kmRemaining = item.nextDueKm - currentOdometer;
 
-          status = "status-ok";
-          progressColor = "#10b981";
-          urgencyText = "Good";
+            status = "status-ok";
+            progressColor = "#10b981";
+            urgencyText = "Good";
 
-          if (progressPercent >= 100) {
-            status = "status-danger";
-            progressColor = "#ef4444";
-            urgencyText = "Overdue";
-          } else if (progressPercent >= 80) {
-            status = "status-warning";
-            progressColor = "#f59e0b";
-            urgencyText = "Urgent";
-          } else if (progressPercent >= 60) {
-            status = "status-caution";
-            progressColor = "#f59e0b";
-            urgencyText = "Soon";
-          }
+            if (progressPercent >= 100) {
+              status = "status-danger";
+              progressColor = "#ef4444";
+              urgencyText = "Overdue";
+            } else if (progressPercent >= 80) {
+              status = "status-warning";
+              progressColor = "#f59e0b";
+              urgencyText = "Urgent";
+            } else if (progressPercent >= 60) {
+              status = "status-caution";
+              progressColor = "#f59e0b";
+              urgencyText = "Soon";
+            }
 
-          progressBar = `
-            <div class="progress-container">
-              <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
+            progressBar = `
+              <div class="progress-container">
+                <div class="progress-bar" style="width: ${progressPercent}%; background: ${progressColor};">
+                </div>
               </div>
-            </div>
-          `;
-          kmInfo = `${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km`;
-          nextDue = `Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})`;
+            `;
+            kmInfo = `${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km`;
+            nextDue = `Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})`;
+          } else if (isMonthsInterval) {
+            // For months-based intervals, show as pending/standby for now
+            // TODO: Implement months-based tracking with date calculations
+            status = "status-standby";
+            progressColor = "#9ca3af";
+            urgencyText = "Pending";
+            progressBar = '';
+            kmInfo = `Interval: ${item.intervalMonths} months`;
+            nextDue = 'Months-based tracking';
+          }
         }
 
         const div = document.createElement("div");
@@ -2608,11 +2633,11 @@ function closeUpcomingEditPopup() {
 function saveUpcomingEdit() {
   if (!db || !editingUpcomingItemId) return;
 
-  const newInterval = parseInt(editUpcomingInterval.value);
+  const newInterval = parseInt(editUpcomingInterval.value) || null;
   const newIntervalMonths = parseInt(editUpcomingIntervalMonths.value) || null;
 
-  if (!newInterval || isNaN(newInterval) || newInterval <= 0) {
-    showAlert('Please enter a valid service interval');
+  if ((!newInterval || isNaN(newInterval) || newInterval <= 0) && (!newIntervalMonths || isNaN(newIntervalMonths) || newIntervalMonths <= 0)) {
+    showAlert('Please enter a valid service interval (km or months)');
     return;
   }
 
@@ -2625,7 +2650,7 @@ function saveUpcomingEdit() {
       const isInstalled = item.installed !== false;
       let newNextDueKm;
 
-      if (isInstalled) {
+      if (isInstalled && newInterval && newInterval > 0) {
         // Preserve the last service odometer (when maintenance was done)
         const lastServiceOdometer = item.nextDueKm - item.interval;
         // Calculate new nextDueKm based on the same last service odometer
@@ -2740,7 +2765,7 @@ function activateReminder(itemId) {
         const updatedItem = {
           ...item,
           installed: true,
-          nextDueKm: currentOdometer + item.interval
+          nextDueKm: item.interval && item.interval > 0 ? currentOdometer + item.interval : null
         };
         store.put(updatedItem);
       }
