@@ -1191,9 +1191,28 @@ section h2::before {
 .item-header-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
   flex-wrap: wrap;
+}
+
+.item-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.item-header-left .item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.remove-upcoming-btn {
+  margin-left: 0;
+  flex-shrink: 0;
 }
 
 .item-name {
@@ -1282,7 +1301,8 @@ section h2::before {
 .mark-done-btn,
 .edit-upcoming-btn,
 .activate-reminder-btn,
-.undo-activation-btn {
+.undo-activation-btn,
+.remove-upcoming-btn {
   width: 38px;
   height: 38px;
   border: none;
@@ -1331,6 +1351,32 @@ section h2::before {
 
 .undo-activation-btn:hover {
   background: #d97706;
+}
+
+.remove-upcoming-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.remove-upcoming-btn:hover {
+  background: #dc2626;
+}
+
+.undo-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  margin-bottom: var(--space-4);
+}
+
+.undo-banner button {
+  min-width: 90px;
+  padding: 0.75rem 1rem;
 }
 
 .progress-container {

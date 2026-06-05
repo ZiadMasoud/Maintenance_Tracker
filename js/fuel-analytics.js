@@ -1027,6 +1027,11 @@ class FuelEntryForm {
     this.estimatedLiters = document.getElementById('estimatedLiters');
     this.estimatedCost = document.getElementById('estimatedCost');
     this.consumptionRate = document.getElementById('consumptionRate');
+    this.tripEstimateWithOilDisplay = document.getElementById('tripEstimateWithOilDisplay');
+    this.estimatedOilCost = document.getElementById('estimatedOilCost');
+    this.estimatedFilterCost = document.getElementById('estimatedFilterCost');
+    this.estimatedTotalWithOil = document.getElementById('estimatedTotalWithOil');
+    this.oilEstimateNote = document.getElementById('oilEstimateNote');
     this.errorContainer = document.getElementById('fuelFormErrors');
     this.submitBtn = document.getElementById('saveFuelBtn');
 
@@ -1098,6 +1103,9 @@ class FuelEntryForm {
         if (this.tripEstimateDisplay) {
           this.tripEstimateDisplay.style.display = 'none';
         }
+        if (this.tripEstimateWithOilDisplay) {
+          this.tripEstimateWithOilDisplay.style.display = 'none';
+        }
         return;
       }
 
@@ -1106,11 +1114,28 @@ class FuelEntryForm {
       const avgConsumption = analytics?.avgConsumption || 0; // L/100km
       
       const pricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
+      const oilPrice = parseFloat(localStorage.getItem('oilPrice')) || 0;
+      const filterPrice = parseFloat(localStorage.getItem('oilFilterPrice')) || 0;
+      const oilChangeIntervalKm = parseFloat(localStorage.getItem('oilChangeIntervalKm')) || 0;
 
       if (avgConsumption > 0 && pricePerLiter > 0) {
         // Calculate: Liters = (Distance * Consumption) / 100
         const litersNeeded = (distance * avgConsumption) / 100;
         const tripCost = litersNeeded * pricePerLiter;
+
+        let oilCost = oilPrice > 0 ? oilPrice : 0;
+        let filterCost = filterPrice > 0 ? filterPrice : 0;
+        let totalWithOil = tripCost + oilCost + filterCost;
+        let noteText = 'Historical fuel average';
+
+        if (oilChangeIntervalKm > 0) {
+          oilCost = oilPrice > 0 ? (oilPrice / oilChangeIntervalKm) * distance : 0;
+          filterCost = filterPrice > 0 ? (filterPrice / oilChangeIntervalKm) * distance : 0;
+          totalWithOil = tripCost + oilCost + filterCost;
+          noteText = `Oil/filter cost spread over ${oilChangeIntervalKm.toLocaleString()} km interval`;
+        } else {
+          noteText = 'No oil change interval set; using full oil/filter cost';
+        }
 
         if (this.estimatedLiters) {
           this.estimatedLiters.textContent = `${litersNeeded.toFixed(2)} L`;
@@ -1123,6 +1148,29 @@ class FuelEntryForm {
         }
         if (this.tripEstimateDisplay) {
           this.tripEstimateDisplay.style.display = 'block';
+        }
+
+        if (this.estimatedOilCost) {
+          this.estimatedOilCost.textContent = oilPrice > 0 ? `${oilCost.toFixed(2)} EGP` : 'No oil price set';
+        }
+        if (this.estimatedFilterCost) {
+          this.estimatedFilterCost.textContent = filterPrice > 0 ? `${filterCost.toFixed(2)} EGP` : 'No filter price set';
+        }
+        if (this.estimatedTotalWithOil) {
+          this.estimatedTotalWithOil.textContent = totalWithOil > 0 ? `${totalWithOil.toFixed(2)} EGP` : 'No oil/filter data';
+        }
+        if (this.oilEstimateNote) {
+          if (oilChangeIntervalKm > 0) {
+            this.oilEstimateNote.textContent = noteText;
+          } else {
+            const reason = [];
+            if (oilPrice <= 0) reason.push('oil price missing');
+            if (filterPrice <= 0) reason.push('filter price missing');
+            this.oilEstimateNote.textContent = reason.length > 0 ? reason.join(' · ') : noteText;
+          }
+        }
+        if (this.tripEstimateWithOilDisplay) {
+          this.tripEstimateWithOilDisplay.style.display = 'block';
         }
       } else if (avgConsumption <= 0) {
         // No historical data yet
@@ -1138,6 +1186,9 @@ class FuelEntryForm {
         if (this.tripEstimateDisplay) {
           this.tripEstimateDisplay.style.display = 'block';
         }
+        if (this.tripEstimateWithOilDisplay) {
+          this.tripEstimateWithOilDisplay.style.display = 'none';
+        }
       } else if (pricePerLiter <= 0) {
         // Price not set
         if (this.estimatedLiters) {
@@ -1151,6 +1202,9 @@ class FuelEntryForm {
         }
         if (this.tripEstimateDisplay) {
           this.tripEstimateDisplay.style.display = 'block';
+        }
+        if (this.tripEstimateWithOilDisplay) {
+          this.tripEstimateWithOilDisplay.style.display = 'none';
         }
       }
     };

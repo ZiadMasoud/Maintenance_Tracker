@@ -923,6 +923,7 @@ function initializeEventListeners() {
 
   // Upcoming edit popup
   if (saveUpcomingEditBtn) saveUpcomingEditBtn.addEventListener('click', saveUpcomingEdit);
+  if (undoUpcomingRemoveBtn) undoUpcomingRemoveBtn.addEventListener('click', undoUpcomingReminderRemoval);
 
   // Load categories for filter
   loadCategoriesForFilter();
@@ -1056,6 +1057,8 @@ const upcomingPaginationControls = document.getElementById("upcomingPaginationCo
 const upcomingPrevPageBtn = document.getElementById("upcomingPrevPageBtn");
 const upcomingNextPageBtn = document.getElementById("upcomingNextPageBtn");
 const upcomingPageInfo = document.getElementById("upcomingPageInfo");
+const undoUpcomingRemoveBanner = document.getElementById("undoUpcomingRemoveBanner");
+const undoUpcomingRemoveBtn = document.getElementById("undoUpcomingRemoveBtn");
 
 // Fuel history pagination elements
 const fuelPaginationControls = document.getElementById("fuelPaginationControls");
@@ -1089,6 +1092,9 @@ const selectiveBackupInfo = document.getElementById('selectiveBackupInfo');
 const selectiveStoreButtons = document.querySelectorAll('.selective-store-btn');
 const resetAllDataBtn = document.getElementById("resetAllDataBtn");
 const fuelPricePerLiterInput = document.getElementById("fuelPricePerLiter");
+const oilPriceInput = document.getElementById("oilPrice");
+const oilFilterPriceInput = document.getElementById("oilFilterPrice");
+const oilChangeIntervalInput = document.getElementById("oilChangeIntervalKm");
 const saveFuelSettingsBtn = document.getElementById("saveFuelSettingsBtn");
 const fuelMaxIntervalKmInput = document.getElementById('fuelMaxIntervalKm');
 const fuelMinConsumptionInput = document.getElementById('fuelMinConsumption');
@@ -1151,6 +1157,8 @@ const fuelPerPage = 3;
 
 // Upcoming edit state
 let editingUpcomingItemId = null;
+let lastRemovedUpcomingReminder = null;
+let undoUpcomingRemoveTimeout = null;
 
 // ================================
 // Fuel Settings Management
@@ -1159,6 +1167,16 @@ function loadFuelSettings() {
   if (fuelPricePerLiterInput) {
     fuelPricePerLiterInput.value = fuelPricePerLiter || '';
   }
+  if (oilPriceInput) {
+    oilPriceInput.value = parseFloat(localStorage.getItem('oilPrice')) || '';
+  }
+  if (oilFilterPriceInput) {
+    oilFilterPriceInput.value = parseFloat(localStorage.getItem('oilFilterPrice')) || '';
+  }
+  if (oilChangeIntervalInput) {
+    oilChangeIntervalInput.value = parseInt(localStorage.getItem('oilChangeIntervalKm')) || '';
+  }
+
   // Load thresholds if present
   try {
     const maxInterval = localStorage.getItem('fuel_max_interval_km');
@@ -1174,10 +1192,61 @@ function loadFuelSettings() {
 
 function saveFuelSettings() {
   const price = parseFloat(fuelPricePerLiterInput?.value);
+  const oilPrice = parseFloat(oilPriceInput?.value);
+  const filterPrice = parseFloat(oilFilterPriceInput?.value);
+  const oilInterval = parseInt(oilChangeIntervalInput?.value);
+
   if (price && price > 0) {
     fuelPricePerLiter = price;
     localStorage.setItem('fuelPricePerLiter', price.toString());
-    showAlert('Fuel settings saved successfully!');
+
+    if (!isNaN(oilPrice) && oilPrice > 0) {
+      localStorage.setItem('oilPrice', oilPrice.toString());
+    } else {
+      localStorage.removeItem('oilPrice');
+    }
+
+    if (!isNaN(filterPrice) && filterPrice > 0) {
+      localStorage.setItem('oilFilterPrice', filterPrice.toString());
+    } else {
+      localStorage.removeItem('oilFilterPrice');
+    }
+
+    if (!isNaN(oilInterval) && oilInterval > 0) {
+      localStorage.setItem('oilChangeIntervalKm', oilInterval.toString());
+    } else {
+      localStorage.removeItem('oilChangeIntervalKm');
+    }
+
+    if (db) {
+      try {
+        const tx = db.transaction('settings', 'readwrite');
+        const store = tx.objectStore('settings');
+        store.put({ key: 'fuelPricePerLiter', value: price });
+
+        if (!isNaN(oilPrice) && oilPrice > 0) {
+          store.put({ key: 'oilPrice', value: oilPrice });
+        } else {
+          store.delete('oilPrice');
+        }
+
+        if (!isNaN(filterPrice) && filterPrice > 0) {
+          store.put({ key: 'oilFilterPrice', value: filterPrice });
+        } else {
+          store.delete('oilFilterPrice');
+        }
+
+        if (!isNaN(oilInterval) && oilInterval > 0) {
+          store.put({ key: 'oilChangeIntervalKm', value: oilInterval });
+        } else {
+          store.delete('oilChangeIntervalKm');
+        }
+      } catch (error) {
+        console.warn('Unable to save oil settings to database:', error);
+      }
+    }
+
+    showAlert('Fuel and oil settings saved successfully!');
   } else {
     showAlert('Please enter a valid price per liter.');
   }
@@ -1703,6 +1772,7 @@ function saveSession() {
       notes: el.querySelector(".itemNotes").value.trim(),
       categoryId: categoryId,
       installed: installed,
+      lastServiceOdometer: installed && intervalVal ? odometer : null,
       nextDueKm: intervalVal && installed ? odometer + intervalVal : null
     };
   });
@@ -2242,9 +2312,18 @@ function renderUpcomingPage() {
         } else {
           // Normal state for installed parts
           if (isKmInterval) {
-            const kmSinceService = currentOdometer - (item.nextDueKm - item.interval);
+            const sessionOdometer = session && typeof session.odometer === 'number' ? session.odometer : null;
+            const lastServiceOdometer = item.lastServiceOdometer != null
+              ? item.lastServiceOdometer
+              : sessionOdometer != null
+                ? sessionOdometer
+                : (item.nextDueKm != null ? item.nextDueKm - item.interval : null);
+            const nextDueKm = item.nextDueKm != null
+              ? item.nextDueKm
+              : (lastServiceOdometer != null ? lastServiceOdometer + item.interval : null);
+            const kmSinceService = lastServiceOdometer != null ? currentOdometer - lastServiceOdometer : 0;
             const progressPercent = Math.min(Math.max((kmSinceService / item.interval) * 100, 0), 100);
-            const kmRemaining = item.nextDueKm - currentOdometer;
+            const kmRemaining = nextDueKm != null ? nextDueKm - currentOdometer : null;
 
             status = "status-ok";
             progressColor = "#10b981";
@@ -2271,7 +2350,7 @@ function renderUpcomingPage() {
               </div>
             `;
             kmInfo = `${kmSinceService.toLocaleString()} / ${item.interval.toLocaleString()} km`;
-            nextDue = `Due: ${item.nextDueKm.toLocaleString()} km (${kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue'})`;
+            nextDue = `Due: ${nextDueKm != null ? nextDueKm.toLocaleString() : 'Unknown'} km (${kmRemaining != null ? (kmRemaining > 0 ? kmRemaining.toLocaleString() + ' km left' : 'Overdue') : 'Unknown'})`;
           } else if (isMonthsInterval) {
             // For months-based intervals, show as pending/standby for now
             // TODO: Implement months-based tracking with date calculations
@@ -2288,9 +2367,13 @@ function renderUpcomingPage() {
         div.classList.add("upcoming-item", status);
 
         // Action buttons based on installation status
-        let actionButtons = '';
+        let actionButtons = `
+          <button class="remove-upcoming-btn" onclick="removeUpcomingReminder(${item.id})" title="Remove Reminder">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
         if (!isInstalled) {
-          actionButtons = `
+          actionButtons += `
             <button class="activate-reminder-btn" onclick="activateReminder(${item.id})" title="Activate Reminder">
               <i class="fas fa-play"></i>
             </button>
@@ -2299,7 +2382,7 @@ function renderUpcomingPage() {
             </button>
           `;
         } else {
-          actionButtons = `
+          actionButtons += `
             <span class="urgency-badge ${status}">${urgencyText}</span>
             <button class="mark-done-btn" onclick="markMaintenanceDone(${item.id})" title="Mark as Done">
               <i class="fas fa-check"></i>
@@ -2317,8 +2400,10 @@ function renderUpcomingPage() {
           <div class="upcoming-content">
             <div class="upcoming-info">
               <div class="item-header-row">
-                <span class="item-name">${item.name}</span>
-                ${relativeTime ? `<span class="time-context time-context-${timeContextColor}" title="Recorded on ${tooltipDate}">${relativeTime}</span>` : ''}
+                <div class="item-header-left">
+                  <span class="item-name">${item.name}</span>
+                  ${relativeTime ? `<span class="time-context time-context-${timeContextColor}" title="Recorded on ${tooltipDate}">${relativeTime}</span>` : ''}
+                </div>
               </div>
               <div class="item-details">
                 <span class="km-info">${kmInfo}</span>
@@ -2633,6 +2718,7 @@ function closeUpcomingEditPopup() {
 function saveUpcomingEdit() {
   if (!db || !editingUpcomingItemId) return;
 
+  const newName = editUpcomingItemName.value.trim();
   const newInterval = parseInt(editUpcomingInterval.value) || null;
   const newIntervalMonths = parseInt(editUpcomingIntervalMonths.value) || null;
 
@@ -2647,24 +2733,35 @@ function saveUpcomingEdit() {
   store.get(editingUpcomingItemId).onsuccess = e => {
     const item = e.target.result;
     if (item) {
-      const isInstalled = item.installed !== false;
-      let newNextDueKm;
+      let lastServiceOdometer = item.lastServiceOdometer != null
+        ? item.lastServiceOdometer
+        : (item.nextDueKm != null && item.interval ? item.nextDueKm - item.interval : null);
 
-      if (isInstalled && newInterval && newInterval > 0) {
-        // Preserve the last service odometer (when maintenance was done)
-        const lastServiceOdometer = item.nextDueKm - item.interval;
-        // Calculate new nextDueKm based on the same last service odometer
-        newNextDueKm = lastServiceOdometer + newInterval;
-      } else {
-        newNextDueKm = null;
+      let newNextDueKm = null;
+
+      if (item.installed !== false && newInterval && newInterval > 0) {
+        if (lastServiceOdometer != null) {
+          newNextDueKm = lastServiceOdometer + newInterval;
+        } else if (item.nextDueKm != null && item.interval) {
+          lastServiceOdometer = item.nextDueKm - item.interval;
+          newNextDueKm = lastServiceOdometer + newInterval;
+        } else {
+          lastServiceOdometer = currentOdometer;
+          newNextDueKm = currentOdometer + newInterval;
+        }
+      } else if (item.installed !== false && item.nextDueKm != null) {
+        newNextDueKm = item.nextDueKm;
       }
 
       const updatedItem = {
         ...item,
+        name: newName,
         interval: newInterval,
         intervalMonths: newIntervalMonths,
-        nextDueKm: newNextDueKm
+        nextDueKm: newNextDueKm,
+        lastServiceOdometer: lastServiceOdometer
       };
+
       store.put(updatedItem);
     }
   };
@@ -2751,6 +2848,87 @@ function deleteCompletedItem(itemId) {
   });
 }
 
+function removeUpcomingReminder(itemId) {
+  showConfirm("Remove the km/months reminder from this item? This will clear the reminder from its session record.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+
+    const tx = db.transaction("items", "readwrite");
+    const store = tx.objectStore("items");
+
+    store.get(itemId).onsuccess = e => {
+      const item = e.target.result;
+      if (item) {
+        lastRemovedUpcomingReminder = { ...item };
+
+        const updatedItem = {
+          ...item,
+          interval: null,
+          intervalMonths: null,
+          nextDueKm: null,
+          installed: false,
+          lastServiceOdometer: null
+        };
+        store.put(updatedItem);
+      }
+    };
+
+    tx.oncomplete = () => {
+      renderAll();
+      showUndoUpcomingRemoveBanner();
+    };
+
+    tx.onerror = () => {
+      console.error("Error removing reminder:", tx.error);
+      showAlert("Error removing reminder. Please try again.");
+    };
+  });
+}
+
+function undoUpcomingReminderRemoval() {
+  if (!lastRemovedUpcomingReminder || !db) return;
+
+  const tx = db.transaction("items", "readwrite");
+  const store = tx.objectStore("items");
+  store.put(lastRemovedUpcomingReminder);
+
+  tx.oncomplete = () => {
+    lastRemovedUpcomingReminder = null;
+    hideUndoUpcomingRemoveBanner();
+    renderAll();
+  };
+
+  tx.onerror = () => {
+    console.error("Error restoring removed reminder:", tx.error);
+    showAlert("Error restoring reminder. Please try again.");
+  };
+}
+
+function showUndoUpcomingRemoveBanner() {
+  if (!undoUpcomingRemoveBanner || !undoUpcomingRemoveBtn) return;
+
+  undoUpcomingRemoveBanner.style.display = 'flex';
+  undoUpcomingRemoveBtn.disabled = false;
+
+  if (undoUpcomingRemoveTimeout) {
+    clearTimeout(undoUpcomingRemoveTimeout);
+  }
+
+  undoUpcomingRemoveTimeout = setTimeout(() => {
+    hideUndoUpcomingRemoveBanner();
+    lastRemovedUpcomingReminder = null;
+  }, 10000);
+}
+
+function hideUndoUpcomingRemoveBanner() {
+  if (!undoUpcomingRemoveBanner) return;
+  undoUpcomingRemoveBanner.style.display = 'none';
+  if (undoUpcomingRemoveTimeout) {
+    clearTimeout(undoUpcomingRemoveTimeout);
+    undoUpcomingRemoveTimeout = null;
+  }
+}
+
 function activateReminder(itemId) {
   showConfirm("Activate this reminder? This will mark the part as installed and start tracking maintenance.").then(confirmed => {
     if (!confirmed) return;
@@ -2762,10 +2940,19 @@ function activateReminder(itemId) {
     store.get(itemId).onsuccess = e => {
       const item = e.target.result;
       if (item) {
+        const lastServiceOdometer = item.lastServiceOdometer != null
+          ? item.lastServiceOdometer
+          : (item.nextDueKm != null && item.interval ? item.nextDueKm - item.interval : currentOdometer);
+
+        const nextDueKm = item.nextDueKm != null
+          ? item.nextDueKm
+          : (item.interval && item.interval > 0 ? lastServiceOdometer + item.interval : null);
+
         const updatedItem = {
           ...item,
           installed: true,
-          nextDueKm: item.interval && item.interval > 0 ? currentOdometer + item.interval : null
+          nextDueKm: nextDueKm,
+          lastServiceOdometer: lastServiceOdometer
         };
         store.put(updatedItem);
       }
@@ -2795,8 +2982,7 @@ function undoActivation(itemId) {
       if (item) {
         const updatedItem = {
           ...item,
-          installed: false,
-          nextDueKm: null
+          installed: false
         };
         store.put(updatedItem);
       }
@@ -3796,6 +3982,9 @@ async function exportAllDataInternal() {
           settings,
           currentOdometer,
           fuelPricePerLiter,
+          oilPrice: parseFloat(localStorage.getItem('oilPrice')) || 0,
+          oilFilterPrice: parseFloat(localStorage.getItem('oilFilterPrice')) || 0,
+          oilChangeIntervalKm: parseInt(localStorage.getItem('oilChangeIntervalKm')) || 0,
           carInfo,
           exportDate: new Date().toISOString()
         };
@@ -3996,13 +4185,38 @@ function importDataInternal(importData) {
       if (importData.fuelPricePerLiter) {
         fuelPricePerLiter = importData.fuelPricePerLiter;
         localStorage.setItem('fuelPricePerLiter', fuelPricePerLiter.toString());
-        loadFuelSettings();
+      }
+
+      if (importData.oilPrice !== undefined && importData.oilPrice !== null) {
+        if (importData.oilPrice > 0) {
+          localStorage.setItem('oilPrice', importData.oilPrice.toString());
+        } else {
+          localStorage.removeItem('oilPrice');
+        }
+      }
+
+      if (importData.oilFilterPrice !== undefined && importData.oilFilterPrice !== null) {
+        if (importData.oilFilterPrice > 0) {
+          localStorage.setItem('oilFilterPrice', importData.oilFilterPrice.toString());
+        } else {
+          localStorage.removeItem('oilFilterPrice');
+        }
+      }
+
+      if (importData.oilChangeIntervalKm !== undefined && importData.oilChangeIntervalKm !== null) {
+        if (importData.oilChangeIntervalKm > 0) {
+          localStorage.setItem('oilChangeIntervalKm', importData.oilChangeIntervalKm.toString());
+        } else {
+          localStorage.removeItem('oilChangeIntervalKm');
+        }
       }
 
       if (importData.carInfo) {
         carInfo = importData.carInfo;
         localStorage.setItem('carInfo', JSON.stringify(carInfo));
       }
+
+      loadFuelSettings();
       
       resolve();
     };
@@ -4921,6 +5135,8 @@ window.editCategory = editCategory;
 window.deleteCategory = deleteCategory;
 window.markMaintenanceDone = markMaintenanceDone;
 window.editUpcomingItem = editUpcomingItem;
+window.removeUpcomingReminder = removeUpcomingReminder;
+window.undoUpcomingReminderRemoval = undoUpcomingReminderRemoval;
 window.toggleSessionItems = toggleSessionItems;
 window.openCarInfoModal = openCarInfoModal;
 window.deleteCompletedItem = deleteCompletedItem;

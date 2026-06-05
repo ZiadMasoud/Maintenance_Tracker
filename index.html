@@ -218,6 +218,10 @@
               <div class="panel-content">
                 <div class="upcoming-maintenance-container">
                   <div id="upcomingList"></div>
+                  <div id="undoUpcomingRemoveBanner" class="undo-banner" style="display: none;">
+                    <span>Reminder removed.</span>
+                    <button type="button" id="undoUpcomingRemoveBtn" class="secondary-btn">Undo</button>
+                  </div>
                   <div class="pagination-controls" id="upcomingPaginationControls" style="display: none">
                     <button id="upcomingPrevPageBtn" class="pagination-btn">
                       <i class="fas fa-chevron-left"></i> Previous
@@ -434,6 +438,24 @@
                         <span class="estimate-value" id="consumptionRate">--</span>
                       </div>
                     </div>
+                    <div class="trip-estimate-display" id="tripEstimateWithOilDisplay" style="display: none; margin-top: var(--space-4);">
+                      <div class="estimate-row">
+                        <span class="estimate-label">Oil Cost:</span>
+                        <span class="estimate-value" id="estimatedOilCost">--</span>
+                      </div>
+                      <div class="estimate-row">
+                        <span class="estimate-label">Oil Filter Cost:</span>
+                        <span class="estimate-value" id="estimatedFilterCost">--</span>
+                      </div>
+                      <div class="estimate-row highlight">
+                        <span class="estimate-label">Estimated Total (Fuel + Oil/Filter):</span>
+                        <span class="estimate-value cost" id="estimatedTotalWithOil">--</span>
+                      </div>
+                      <div class="estimate-row consumption-info">
+                        <span class="estimate-label">Based on:</span>
+                        <span class="estimate-value" id="oilEstimateNote">--</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -610,8 +632,32 @@
                       entering fuel costs
                     </p>
                   </div>
+                  <div class="form-group">
+                    <label for="oilPrice">Oil Price (EGP):</label>
+                    <input type="number" id="oilPrice" placeholder="e.g., 800" min="0.01" step="0.01"
+                      class="styled-input" />
+                    <p class="help-text">
+                      Price for one oil change. Used by the new trip cost calculator.
+                    </p>
+                  </div>
+                  <div class="form-group">
+                    <label for="oilFilterPrice">Oil Filter Price (EGP):</label>
+                    <input type="number" id="oilFilterPrice" placeholder="e.g., 120" min="0.01" step="0.01"
+                      class="styled-input" />
+                    <p class="help-text">
+                      Price for one oil filter. Used by the new trip cost calculator.
+                    </p>
+                  </div>
+                  <div class="form-group">
+                    <label for="oilChangeIntervalKm">Oil Change Interval (km):</label>
+                    <input type="number" id="oilChangeIntervalKm" placeholder="e.g., 10000" min="1" step="1"
+                      class="styled-input" />
+                    <p class="help-text">
+                      Distributes oil and filter cost across the expected service interval.
+                    </p>
+                  </div>
                   <button id="saveFuelSettingsBtn" class="primary-btn full-width">
-                    Save Fuel Settings
+                    Save Fuel & Oil Settings
                   </button>
                   <h3 class="section-subheader">Fuel Analysis Thresholds</h3>
                   <div class="threshold-grid">
