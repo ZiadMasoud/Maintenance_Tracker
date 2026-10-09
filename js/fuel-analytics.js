@@ -208,7 +208,7 @@ class FuelStateManager {
 class FuelDataManager {
   // Use centralized database constants to prevent version mismatches
   static DB_NAME = 'carMaintainDB';
-  static DB_VERSION = 7; // Must match main DB_VERSION in script.js
+  static DB_VERSION = 11; // Must match main DB_VERSION in database.js
   static STORE_FUEL = 'fuelRecords';
   static STORE_FUEL_SESSIONS = 'fuelSessions';
 
@@ -287,12 +287,16 @@ class FuelDataManager {
       id,
       sessionId,
       date: data.date,
+      time: data.time || '00:00',
+      eventAt: data.eventAt || (typeof combineEventDateTime === 'function' ? combineEventDateTime(data.date, data.time || '00:00') : undefined),
       odometer: parseFloat(data.odometer),
       liters: parseFloat(liters.toFixed(2)),
       pricePerLiter: parseFloat(pricePerLiter.toFixed(2)),
       totalCost: parseFloat(totalCost.toFixed(2)),
       isFullTank: data.isFullTank || false,
       notes: data.notes || '',
+      financeIncluded: data.financeIncluded !== false,
+      fundingSource: data.fundingSource || 'uber',
       createdAt: new Date().toISOString()
     };
   }
@@ -1021,7 +1025,8 @@ class FuelEntryForm {
       isFullTank: document.getElementById('fuelFullTank'),
       notes: document.getElementById('fuelNotes'),
       tripDistance: document.getElementById('tripDistance'),
-      deductFromFunds: document.getElementById('fuelDeductFromFunds')
+      fundingSource: document.getElementById('fuelFundingSource'),
+      financeIncluded: document.getElementById('fuelFinanceIncluded')
     };
     this.tripEstimateDisplay = document.getElementById('tripEstimateDisplay');
     this.estimatedLiters = document.getElementById('estimatedLiters');
@@ -1043,9 +1048,10 @@ class FuelEntryForm {
 
     // Set default date to today
     if (this.inputs.date) {
-      this.inputs.date.valueAsDate = new Date();
+      this.inputs.date.value = typeof getTodayDateInput === 'function'
+        ? getTodayDateInput()
+        : new Date().toISOString().slice(0, 10);
     }
-
     // Set default odometer to current value
     if (this.inputs.odometer) {
       const currentOdo = parseInt(localStorage.getItem('currentOdometer')) || 0;
@@ -1054,10 +1060,8 @@ class FuelEntryForm {
       }
     }
 
-    // Initialize checkbox states
-    if (this.inputs.deductFromFunds) {
-      this.inputs.deductFromFunds.checked = false;
-    }
+    if (this.inputs.fundingSource) this.inputs.fundingSource.value = 'uber';
+    if (this.inputs.financeIncluded) this.inputs.financeIncluded.checked = true;
     if (this.inputs.isFullTank) {
       this.inputs.isFullTank.checked = false;
     }
@@ -1257,22 +1261,20 @@ class FuelEntryForm {
       if (fuelApp && fuelApp.editingRecordId) {
         await fuelApp.stateManager.editRecord(fuelApp.editingRecordId, formData);
         
-        // Update finance record for fuel edit
-        if (typeof window.addFuelExpense === 'function') {
-          const updatedRecord = await FuelDataManager.getRecord(fuelApp.editingRecordId);
-          if (updatedRecord) {
-            await window.deleteFinanceRecordsByFuelRecord(fuelApp.editingRecordId);
-            await window.addFuelExpense(updatedRecord);
-          }
+        // Reconcile the one linked Finance record without creating a duplicate.
+        const updatedRecord = await FuelDataManager.getRecord(fuelApp.editingRecordId);
+        if (updatedRecord && typeof window.addFuelExpense === 'function') {
+          await window.addFuelExpense(updatedRecord);
         }
         
         fuelApp.editingRecordId = null; // Clear edit mode
+        fuelApp.editingRecord = null;
         this.showSuccess('Fuel entry updated successfully!');
       } else {
         const newRecord = await this.stateManager.addRecord(formData);
         
-        // Add finance record for fuel (only if deductFromFunds is checked)
-        if (typeof window.addFuelExpense === 'function' && newRecord && formData.deductFromFunds) {
+        // Every fuel purchase is reflected in Finance.
+        if (typeof window.addFuelExpense === 'function' && newRecord) {
           await window.addFuelExpense(newRecord);
         }
         
@@ -1297,8 +1299,11 @@ class FuelEntryForm {
     const totalCost = parseFloat(this.inputs.totalCost?.value) || 0;
     const pricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
     const liters = pricePerLiter > 0 ? totalCost / pricePerLiter : 0;
-    const deductFromFunds = this.inputs.deductFromFunds?.checked ?? true;
-    
+    const time = fuelApp?.editingRecord
+      ? (typeof getRecordTimeInput === 'function'
+        ? getRecordTimeInput(fuelApp.editingRecord)
+        : (fuelApp.editingRecord.time || '00:00'))
+      : new Date().toTimeString().slice(0, 5);
     return {
       date: this.inputs.date?.value,
       odometer: this.inputs.odometer?.value,
@@ -1307,7 +1312,10 @@ class FuelEntryForm {
       totalCost: totalCost,
       isFullTank: this.inputs.isFullTank?.checked || false,
       notes: this.inputs.notes?.value || '',
-      deductFromFunds: deductFromFunds
+      time,
+      eventAt: typeof combineEventDateTime === 'function' ? combineEventDateTime(this.inputs.date?.value, time) : undefined,
+      financeIncluded: this.inputs.financeIncluded?.checked !== false,
+      fundingSource: this.inputs.fundingSource?.value || 'uber'
     };
   }
 
@@ -1344,15 +1352,16 @@ class FuelEntryForm {
     this.form.reset();
     
     // Ensure checkbox states are correct after reset
-    if (this.inputs.deductFromFunds) {
-      this.inputs.deductFromFunds.checked = false;
-    }
+    if (this.inputs.fundingSource) this.inputs.fundingSource.value = 'uber';
+    if (this.inputs.financeIncluded) this.inputs.financeIncluded.checked = true;
     if (this.inputs.isFullTank) {
       this.inputs.isFullTank.checked = false;
     }
     
     if (this.inputs.date) {
-      this.inputs.date.valueAsDate = new Date();
+      this.inputs.date.value = typeof getTodayDateInput === 'function'
+        ? getTodayDateInput()
+        : new Date().toISOString().slice(0, 10);
     }
     if (this.inputs.liters) {
       this.inputs.liters.value = '';
@@ -1369,6 +1378,7 @@ class FuelEntryForm {
     // Clear edit mode
     if (fuelApp) {
       fuelApp.editingRecordId = null;
+      fuelApp.editingRecord = null;
     }
     
     // Update odometer placeholder with new value
@@ -1423,11 +1433,11 @@ class FuelApplication {
 
   async deleteRecord(recordId) {
     if (confirm('Are you sure you want to delete this fuel entry?')) {
-      // Delete associated finance record first
+      await this.stateManager.deleteRecord(recordId);
+      // Remove the linked expense after the fuel entry is gone so reconciliation cannot recreate it.
       if (typeof window.deleteFinanceRecordsByFuelRecord === 'function') {
         await window.deleteFinanceRecordsByFuelRecord(recordId);
       }
-      return this.stateManager.deleteRecord(recordId);
     }
   }
 
@@ -1448,10 +1458,15 @@ class FuelApplication {
     if (litersInput) litersInput.value = record.liters;
     if (totalCostInput) totalCostInput.value = record.totalCost;
     if (fullTankInput) fullTankInput.checked = record.isFullTank;
+    const fundingSourceInput = document.getElementById('fuelFundingSource');
+    if (fundingSourceInput) fundingSourceInput.value = record.fundingSource || 'uber';
+    const financeIncludedInput = document.getElementById('fuelFinanceIncluded');
+    if (financeIncludedInput) financeIncludedInput.checked = record.financeIncluded !== false;
     if (notesInput) notesInput.value = record.notes || '';
 
     // Store edit mode
     this.editingRecordId = recordId;
+    this.editingRecord = record;
     
     // Change submit button text
     const submitBtn = document.getElementById('saveFuelBtn');

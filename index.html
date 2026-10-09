@@ -367,6 +367,9 @@
                     <label for="fuelDate">Date:</label>
                     <input type="date" id="fuelDate" required />
                   </div>
+                </div>
+
+                <div class="form-row">
                   <div class="form-group">
                     <label for="fuelOdometer">Odometer (km):</label>
                     <input type="number" id="fuelOdometer" placeholder="e.g., 50000" min="0" step="1" required />
@@ -390,17 +393,24 @@
                 </div>
 
                 <div class="form-row inline-actions-row">
-                  <div class="checkbox-wrapper inline-checkboxes">
+                  <div class="fuel-entry-controls">
                     <label class="checkbox-label full-tank-label">
                       <input type="checkbox" id="fuelFullTank" />
                       <span class="checkmark"></span>
                       <span class="full-tank-text">Full Tank Refill</span>
                     </label>
-                    <label class="checkbox-label fund-deduction-label">
-                      <input type="checkbox" id="fuelDeductFromFunds" />
+                    <label class="checkbox-label finance-include-label">
+                      <input type="checkbox" id="fuelFinanceIncluded" checked />
                       <span class="checkmark"></span>
-                      <span class="fund-deduction-text">Deduct from funds</span>
+                      <span>Include in Finance</span>
                     </label>
+                    <div class="fuel-funding-control">
+                      <label class="fuel-finance-source-label" for="fuelFundingSource">Fuel paid from:</label>
+                      <select id="fuelFundingSource" class="styled-input fuel-finance-source">
+                        <option value="uber">Uber Earnings</option>
+                        <option value="personal">Personal Savings</option>
+                      </select>
+                    </div>
                   </div>
                   <div class="actions inline-actions">
                     <button type="submit" id="saveFuelBtn" class="primary-btn">
@@ -496,6 +506,10 @@
                 <div class="finance-kpi-label">Total Savings</div>
                 <div class="finance-kpi-main" id="financeTotalSavings">0</div>
                 <div class="finance-kpi-sub">EGP</div>
+                <div class="finance-source-balances" aria-label="Balance by money source">
+                  <span><span>Personal Savings</span><strong id="financePersonalBalance">0</strong><small>EGP</small></span>
+                  <span><span>Uber Earnings</span><strong id="financeUberBalance">0</strong><small>EGP</small></span>
+                </div>
               </div>
               <div class="finance-kpi-card kpi-income" data-kpi="monthlyIncome">
                 <div class="finance-kpi-label">Monthly Income</div>
@@ -519,28 +533,48 @@
           <section class="finance-transactions-section">
             <div class="section-header-with-action">
               <h2>Transaction History</h2>
-              <button id="addFundsBtn" class="primary-btn">
-                <i class="fas fa-plus"></i> Add Funds
-              </button>
+              <div class="header-actions">
+                <button id="addFundsBtn" class="primary-btn">
+                  <i class="fas fa-plus"></i><span class="add-transaction-desktop">Add Transaction</span><span class="add-transaction-mobile">Add</span>
+                </button>
+              </div>
             </div>
             <div class="panel-content">
-              <!-- Transaction Table -->
-              <div class="finance-table-container">
-                <table class="finance-table" id="financeTable">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Item</th>
-                      <th>Type</th>
-                      <th>Category</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="financeTableBody">
-                    <!-- Transactions will be rendered here -->
-                  </tbody>
-                </table>
+              <button type="button" id="toggleFinanceFiltersBtn" class="finance-filter-toggle" aria-controls="financeHistoryControls" aria-expanded="false">
+                <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                <span>Filters &amp; Sort</span>
+                <i class="fas fa-chevron-down finance-filter-chevron" aria-hidden="true"></i>
+              </button>
+              <div class="finance-history-controls" id="financeHistoryControls" aria-label="Filter and sort transactions" hidden>
+                <div class="form-group">
+                  <label for="financeTypeFilter">Transaction type</label>
+                  <select id="financeTypeFilter" class="styled-input">
+                    <option value="all">All transactions</option>
+                    <option value="income">Income only</option>
+                    <option value="expense">Spending only</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="financeSourceFilter">Money source</label>
+                  <select id="financeSourceFilter" class="styled-input">
+                    <option value="all">All sources</option>
+                    <option value="personal">Personal Savings</option>
+                    <option value="uber">Uber Earnings</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="financeSortOrder">Sort by</label>
+                  <select id="financeSortOrder" class="styled-input">
+                    <option value="newest">Newest event first</option>
+                    <option value="oldest">Oldest event first</option>
+                    <option value="amount-desc">Amount: high to low</option>
+                    <option value="amount-asc">Amount: low to high</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Transaction Cards -->
+              <div class="transactions-container">
+                <div id="transactionsList"></div>
                 <div id="financeEmptyState" class="empty-state" style="display: none">
                   <div class="empty-icon"><i class="fas fa-wallet"></i></div>
                   <p>No transactions yet</p>
@@ -571,6 +605,10 @@
                 <label>Date:</label>
                 <input type="date" id="sessionDate" class="styled-input" />
               </div>
+              <div class="form-group">
+                <label for="sessionTime">Time:</label>
+                <input type="time" id="sessionTime" class="styled-input" />
+              </div>
 
               <div class="form-group">
                 <label>ODO (km):</label>
@@ -592,13 +630,21 @@
                 <textarea id="sessionNotes" placeholder="Optional" class="styled-input"></textarea>
               </div>
 
-              <div class="form-group checkbox-wrapper">
-                <label class="checkbox-label fund-deduction-label">
-                  <input type="checkbox" id="deductFromFunds" />
+              <div class="form-group">
+                <label class="checkbox-label finance-include-label">
+                  <input type="checkbox" id="maintenanceFinanceIncluded" checked />
                   <span class="checkmark"></span>
-                  <span class="fund-deduction-text">Deduct from funds</span>
+                  <span>Include this session in Finance</span>
                 </label>
-                <p class="help-text">Uncheck to exclude this record from finance tracking</p>
+                <p class="help-text">Uncheck to keep this session without adding it to Finance.</p>
+              </div>
+              <div class="form-group">
+                <label for="maintenanceFundingSource">Deduct maintenance spending from:</label>
+                <select id="maintenanceFundingSource" class="styled-input">
+                  <option value="personal">Personal Savings</option>
+                  <option value="uber">Uber Earnings</option>
+                </select>
+                <p class="help-text">Every priced maintenance item is automatically recorded in Finance.</p>
               </div>
 
               <h3 class="items-section-title">Items / Services</h3>
@@ -664,20 +710,29 @@
                     <div class="form-group">
                       <label for="fuelMaxIntervalKm">Max Interval To Use (km):</label>
                       <input type="number" id="fuelMaxIntervalKm" placeholder="1000" min="1" step="1" class="styled-input" />
+                      <p class="help-text">Fuel intervals longer than this are ignored in consumption calculations.</p>
                     </div>
                     <div class="form-group">
                       <label for="fuelMinConsumption">Min Consumption (L/100km):</label>
                       <input type="number" id="fuelMinConsumption" placeholder="2" min="0.1" step="0.1" class="styled-input" />
+                      <p class="help-text">Intervals below this value are treated as outliers and excluded.</p>
                     </div>
                     <div class="form-group">
                       <label for="fuelMaxConsumption">Max Consumption (L/100km):</label>
                       <input type="number" id="fuelMaxConsumption" placeholder="25" min="0.1" step="0.1" class="styled-input" />
+                      <p class="help-text">Intervals above this value are treated as outliers and excluded.</p>
                     </div>
                   </div>
                   <button id="saveFuelThresholdsBtn" class="primary-btn full-width">Save Thresholds</button>
                 </div>
                 <h3>Data Management</h3>
                 <div class="settings-group data-management-group">
+                  <p class="help-text">
+                    Export downloads your app data as a JSON file. Import uses a JSON backup file you select and replaces the data currently in this app.
+                  </p>
+                  <p class="help-text">
+                    Automatic backups are made when you save a maintenance session and are kept in this browser's storage for this site on this device (not in the cloud or Downloads). Up to 7 dated backups are kept. Restore Auto Backup uses the latest one and replaces the current app data in this browser.
+                  </p>
                   <div class="settings-action-grid">
                     <button id="exportDataBtn" class="primary-btn">Export Data (JSON)</button>
                     <button id="importDataBtn" class="secondary-btn">Import Data (JSON)</button>
@@ -686,26 +741,65 @@
                   <input type="file" id="importFileInput" accept=".json" style="display: none" />
                   <div class="danger-zone">
                     <h3>Danger Zone</h3>
-                    <button id="deleteDatabaseBtn" class="danger-btn full-width">
-                      Delete Database (Fix Corruption)
-                    </button>
-                    <div class="selective-delete-buttons">
-                      <div class="selective-delete-label">Select stores to delete:</div>
-                      <button type="button" class="selective-store-btn danger-btn active" data-store="fuelRecords">Fuel Records</button>
-                      <button type="button" class="selective-store-btn danger-btn active" data-store="fuelSessions">Fuel Sessions</button>
-                      <button type="button" class="selective-store-btn danger-btn" data-store="financeRecords">Finance Records</button>
-                      <button type="button" class="selective-store-btn danger-btn" data-store="sessions">Sessions</button>
+                    <div style="margin-bottom: var(--space-4);">
+                      <p class="danger-description" style="margin-bottom: var(--space-2); font-weight: 600;">Complete Database Reset</p>
+                      <p class="danger-description">Deletes entire database and recreates it from scratch. Use only if your database is corrupted and nothing else works. All your data will be lost.</p>
+                      <button id="deleteDatabaseBtn" class="danger-btn full-width" style="margin-top: var(--space-3);">
+                        <i class="fas fa-trash"></i> Delete Database (Fix Corruption)
+                      </button>
                     </div>
-                    <button id="deleteSelectedBtn" class="danger-btn full-width">Delete Selected</button>
-                    <div id="selectiveBackupInfo" class="backup-info">No backup created yet</div>
-                    <button id="undoSelectiveDeleteBtn" class="secondary-btn full-width">Undo Last Selective Delete</button>
-                    <button id="resetAllDataBtn" class="danger-btn full-width">
-                      Reset All Data
-                    </button>
-                    <p class="warning-text">
-                      <i class="fas fa-exclamation-triangle"></i> This will permanently delete all data. This action
-                      cannot be undone!
-                    </p>
+                    
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: var(--space-4); margin-top: var(--space-4);">
+                      <p class="danger-description" style="margin-bottom: var(--space-3); font-weight: 600;">Selective Data Deletion</p>
+                      <p class="danger-description" style="margin-bottom: var(--space-3);">Select specific data types to delete. Click buttons to toggle selection (Orange = Selected, Light Orange = Not Selected).</p>
+                      <div class="selective-delete-buttons">
+                        <div class="selective-delete-label">Select stores to delete:</div>
+                        <div style="display: grid; gap: var(--space-2);">
+                          <button type="button" class="selective-store-btn" data-store="fuelRecords">
+                            <i class="fas fa-gas-pump"></i>
+                            <span>Fuel Records</span>
+                          </button>
+                          <button type="button" class="selective-store-btn" data-store="fuelSessions">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Fuel Sessions</span>
+                          </button>
+                          <button type="button" class="selective-store-btn" data-store="financeRecords">
+                            <i class="fas fa-wallet"></i>
+                            <span>Finance Records</span>
+                          </button>
+                          <button type="button" class="selective-store-btn" data-store="sessions">
+                            <i class="fas fa-wrench"></i>
+                            <span>Maintenance Sessions</span>
+                          </button>
+                        </div>
+                      </div>
+                      <button id="deleteSelectedBtn" class="danger-btn full-width" style="margin-top: var(--space-3);">
+                        <i class="fas fa-trash"></i> Delete Selected Stores
+                      </button>
+                      <div id="selectiveBackupInfo" class="backup-info" style="margin-top: var(--space-3);">No backup created yet</div>
+                      <button id="undoSelectiveDeleteBtn" class="secondary-btn full-width" style="margin-top: var(--space-3);">
+                        <i class="fas fa-undo"></i> Undo Last Selective Delete
+                      </button>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: var(--space-4); margin-top: var(--space-4);">
+                      <p class="danger-description" style="margin-bottom: var(--space-3); font-weight: 600;">Migrate Old Data</p>
+                      <p class="danger-description" style="margin-bottom: var(--space-3);">Transfer your existing maintenance sessions and fuel records to the transaction history for better financial tracking.</p>
+                      <button id="migrateOldDataBtn" class="secondary-btn full-width" title="Migrate old maintenance and fuel data to transaction history">
+                        <i class="fas fa-sync"></i> Migrate Old Data
+                      </button>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: var(--space-4); margin-top: var(--space-4);">
+                      <p class="danger-description" style="margin-bottom: var(--space-2); font-weight: 600;">Complete Data Wipe</p>
+                      <p class="danger-description" style="margin-bottom: var(--space-3);">This will permanently erase ALL your data including maintenance records, fuel history, finance transactions, categories, and settings. This action CANNOT be undone.</p>
+                      <button id="resetAllDataBtn" class="danger-btn full-width">
+                        <i class="fas fa-exclamation-triangle"></i> Reset All Data - PERMANENT
+                      </button>
+                      <p class="warning-text" style="margin-top: var(--space-3);">
+                        <i class="fas fa-exclamation-triangle"></i> WARNING: This will permanently delete all data. This action cannot be undone!
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -739,6 +833,61 @@
                     Next <i class="fas fa-chevron-right"></i>
                   </button>
                 </div>
+              <!-- Finance categories share this section but remain separated by transaction type. -->
+              <div class="finance-category-management">
+                <h3>Finance Category Management</h3>
+                <div class="settings-group">
+                  <div class="form-group">
+                    <label for="newFinanceCategoryType">Category Type:</label>
+                    <select id="newFinanceCategoryType" class="styled-input">
+                      <option value="income">Income Category</option>
+                      <option value="expense">Spending Category</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="newFinanceCategoryName">Category Name:</label>
+                    <input type="text" id="newFinanceCategoryName" placeholder="Enter category name" class="styled-input" />
+                  </div>
+                  <div class="form-group">
+                    <label for="newFinanceCategoryColor">Category Color:</label>
+                    <input type="color" id="newFinanceCategoryColor" value="#10b981" />
+                  </div>
+                  <button id="addFinanceCategoryBtn" class="primary-btn">
+                    Add Category
+                  </button>
+                  <button id="restoreDefaultFinanceCategoriesBtn" class="secondary-btn" style="margin-top: var(--space-2)">
+                    <i class="fas fa-undo"></i> Restore Default Categories
+                  </button>
+                </div>
+                <div class="finance-category-groups">
+                  <div class="finance-category-group">
+                    <h4>Income Categories</h4>
+                    <div id="financeIncomeCategoriesList" class="categories-list"></div>
+                    <div class="pagination-controls finance-category-pagination" id="financeIncomeCategoryPaginationControls" style="display: none">
+                      <button id="financeIncomeCategoryPrevPageBtn" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i> Previous
+                      </button>
+                      <span id="financeIncomeCategoryPageInfo" class="page-info">Page 1 of 1</span>
+                      <button id="financeIncomeCategoryNextPageBtn" class="pagination-btn">
+                        Next <i class="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="finance-category-group">
+                    <h4>Spending Categories</h4>
+                    <div id="financeExpenseCategoriesList" class="categories-list"></div>
+                    <div class="pagination-controls finance-category-pagination" id="financeExpenseCategoryPaginationControls" style="display: none">
+                      <button id="financeExpenseCategoryPrevPageBtn" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i> Previous
+                      </button>
+                      <span id="financeExpenseCategoryPageInfo" class="page-info">Page 1 of 1</span>
+                      <button id="financeExpenseCategoryNextPageBtn" class="pagination-btn">
+                        Next <i class="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               </div>
             </div>
           </section>
@@ -841,6 +990,13 @@
           <label for="editCategoryName">Category Name:</label>
           <input type="text" id="editCategoryName" class="styled-input" />
         </div>
+        <div class="form-group" id="editFinanceCategoryTypeGroup" style="display: none">
+          <label for="editFinanceCategoryType">Category Type:</label>
+          <select id="editFinanceCategoryType" class="styled-input">
+            <option value="income">Income Category</option>
+            <option value="expense">Spending Category</option>
+          </select>
+        </div>
         <div class="form-group">
           <label for="editCategoryColor">Category Color:</label>
           <input type="color" id="editCategoryColor" />
@@ -895,15 +1051,25 @@
   <div id="addFundsPopup" class="popup-overlay">
     <div class="popup-card">
       <div class="popup-header">
-        <h3>Add Funds</h3>
+        <h3>Add Transaction</h3>
         <button class="popup-close" onclick="closeAddFundsPopup()">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="popup-body">
         <div class="form-group">
-          <label for="fundDate">Date:</label>
-          <input type="date" id="fundDate" class="styled-input" />
+          <label for="fundType">Transaction Type:</label>
+          <select id="fundType" class="styled-input">
+            <option value="income">Income (Add Funds)</option>
+            <option value="expense">Expense (Spending / Withdrawal)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fundingSource">Money Source:</label>
+          <select id="fundingSource" class="styled-input">
+            <option value="personal">Personal Savings</option>
+            <option value="uber">Uber Earnings</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="fundAmount">Amount (EGP):</label>
@@ -916,11 +1082,16 @@
         <div class="form-group">
           <label for="fundCategory">Category:</label>
           <select id="fundCategory" class="styled-input">
-            <option value="Savings">Savings</option>
-            <option value="Bonus">Bonus</option>
-            <option value="Refund">Refund</option>
-            <option value="Other">Other</option>
+            <option value="">Loading categories...</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label for="fundDate">Date:</label>
+          <input type="date" id="fundDate" class="styled-input" />
+        </div>
+        <div class="form-group">
+          <label for="fundTime">Time:</label>
+          <input type="time" id="fundTime" class="styled-input" />
         </div>
         <div class="form-group">
           <label for="fundNotes">Notes (optional):</label>
@@ -928,7 +1099,7 @@
         </div>
       </div>
       <div class="popup-actions">
-        <button id="saveFundBtn" class="primary-btn">Add Funds</button>
+        <button id="saveFundBtn" class="primary-btn">Add Transaction</button>
         <button class="secondary-btn" onclick="closeAddFundsPopup()">Cancel</button>
       </div>
     </div>
@@ -946,8 +1117,26 @@
       <div class="popup-body">
         <input type="hidden" id="editTransactionId" />
         <div class="form-group">
+          <label for="editTransactionType">Transaction Type:</label>
+          <select id="editTransactionType" class="styled-input">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editTransactionFundingSource">Money Source:</label>
+          <select id="editTransactionFundingSource" class="styled-input">
+            <option value="personal">Personal Savings</option>
+            <option value="uber">Uber Earnings</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label for="editTransactionDate">Date:</label>
           <input type="date" id="editTransactionDate" class="styled-input" />
+        </div>
+        <div class="form-group">
+          <label for="editTransactionTime">Time:</label>
+          <input type="time" id="editTransactionTime" class="styled-input" />
         </div>
         <div class="form-group">
           <label for="editTransactionAmount">Amount (EGP):</label>
@@ -961,8 +1150,7 @@
         </div>
         <div class="form-group">
           <label for="editTransactionCategory">Category:</label>
-          <input type="text" id="editTransactionCategory" placeholder="e.g., Savings, Fuel, Maintenance..."
-            class="styled-input" />
+          <select id="editTransactionCategory" class="styled-input"></select>
         </div>
         <div class="form-group">
           <label for="editTransactionNotes">Notes (optional):</label>
@@ -990,6 +1178,22 @@
       </div>
       <div class="popup-actions">
         <button class="secondary-btn" onclick="closeTransactionDetailsPopup()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Savings Breakdown Popup -->
+  <div id="financeKpiDetailPopup" class="popup-overlay">
+    <div class="popup-card finance-kpi-detail-card">
+      <div class="popup-header">
+        <h3 id="financeKpiDetailTitle">Total Savings Breakdown</h3>
+        <button class="popup-close" onclick="closeFinanceKPIDetailPopup()" aria-label="Close savings details">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="popup-body" id="financeKpiDetailBody"></div>
+      <div class="popup-actions">
+        <button class="secondary-btn" onclick="closeFinanceKPIDetailPopup()">Close</button>
       </div>
     </div>
   </div>

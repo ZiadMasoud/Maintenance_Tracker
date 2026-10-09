@@ -504,6 +504,10 @@ function initializeSidebar() {
 // ================================
 // Tab Switching
 // ================================
+function closeMoreTabsCard() {
+  document.getElementById('moreTabsCard')?.classList.remove('show');
+}
+
 function setActiveTab(target) {
   // Update sidebar nav buttons
   const tabButtons = document.querySelectorAll('.sidebar-nav .nav-link[data-tab-target]');
@@ -553,154 +557,84 @@ function setActiveTab(target) {
   }
 
   // Load and render fuel history when Fuel tab is shown
+  if (target === 'fuel') {
+    setTimeout(() => {
+      if (typeof fuelApp !== 'undefined' && fuelApp) {
+        const records = fuelApp.getRecords();
+        if (fuelApp.uiRenderer) {
+          fuelApp.uiRenderer.renderFuelHistory(records);
+        }
+        updateFuelTabKPIs();
+      } else {
+        // Fallback: load fuel records directly if fuelApp isn't initialized
+        loadFuelRecordsDirectly();
+      }
+    }, 100);
+  }
+
   if (target === 'fuel' && typeof fuelApp !== 'undefined' && fuelApp) {
     setTimeout(() => {
       const records = fuelApp.getRecords();
-      if (fuelApp.uiRenderer) {
-        fuelApp.uiRenderer.renderFuelHistory(records);
-      }
+      if (fuelApp.uiRenderer) fuelApp.uiRenderer.renderFuelHistory(records);
       updateFuelTabKPIs();
     }, 100);
   }
 
-  // Load and render finance records when Finance tab is shown
   if (target === 'finance') {
-    setTimeout(() => {
-      loadFinanceRecords();
-    }, 100);
+    setTimeout(() => loadFinanceRecords(), 100);
   }
 
-  // Re-initialize KPI descriptions after tab switch
-  setTimeout(() => {
-    initializeKPIDescriptions();
-  }, 150);
+  setTimeout(() => initializeKPIDescriptions(), 150);
 }
 
 // ================================
 // Event Listeners Setup
 // ================================
 function initializeEventListeners() {
-  // Sidebar navigation (tabs)
   const tabButtons = document.querySelectorAll('.sidebar-nav .nav-link[data-tab-target]');
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-tab-target');
-      setActiveTab(target);
+  tabButtons.forEach(btn => btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-tab-target');
+    setActiveTab(target);
+    if (target === 'record') openRecordForm();
+    else if (target === 'settings') {
+      loadCategoriesList();
+      loadFinanceCategoriesList();
+    }
+    if (window.innerWidth <= 991) {
+      document.getElementById('sidebar')?.classList.remove('sidebar-open');
+      document.getElementById('mobileOverlay')?.classList.remove('active');
+    }
+  }));
 
-      if (target === 'record') {
-        openRecordForm();
-      } else if (target === 'settings') {
-        loadCategoriesList();
-      } else if (target === 'analytics') {
-        // Re-render fuel charts when Analytics tab is clicked
-        setTimeout(() => {
-          if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.uiRenderer) {
-            const analytics = fuelApp.getAnalytics();
-            fuelApp.uiRenderer.renderCharts(analytics);
-          }
-        }, 100);
-      } else if (target === 'finance') {
-        // Load finance records when Finance tab is clicked
-        setTimeout(() => {
-          loadFinanceRecords();
-        }, 100);
-      }
-
-      // Close mobile sidebar after navigation
-      if (window.innerWidth <= 991) {
-        const sidebar = document.getElementById('sidebar');
-        const mobileOverlay = document.getElementById('mobileOverlay');
-        sidebar.classList.remove('sidebar-open');
-        mobileOverlay.classList.remove('active');
-      }
-    });
-  });
-
-  // Mobile bottom navigation
   const mobileNavItems = document.querySelectorAll('.mobile-bottom-nav-item[data-tab-target]');
-  mobileNavItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = item.getAttribute('data-tab-target');
-      
-      // Close more tabs card if open
-      if (target !== 'more') {
-        closeMoreTabsCard();
-      }
-      
-      setActiveTab(target);
+  mobileNavItems.forEach(item => item.addEventListener('click', e => {
+    e.preventDefault();
+    const target = item.getAttribute('data-tab-target');
+    if (target !== 'more') closeMoreTabsCard();
+    setActiveTab(target);
+    if (target === 'record') openRecordForm();
+    else if (target === 'settings') {
+      loadCategoriesList();
+      loadFinanceCategoriesList();
+    }
+  }));
 
-      if (target === 'record') {
-        openRecordForm();
-      } else if (target === 'settings') {
-        loadCategoriesList();
-      } else if (target === 'analytics') {
-        // Re-render fuel charts when Analytics tab is clicked
-        setTimeout(() => {
-          if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.uiRenderer) {
-            const analytics = fuelApp.getAnalytics();
-            fuelApp.uiRenderer.renderCharts(analytics);
-          }
-        }, 100);
-      } else if (target === 'finance') {
-        // Load finance records when Finance tab is clicked
-        setTimeout(() => {
-          loadFinanceRecords();
-        }, 100);
-      }
-    });
-  });
-
-  // More tabs functionality
   const moreTabsBtn = document.getElementById('moreTabsBtn');
   const moreTabsCard = document.getElementById('moreTabsCard');
-  const closeMoreTabsBtn = document.getElementById('closeMoreTabs');
-
-  function openMoreTabsCard() {
-    moreTabsCard.classList.add('show');
-  }
-
-  function closeMoreTabsCard() {
-    moreTabsCard.classList.remove('show');
-  }
-
-  if (moreTabsBtn) {
-    moreTabsBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openMoreTabsCard();
-    });
-  }
-
-  if (closeMoreTabsBtn) {
-    closeMoreTabsBtn.addEventListener('click', closeMoreTabsCard);
-  }
-
-  // Close more tabs card when clicking outside
-  document.addEventListener('click', (e) => {
-    if (moreTabsCard && !moreTabsCard.contains(e.target) && !moreTabsBtn.contains(e.target)) {
-      closeMoreTabsCard();
-    }
+  moreTabsBtn?.addEventListener('click', e => {
+    e.preventDefault();
+    moreTabsCard?.classList.toggle('show');
   });
-
-  // More tabs card items
-  const moreTabItems = document.querySelectorAll('.more-tab-item[data-tab-target]');
-  moreTabItems.forEach(item => {
-    item.addEventListener('click', (e) => {
+  document.getElementById('closeMoreTabs')?.addEventListener('click', closeMoreTabsCard);
+  document.querySelectorAll('.more-tab-item[data-tab-target]').forEach(item => {
+    item.addEventListener('click', e => {
       e.preventDefault();
       const target = item.getAttribute('data-tab-target');
-      setActiveTab(target);
       closeMoreTabsCard();
-
+      setActiveTab(target);
       if (target === 'settings') {
         loadCategoriesList();
-      } else if (target === 'analytics') {
-        // Re-render fuel charts when Analytics tab is clicked
-        setTimeout(() => {
-          if (typeof fuelApp !== 'undefined' && fuelApp && fuelApp.uiRenderer) {
-            const analytics = fuelApp.getAnalytics();
-            fuelApp.uiRenderer.renderCharts(analytics);
-          }
-        }, 100);
+        loadFinanceCategoriesList();
       }
     });
   });
@@ -914,6 +848,12 @@ function initializeEventListeners() {
   if (categoryPrevPageBtn) categoryPrevPageBtn.addEventListener('click', () => changeCategoryPage(-1));
   if (categoryNextPageBtn) categoryNextPageBtn.addEventListener('click', () => changeCategoryPage(1));
 
+  // Finance category pagination
+  if (financeIncomeCategoryPrevPageBtn) financeIncomeCategoryPrevPageBtn.addEventListener('click', () => changeFinanceCategoryPage(-1, 'income'));
+  if (financeIncomeCategoryNextPageBtn) financeIncomeCategoryNextPageBtn.addEventListener('click', () => changeFinanceCategoryPage(1, 'income'));
+  if (financeExpenseCategoryPrevPageBtn) financeExpenseCategoryPrevPageBtn.addEventListener('click', () => changeFinanceCategoryPage(-1, 'expense'));
+  if (financeExpenseCategoryNextPageBtn) financeExpenseCategoryNextPageBtn.addEventListener('click', () => changeFinanceCategoryPage(1, 'expense'));
+
   // Category edit popup
   if (saveCategoryEditBtn) saveCategoryEditBtn.addEventListener('click', saveCategoryEdit);
 
@@ -1030,11 +970,26 @@ const addCategoryBtn = document.getElementById("addCategoryBtn");
 const restoreDefaultCategoriesBtn = document.getElementById("restoreDefaultCategoriesBtn");
 const categoriesList = document.getElementById("categoriesList");
 
+// Finance category management elements
+const newFinanceCategoryName = document.getElementById("newFinanceCategoryName");
+const newFinanceCategoryColor = document.getElementById("newFinanceCategoryColor");
+const newFinanceCategoryType = document.getElementById("newFinanceCategoryType");
+const addFinanceCategoryBtn = document.getElementById("addFinanceCategoryBtn");
+const restoreDefaultFinanceCategoriesBtn = document.getElementById("restoreDefaultFinanceCategoriesBtn");
+
 // Category pagination elements
 const categoryPaginationControls = document.getElementById("categoryPaginationControls");
 const categoryPrevPageBtn = document.getElementById("categoryPrevPageBtn");
 const categoryNextPageBtn = document.getElementById("categoryNextPageBtn");
 const categoryPageInfo = document.getElementById("categoryPageInfo");
+const financeIncomeCategoryPaginationControls = document.getElementById('financeIncomeCategoryPaginationControls');
+const financeIncomeCategoryPrevPageBtn = document.getElementById('financeIncomeCategoryPrevPageBtn');
+const financeIncomeCategoryNextPageBtn = document.getElementById('financeIncomeCategoryNextPageBtn');
+const financeIncomeCategoryPageInfo = document.getElementById('financeIncomeCategoryPageInfo');
+const financeExpenseCategoryPaginationControls = document.getElementById('financeExpenseCategoryPaginationControls');
+const financeExpenseCategoryPrevPageBtn = document.getElementById('financeExpenseCategoryPrevPageBtn');
+const financeExpenseCategoryNextPageBtn = document.getElementById('financeExpenseCategoryNextPageBtn');
+const financeExpenseCategoryPageInfo = document.getElementById('financeExpenseCategoryPageInfo');
 
 // Category edit popup elements
 const categoryEditPopup = document.getElementById("categoryEditPopup");
@@ -1149,6 +1104,12 @@ let allCategories = [];
 let categoryCurrentPage = 1;
 let categoriesPerPage = 5;
 let editingCategoryId = null;
+
+// Finance category pagination state
+let allFinanceCategories = [];
+let financeCategoryCurrentPages = { income: 1, expense: 1 };
+let financeCategoriesPerPage = 5;
+let editingFinanceCategoryId = null;
 
 // Fuel pagination state
 let fuelRecordsAll = [];
@@ -1383,35 +1344,26 @@ if (restoreDefaultCategoriesBtn) {
   restoreDefaultCategoriesBtn.addEventListener("click", restoreDefaultCategories);
 }
 
+// Finance category management
+if (addFinanceCategoryBtn) {
+  addFinanceCategoryBtn.addEventListener("click", addFinanceCategory);
+}
+
+if (restoreDefaultFinanceCategoriesBtn) {
+  restoreDefaultFinanceCategoriesBtn.addEventListener("click", restoreDefaultFinanceCategories);
+}
+
 function restoreDefaultCategories() {
   if (!db) {
     showAlert("Database not initialized. Please refresh the page.");
     return;
   }
 
-  const defaultCategories = [
-    { name: "Oil Change", color: "#667eea" },
-    { name: "Brake Service", color: "#f56565" },
-    { name: "Tire Service", color: "#ed8936" },
-    { name: "Engine Repair", color: "#48bb78" },
-    { name: "General Maintenance", color: "#764ba2" },
-    { name: "Battery", color: "#38b2ac" },
-    { name: "Transmission", color: "#9f7aea" },
-    { name: "Suspension", color: "#ed64a6" },
-    { name: "Cooling System", color: "#4299e1" },
-    { name: "Exhaust", color: "#f6ad55" },
-    { name: "Air Filter", color: "#68d391" },
-    { name: "Spark Plugs", color: "#fc8181" },
-    { name: "Belts & Hoses", color: "#63b3ed" },
-    { name: "Lights & Electrical", color: "#f687b3" },
-    { name: "AC & Heating", color: "#4fd1c5" }
-  ];
-
   const tx = db.transaction("categories", "readwrite");
   const store = tx.objectStore("categories");
   let addedCount = 0;
 
-  defaultCategories.forEach(cat => {
+  DEFAULT_MAINTENANCE_CATEGORIES.forEach(cat => {
     const request = store.index("name").get(cat.name);
     request.onsuccess = () => {
       if (!request.result) {
@@ -1519,6 +1471,7 @@ function openCategoryEditPopup(id) {
     if (category) {
       editCategoryName.value = category.name;
       editCategoryColor.value = category.color;
+        if (editFinanceCategoryTypeGroup) editFinanceCategoryTypeGroup.style.display = 'none';
       categoryEditPopup.classList.add('active');
       document.body.classList.add('modal-open');
     }
@@ -1527,12 +1480,14 @@ function openCategoryEditPopup(id) {
 
 function closeCategoryEditPopup() {
   categoryEditPopup.classList.remove('active');
+  if (editFinanceCategoryTypeGroup) editFinanceCategoryTypeGroup.style.display = 'none';
   document.body.classList.remove('modal-open');
   editingCategoryId = null;
+  editingFinanceCategoryId = null;
 }
 
 function saveCategoryEdit() {
-  if (!db || !editingCategoryId) return;
+  if (!db) return;
 
   const newName = editCategoryName.value.trim();
   const newColor = editCategoryColor.value;
@@ -1542,26 +1497,56 @@ function saveCategoryEdit() {
     return;
   }
 
-  const tx = db.transaction("categories", "readwrite");
-  const store = tx.objectStore("categories");
+  // Determine which category type we're editing based on which ID is set
+  if (editingFinanceCategoryId) {
+    const tx = db.transaction("financeCategories", "readwrite");
+    const store = tx.objectStore("financeCategories");
 
-  store.get(editingCategoryId).onsuccess = e => {
-    const category = e.target.result;
-    if (category) {
-      const updatedCategory = { ...category, name: newName, color: newColor };
-      store.put(updatedCategory);
-    }
-  };
+    store.get(editingFinanceCategoryId).onsuccess = e => {
+      const category = e.target.result;
+      if (category) {
+        const newType = editFinanceCategoryType?.value || category.type || inferFinanceCategoryType(category.name);
+        store.getAll().onsuccess = allEvent => {
+          const duplicate = allEvent.target.result.some(other => other.id !== category.id && (other.type || inferFinanceCategoryType(other.name)) === newType && other.name.toLowerCase() === newName.toLowerCase());
+          if (duplicate) {
+            showAlert("A category with this name already exists for this transaction type");
+            return;
+          }
+          store.put({ ...category, name: newName, color: newColor, type: newType });
+        };
+      }
+    };
 
-  tx.oncomplete = () => {
-    closeCategoryEditPopup();
-    loadCategoriesList();
-    loadCategoriesForFilter();
-  };
+    tx.oncomplete = () => {
+      closeCategoryEditPopup();
+      loadFinanceCategoriesList();
+    };
 
-  tx.onerror = () => {
-    showAlert("Category with this name already exists");
-  };
+    tx.onerror = () => {
+      showAlert("Category with this name already exists");
+    };
+  } else if (editingCategoryId) {
+    const tx = db.transaction("categories", "readwrite");
+    const store = tx.objectStore("categories");
+
+    store.get(editingCategoryId).onsuccess = e => {
+      const category = e.target.result;
+      if (category) {
+        const updatedCategory = { ...category, name: newName, color: newColor };
+        store.put(updatedCategory);
+      }
+    };
+
+    tx.oncomplete = () => {
+      closeCategoryEditPopup();
+      loadCategoriesList();
+      loadCategoriesForFilter();
+    };
+
+    tx.onerror = () => {
+      showAlert("Category with this name already exists");
+    };
+  }
 }
 
 function editCategory(id) {
@@ -1582,26 +1567,239 @@ function deleteCategory(id) {
 }
 
 // ================================
+// Finance Category Management
+// ================================
+function loadFinanceCategoriesList() {
+  if (!db) return;
+
+  const tx = db.transaction("financeCategories", "readonly");
+  const store = tx.objectStore("financeCategories");
+
+  allFinanceCategories = [];
+  store.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      const category = cursor.value;
+      category.type = category.type || inferFinanceCategoryType(category.name);
+      allFinanceCategories.push(category);
+      cursor.continue();
+    } else {
+      renderFinanceCategoriesPage();
+    }
+  };
+}
+
+function renderFinanceCategoriesPage() {
+  const incomeList = document.getElementById('financeIncomeCategoriesList');
+  const expenseList = document.getElementById('financeExpenseCategoriesList');
+  const renderList = (container, type, controls, previousButton, nextButton, pageInfo) => {
+    if (!container) return;
+    container.innerHTML = '';
+    const categories = allFinanceCategories.filter(category => category.type === type);
+    const totalPages = Math.ceil(categories.length / financeCategoriesPerPage);
+    financeCategoryCurrentPages[type] = Math.min(
+      financeCategoryCurrentPages[type],
+      Math.max(1, totalPages)
+    );
+    const currentPage = financeCategoryCurrentPages[type];
+    const startIndex = (currentPage - 1) * financeCategoriesPerPage;
+    categories.slice(startIndex, startIndex + financeCategoriesPerPage).forEach(category => {
+      const categoryDiv = document.createElement('div');
+      categoryDiv.classList.add('category-item');
+      categoryDiv.innerHTML = `
+        <div class="category-info">
+          <div class="category-color" style="background-color: ${category.color}"></div>
+          <span class="category-name"></span>
+        </div>
+        <div class="category-actions">
+          <button class="category-edit-btn" onclick="openFinanceCategoryEditPopup(${category.id})" title="Edit"><i class="fas fa-edit"></i></button>
+          <button class="category-delete-btn" onclick="deleteFinanceCategory(${category.id})" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>`;
+      categoryDiv.querySelector('.category-name').textContent = category.name;
+      container.appendChild(categoryDiv);
+    });
+    if (controls && pageInfo) {
+      controls.style.display = totalPages > 1 ? 'flex' : 'none';
+      pageInfo.textContent = `Page ${currentPage} of ${Math.max(1, totalPages)}`;
+      if (previousButton) previousButton.disabled = currentPage === 1;
+      if (nextButton) nextButton.disabled = currentPage === totalPages || totalPages === 0;
+    }
+  };
+  renderList(incomeList, 'income', financeIncomeCategoryPaginationControls, financeIncomeCategoryPrevPageBtn, financeIncomeCategoryNextPageBtn, financeIncomeCategoryPageInfo);
+  renderList(expenseList, 'expense', financeExpenseCategoryPaginationControls, financeExpenseCategoryPrevPageBtn, financeExpenseCategoryNextPageBtn, financeExpenseCategoryPageInfo);
+}
+
+function changeFinanceCategoryPage(direction, type) {
+  const categories = allFinanceCategories.filter(category => category.type === type);
+  const totalPages = Math.ceil(categories.length / financeCategoriesPerPage);
+  const newPage = financeCategoryCurrentPages[type] + direction;
+
+  if (newPage >= 1 && newPage <= totalPages) {
+    financeCategoryCurrentPages[type] = newPage;
+    renderFinanceCategoriesPage();
+  }
+}
+
+function openFinanceCategoryEditPopup(id) {
+  if (!db) return;
+
+  editingFinanceCategoryId = id;
+  const tx = db.transaction("financeCategories", "readonly");
+  tx.objectStore("financeCategories").get(id).onsuccess = e => {
+    const category = e.target.result;
+    if (category) {
+      editCategoryName.value = category.name;
+      editCategoryColor.value = category.color;
+      if (editFinanceCategoryType) editFinanceCategoryType.value = category.type || 'expense';
+      if (editFinanceCategoryTypeGroup) editFinanceCategoryTypeGroup.style.display = 'block';
+      categoryEditPopup.classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+  };
+}
+
+function saveFinanceCategoryEdit() {
+  if (!db || !editingFinanceCategoryId) return;
+
+  const newName = editCategoryName.value.trim();
+  const newColor = editCategoryColor.value;
+
+  if (!newName) {
+    showAlert("Please enter a category name");
+    return;
+  }
+
+  const tx = db.transaction("financeCategories", "readwrite");
+  const store = tx.objectStore("financeCategories");
+
+  store.get(editingFinanceCategoryId).onsuccess = e => {
+    const category = e.target.result;
+    if (category) {
+      const updatedCategory = { ...category, name: newName, color: newColor };
+      store.put(updatedCategory);
+    }
+  };
+
+  tx.oncomplete = () => {
+    closeCategoryEditPopup();
+    loadFinanceCategoriesList();
+  };
+
+  tx.onerror = () => {
+    showAlert("Category with this name already exists");
+  };
+}
+
+function deleteFinanceCategory(id) {
+  showConfirm("Are you sure you want to delete this finance category? Existing transactions will keep the old category name.").then(confirmed => {
+    if (!confirmed) return;
+    if (!db) return;
+    const tx = db.transaction("financeCategories", "readwrite");
+    tx.objectStore("financeCategories").delete(id);
+    tx.oncomplete = () => {
+      loadFinanceCategoriesList();
+    };
+  });
+}
+
+function addFinanceCategory() {
+  const newFinanceCategoryName = document.getElementById('newFinanceCategoryName');
+  const newFinanceCategoryColor = document.getElementById('newFinanceCategoryColor');
+
+  if (!db) return;
+  const name = newFinanceCategoryName.value.trim();
+  const color = newFinanceCategoryColor.value;
+  const type = newFinanceCategoryType?.value || 'expense';
+
+  if (!name) {
+    showAlert("Please enter a category name");
+    return;
+  }
+
+  const tx = db.transaction("financeCategories", "readwrite");
+  const store = tx.objectStore("financeCategories");
+  const request = store.getAll();
+  request.onsuccess = () => {
+    const duplicate = request.result.some(category => (category.type || inferFinanceCategoryType(category.name)) === type && category.name.toLowerCase() === name.toLowerCase());
+    if (duplicate) {
+      showAlert("A category with this name already exists for this transaction type");
+      return;
+    }
+    store.add({ name, color, type });
+  };
+  tx.oncomplete = () => {
+    newFinanceCategoryName.value = "";
+    newFinanceCategoryColor.value = type === 'income' ? '#10b981' : '#ef4444';
+    loadFinanceCategoriesList();
+  };
+}
+
+function restoreDefaultFinanceCategories() {
+  if (!db) return;
+
+  const tx = db.transaction("financeCategories", "readwrite");
+  const store = tx.objectStore("financeCategories");
+
+  let addedCount = 0;
+  store.getAll().onsuccess = event => {
+    const existing = event.target.result;
+    DEFAULT_FINANCE_CATEGORIES.forEach(category => {
+      if (existing.some(item => item.type === category.type && item.name.toLowerCase() === category.name.toLowerCase())) return;
+      store.add(category);
+      addedCount++;
+    });
+  };
+
+  tx.oncomplete = () => {
+    if (addedCount > 0) {
+      showAlert(`Restored ${addedCount} default finance categories`);
+    } else {
+      showAlert("All default finance categories already exist");
+    }
+    loadFinanceCategoriesList();
+  };
+}
+
+// ================================
 // Record Page Controls
 // ================================
 function openRecordForm(session = null) {
   itemsContainer.innerHTML = "";
   editingSessionId = session ? session.id : null;
+  const maintenanceSource = document.getElementById('maintenanceFundingSource');
+  const maintenanceFinanceIncluded = document.getElementById('maintenanceFinanceIncluded');
 
   if (session) {
     document.getElementById("sessionDate").value = session.date;
+    document.getElementById("sessionTime").value = getRecordTimeInput(session);
     document.getElementById("sessionOdometer").value = session.odometer;
     document.getElementById("sessionMerchant").value = session.merchant || '';
     document.getElementById("sessionNotes").value = session.notes || '';
+    if (maintenanceSource) maintenanceSource.value = session.fundingSource || 'personal';
+    if (maintenanceFinanceIncluded) maintenanceFinanceIncluded.checked = session.financeIncluded !== false;
     loadItemsForEdit(session.id);
   } else {
-    const today = new Date();
-    const iso = today.toISOString().split("T")[0];
+    const iso = getTodayDateInput();
     document.getElementById("sessionDate").value = iso;
+    document.getElementById("sessionTime").value = getCurrentTimeInput();
     document.getElementById("sessionOdometer").value = "";
     document.getElementById("sessionMerchant").value = "";
     document.getElementById("sessionNotes").value = "";
+    if (maintenanceSource) maintenanceSource.value = 'personal';
+    if (maintenanceFinanceIncluded) maintenanceFinanceIncluded.checked = true;
   }
+}
+
+function setFinanceToggleState(toggle, included) {
+  if (!toggle) return;
+  toggle.dataset.included = included ? 'true' : 'false';
+  toggle.classList.toggle('toggle-on', included);
+  toggle.classList.toggle('toggle-off', !included);
+  toggle.textContent = included ? 'Included in Finance' : 'Not Included in Finance';
+}
+
+function isFinanceToggleIncluded(toggle) {
+  return toggle?.dataset.included === 'true';
 }
 
 function closeSessionModal() {
@@ -1618,7 +1816,7 @@ if (addItemBtn) {
 function addItemField(item = {}) {
   const div = document.createElement("div");
   div.classList.add("item-form");
-  
+  const isNewItem = Object.keys(item).length === 0;
   // Get merchant from top field if not provided
   const topMerchant = document.getElementById("sessionMerchant").value.trim();
   const merchantValue = item.merchant || topMerchant || "";
@@ -1644,10 +1842,9 @@ function addItemField(item = {}) {
         <input type="number" class="itemInterval styled-input" placeholder="Interval (km)" value="${item.interval || ""}">
         <input type="number" class="itemIntervalMonths styled-input" placeholder="Interval (months)" value="${item.intervalMonths || ""}" min="1">
       </div>
-      <div class="item-installation-section">
+      <div class="item-controls-group">
         <button type="button" class="installation-status-btn ${item.installed !== false ? 'installed' : 'not-installed'}" data-installed="${item.installed !== false ? 'true' : 'false'}">
-          <i class="fas ${item.installed !== false ? 'fa-check' : 'fa-bell'}"></i>
-          <span>${item.installed !== false ? 'Part Installed' : 'Activate Reminder'}</span>
+          ${item.installed !== false ? 'Reminder Active' : 'Reminder Inactive'}
         </button>
       </div>
     </div>
@@ -1672,15 +1869,15 @@ function addItemField(item = {}) {
       statusBtn.classList.remove('installed');
       statusBtn.classList.add('not-installed');
       statusBtn.querySelector('i').className = 'fas fa-bell';
-      statusBtn.querySelector('span').textContent = 'Activate Reminder';
+      statusBtn.querySelector('span').textContent = 'Reminder Inactive';
     } else {
       statusBtn.classList.remove('not-installed');
       statusBtn.classList.add('installed');
       statusBtn.querySelector('i').className = 'fas fa-check';
-      statusBtn.querySelector('span').textContent = 'Part Installed';
+      statusBtn.querySelector('span').textContent = 'Installed / Completed · Reminder Active';
     }
   };
-  
+
   itemsContainer.appendChild(div);
 
   loadCategoriesForSelect(div.querySelector(".itemCategory"), item.categoryId);
@@ -1737,14 +1934,16 @@ function saveSession() {
   let date = document.getElementById("sessionDate").value;
 
   if (!date) {
-    const today = new Date();
-    date = today.toISOString().split("T")[0];
+    date = getTodayDateInput();
   }
 
   const odometer = parseInt(document.getElementById("sessionOdometer").value) || 0;
   const merchant = document.getElementById("sessionMerchant").value.trim();
   const notes = document.getElementById("sessionNotes").value.trim();
-  const deductFromFunds = document.getElementById("deductFromFunds")?.checked ?? true;
+  const fundingSource = document.getElementById('maintenanceFundingSource')?.value || 'personal';
+  const financeIncluded = document.getElementById('maintenanceFinanceIncluded')?.checked !== false;
+  const time = document.getElementById('sessionTime')?.value || '00:00';
+  const eventAt = combineEventDateTime(date, time);
 
   if (odometer && odometer > currentOdometer) {
     currentOdometer = odometer;
@@ -1752,7 +1951,7 @@ function saveSession() {
     if (odometerValue) odometerValue.textContent = `${odometer.toLocaleString()}`;
   }
 
-  const sessionObj = { id: editingSessionId || Date.now(), date, odometer, merchant, notes };
+  const sessionObj = { id: editingSessionId || Date.now(), date, time, eventAt, odometer, merchant, notes, financeIncluded, fundingSource };
 
   const itemEls = itemsContainer.querySelectorAll(".item-form");
   const items = Array.from(itemEls).map(el => {
@@ -1773,7 +1972,8 @@ function saveSession() {
       categoryId: categoryId,
       installed: installed,
       lastServiceOdometer: installed && intervalVal ? odometer : null,
-      nextDueKm: intervalVal && installed ? odometer + intervalVal : null
+      nextDueKm: intervalVal && installed ? odometer + intervalVal : null,
+      financeIncluded: true
     };
   });
 
@@ -1787,27 +1987,30 @@ function saveSession() {
     delReq.onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
-        if (cursor.value.sessionId === editingSessionId) cursor.delete();
+        if (String(cursor.value.sessionId) === String(editingSessionId)) cursor.delete();
         cursor.continue();
       } else {
-        items.forEach(i => itemStore.add(i));
+        items.forEach(i => {
+          const addRequest = itemStore.add(i);
+          addRequest.onsuccess = () => { i.id = addRequest.result; };
+        });
+
       }
     };
   } else {
     const addReq = sessionStore.add(sessionObj);
     addReq.onsuccess = e => {
       const newSessionId = e.target.result;
-      items.forEach(i => itemStore.add(i));
+      items.forEach(i => {
+        const addRequest = itemStore.add(i);
+        addRequest.onsuccess = () => { i.id = addRequest.result; };
+      });
 
-      // Add finance expense record for new session (only if deductFromFunds is checked)
-      const totalCost = items.reduce((sum, i) => sum + (i.price || 0), 0);
-      if (totalCost > 0 && deductFromFunds) {
-        addMaintenanceExpense(newSessionId, date, items, merchant);
-      }
     };
   }
 
   tx.oncomplete = function () {
+    syncMaintenanceFinance(sessionObj.id, date, items, merchant, financeIncluded, fundingSource, eventAt).catch(error => console.error(error));
     closeSessionModal();
     setActiveTab('home');
     renderAll();
@@ -2374,7 +2577,7 @@ function renderUpcomingPage() {
         `;
         if (!isInstalled) {
           actionButtons += `
-            <button class="activate-reminder-btn" onclick="activateReminder(${item.id})" title="Activate Reminder">
+            <button class="activate-reminder-btn" onclick="activateReminder(${item.id})" title="Start Reminder Tracking">
               <i class="fas fa-play"></i>
             </button>
             <button class="edit-upcoming-btn" onclick="editUpcomingItem(${item.id})" title="Edit">
@@ -2497,7 +2700,7 @@ function loadItemsForEdit(sessionId) {
   store.openCursor().onsuccess = e => {
     const cursor = e.target.result;
     if (cursor) {
-      if (cursor.value.sessionId === sessionId) addItemField(cursor.value);
+      if (String(cursor.value.sessionId) === String(sessionId)) addItemField(cursor.value);
       cursor.continue();
     }
   };
@@ -2505,12 +2708,13 @@ function loadItemsForEdit(sessionId) {
 
 function viewSessionDetails(id) {
   if (!db) return;
+  const sessionId = typeof id === 'string' && /^\d+$/.test(id) ? Number(id) : id;
   const tx = db.transaction(["sessions", "items", "categories"], "readonly");
   const sessionStore = tx.objectStore("sessions");
   const itemStore = tx.objectStore("items");
   const categoryStore = tx.objectStore("categories");
 
-  sessionStore.get(id).onsuccess = e => {
+  sessionStore.get(sessionId).onsuccess = e => {
     const session = e.target.result;
     if (!session) return;
 
@@ -2518,7 +2722,7 @@ function viewSessionDetails(id) {
     itemStore.openCursor().onsuccess = e2 => {
       const cursor = e2.target.result;
       if (cursor) {
-        if (cursor.value.sessionId === id) {
+        if (String(cursor.value.sessionId) === String(sessionId)) {
           items.push(cursor.value);
         }
         cursor.continue();
@@ -2930,7 +3134,7 @@ function hideUndoUpcomingRemoveBanner() {
 }
 
 function activateReminder(itemId) {
-  showConfirm("Activate this reminder? This will mark the part as installed and start tracking maintenance.").then(confirmed => {
+  showConfirm("Start tracking this reminder? Confirm that the part or service has been installed.", 'Start Reminder Tracking').then(confirmed => {
     if (!confirmed) return;
     if (!db) return;
 
@@ -3004,30 +3208,26 @@ function deleteSession(id) {
     if (!confirmed) return;
     if (!db) return;
 
-    // Delete finance records first
-    deleteFinanceRecordsBySession(id).then(() => {
-      const tx = db.transaction(["sessions", "items"], "readwrite");
-      tx.objectStore("sessions").delete(id);
-      const itemStore = tx.objectStore("items");
-      itemStore.openCursor().onsuccess = e => {
-        const cursor = e.target.result;
-        if (cursor) {
-          if (cursor.value.sessionId === id) cursor.delete();
-          cursor.continue();
-        }
-      };
-      tx.oncomplete = () => {
+    const tx = db.transaction(["sessions", "items"], "readwrite");
+    tx.objectStore("sessions").delete(id);
+    const itemStore = tx.objectStore("items");
+    itemStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (String(cursor.value.sessionId) === String(id)) cursor.delete();
+        cursor.continue();
+      }
+    };
+    tx.oncomplete = () => {
+      deleteFinanceRecordsBySession(id).then(() => {
         renderAll();
-        // Refresh finance records if on finance tab
-        if (document.body.getAttribute('data-active-tab') === 'finance') {
-          loadFinanceRecords();
-        }
-      };
-      tx.onerror = () => {
-        console.error("Error deleting session:", tx.error);
-        showAlert("Error deleting session. Please try again.");
-      };
-    });
+        if (document.body.getAttribute('data-active-tab') === 'finance') loadFinanceRecords();
+      }).catch(error => console.error('Error deleting linked finance records:', error));
+    };
+    tx.onerror = () => {
+      console.error("Error deleting session:", tx.error);
+      showAlert("Error deleting session. Please try again.");
+    };
   });
 }
 
@@ -3370,7 +3570,7 @@ function processSpendingData(sessions, items, viewType, selectedMonth = '', sele
 
     if (selectedYear && sessionYear !== filterYear) return;
 
-    const sessionItems = items.filter(item => item.sessionId === session.id);
+    const sessionItems = items.filter(item => String(item.sessionId) === String(session.id));
     const totalSpending = sessionItems.reduce((sum, item) => sum + (item.price || 0), 0);
     if (totalSpending > 0) {
       const yearKey = sessionYear.toString();
@@ -3399,7 +3599,7 @@ function processCategorySpendingData(sessions, items, categories, viewType, sele
     if (viewType === 'monthly' && selectedMonth && selectedMonth !== '' && sessionMonth !== parseInt(selectedMonth)) return;
     if (viewType === 'yearly' && selectedYear && selectedYear !== '' && sessionYear !== filterYear) return;
 
-    const sessionItems = items.filter(item => item.sessionId === session.id);
+    const sessionItems = items.filter(item => String(item.sessionId) === String(session.id));
 
     sessionItems.forEach(item => {
       if (item.price > 0) {
@@ -3566,7 +3766,7 @@ function applyFilters() {
 
 function filterSessions(sessions, items, categories) {
   return sessions.filter(session => {
-    const sessionItems = items.filter(item => item.sessionId === session.id);
+    const sessionItems = items.filter(item => String(item.sessionId) === String(session.id));
 
     if (searchTerm) {
       const matchesDate = session.date.toLowerCase().includes(searchTerm);
@@ -3924,7 +4124,7 @@ function renderCarInfo() {
       expiry.setHours(0, 0, 0, 0);
       const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
 
-      licenseExpiryBox.classList.remove('license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
+      licenseExpiryBox.classList.remove('license-warning-ok', 'license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
 
       if (daysUntilExpiry < 0) {
         licenseExpiryBox.classList.add('license-warning-expired');
@@ -3932,10 +4132,12 @@ function renderCarInfo() {
         licenseExpiryBox.classList.add('license-warning-urgent');
       } else if (daysUntilExpiry <= 30) {
         licenseExpiryBox.classList.add('license-warning-soon');
+      } else {
+        licenseExpiryBox.classList.add('license-warning-ok');
       }
     } else {
       licenseExpiryEl.textContent = '—';
-      licenseExpiryBox.classList.remove('license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
+      licenseExpiryBox.classList.remove('license-warning-ok', 'license-warning-urgent', 'license-warning-soon', 'license-warning-expired');
     }
   }
 }
@@ -3951,13 +4153,14 @@ async function exportAllDataInternal() {
       return;
     }
     
-    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "settings"], "readonly");
+    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "financeCategories", "settings"], "readonly");
     const sessionStore = tx.objectStore("sessions");
     const itemStore = tx.objectStore("items");
     const categoryStore = tx.objectStore("categories");
     const fuelRecordStore = tx.objectStore("fuelRecords");
     const fuelSessionStore = tx.objectStore("fuelSessions");
     const financeStore = tx.objectStore("financeRecords");
+    const financeCategoryStore = tx.objectStore("financeCategories");
     const settingsStore = tx.objectStore("settings");
 
     const sessions = [];
@@ -3966,12 +4169,13 @@ async function exportAllDataInternal() {
     const fuelRecords = [];
     const fuelSessions = [];
     const financeRecords = [];
+    const financeCategories = [];
     const settings = [];
 
     let completed = 0;
     const checkComplete = () => {
       completed++;
-      if (completed === 7) {
+      if (completed === 8) {
         const exportData = {
           sessions,
           items,
@@ -3979,6 +4183,7 @@ async function exportAllDataInternal() {
           fuelRecords,
           fuelSessions,
           financeRecords,
+          financeCategories,
           settings,
           currentOdometer,
           fuelPricePerLiter,
@@ -4054,6 +4259,16 @@ async function exportAllDataInternal() {
       }
     };
 
+    financeCategoryStore.openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        financeCategories.push(cursor.value);
+        cursor.continue();
+      } else {
+        checkComplete();
+      }
+    };
+
     settingsStore.openCursor().onsuccess = e => {
       const cursor = e.target.result;
       if (cursor) {
@@ -4121,7 +4336,7 @@ function importDataInternal(importData) {
       return;
     }
     
-    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "settings"], "readwrite");
+    const tx = db.transaction(["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "financeCategories", "settings"], "readwrite");
 
     tx.onerror = () => reject(tx.error);
 
@@ -4131,6 +4346,7 @@ function importDataInternal(importData) {
     tx.objectStore("fuelRecords").clear();
     tx.objectStore("fuelSessions").clear();
     tx.objectStore("financeRecords").clear();
+    if (Array.isArray(importData.financeCategories)) tx.objectStore("financeCategories").clear();
     tx.objectStore("settings").clear();
 
     if (importData.categories) {
@@ -4165,7 +4381,21 @@ function importDataInternal(importData) {
 
     if (importData.financeRecords) {
       importData.financeRecords.forEach(record => {
-        tx.objectStore("financeRecords").add(record);
+        const normalizedRecord = {
+          ...record,
+          categoryType: record.categoryType || record.type || inferFinanceCategoryType(record.category || ''),
+          fundingSource: record.fundingSource || (record.fuelRecordId ? 'uber' : 'personal')
+        };
+        tx.objectStore("financeRecords").add(normalizedRecord);
+      });
+    }
+
+    if (importData.financeCategories) {
+      importData.financeCategories.forEach(category => {
+        tx.objectStore("financeCategories").add({
+          ...category,
+          type: category.type || inferFinanceCategoryType(category.name || '')
+        });
       });
     }
 
@@ -4242,6 +4472,8 @@ function importAllData(importData) {
     showAlert('Data imported successfully!');
     renderAll();
     loadCategoriesForFilter();
+    loadFinanceRecords();
+    updateFinanceKPIs();
   }).catch(error => {
     console.error("Import failed:", error);
     showAlert('Error importing data. Please try again.');
@@ -4253,7 +4485,7 @@ function resetAllData() {
   showConfirm('Are you sure you want to reset ALL data? This action cannot be undone!').then(confirmed => {
     if (!confirmed) return;
 
-    return showConfirm('This will permanently delete all sessions, items, categories, fuel records, and finance records. Are you sure?', 'Confirm');
+    return showConfirm('This permanently deletes all records, settings, saved backups, and custom categories. Default maintenance and finance categories will be restored. Are you sure?', 'Confirm');
   }).then(confirmed => {
     if (!confirmed) return;
 
@@ -4263,16 +4495,48 @@ function resetAllData() {
     }
 
     try {
-      const storeNames = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "settings"];
+      const storeNames = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "financeCategories", "settings", SELECTIVE_BACKUP_STORE];
       const tx = db.transaction(storeNames, "readwrite");
+      const maintenanceCategories = tx.objectStore("categories");
+      const financeCategories = tx.objectStore("financeCategories");
+
+      storeNames.forEach(name => tx.objectStore(name).clear());
+      DEFAULT_MAINTENANCE_CATEGORIES.forEach(category => maintenanceCategories.add(category));
+      DEFAULT_FINANCE_CATEGORIES.forEach(category => financeCategories.add(category));
 
       tx.oncomplete = () => {
+        Object.keys(localStorage)
+          .filter(key => key.startsWith('auto_backup_'))
+          .forEach(key => localStorage.removeItem(key));
+        [
+          'carInfo',
+          'carName',
+          'fuelPricePerLiter',
+          'oilPrice',
+          'oilFilterPrice',
+          'oilChangeIntervalKm',
+          'fuel_max_interval_km',
+          'fuel_min_consumption',
+          'fuel_max_consumption',
+          'lastExportDate',
+          'siteDataBlurred'
+        ].forEach(key => localStorage.removeItem(key));
+        lastAutoBackup = null;
+        document.body.classList.remove('data-blurred');
+        const blurIcon = document.querySelector('#headerBlurBtn i');
+        if (blurIcon) {
+          blurIcon.classList.remove('fa-eye-slash');
+          blurIcon.classList.add('fa-eye');
+        }
+
         // Reset odometer
         currentOdometer = 0;
         localStorage.setItem('currentOdometer', '0');
         if (odometerValue) odometerValue.textContent = '0';
 
         // Reset car info
+        carName = 'My Car';
+        if (carNameDisplay) carNameDisplay.textContent = carName;
         carInfo = {
           manufacturer: '',
           model: '',
@@ -4281,15 +4545,16 @@ function resetAllData() {
           color: '#3b82f6',
           licenseExpiry: ''
         };
-        localStorage.removeItem('carInfo');
+        renderCarInfo();
+        updateLastExportCounter();
 
         // Reset fuel price per liter
         fuelPricePerLiter = 0;
-        localStorage.removeItem('fuelPricePerLiter');
         loadFuelSettings();
 
         // Reset fuel analytics
         if (typeof fuelApp !== 'undefined' && fuelApp) {
+          fuelApp.stateManager.analyticsEngine = new FuelAnalyticsEngine();
           fuelApp.stateManager.loadSession('default');
         }
 
@@ -4297,8 +4562,11 @@ function resetAllData() {
         allFinanceRecords = [];
         financeCurrentPage = 1;
 
-        showAlert('All data has been reset!');
+        financeCategoryCurrentPages = { income: 1, expense: 1 };
+        showAlert('All data has been reset. Default categories have been restored.');
         renderAll();
+        loadCategoriesList();
+        loadFinanceCategoriesList();
         loadCategoriesForFilter();
 
         // Refresh finance if on finance tab
@@ -4311,11 +4579,6 @@ function resetAllData() {
         showAlert('Error resetting data: ' + (tx.error ? tx.error.message : 'Please try again.'));
       };
 
-      storeNames.forEach(name => {
-        if (db.objectStoreNames.contains(name)) {
-          tx.objectStore(name).clear();
-        }
-      });
     } catch (err) {
       showAlert('Error resetting data: ' + (err && err.message ? err.message : 'Please try again.'));
     }
@@ -4355,7 +4618,9 @@ function renderFuelPage() {
   const endIndex = startIndex + fuelPerPage;
   const pageRecords = fuelRecordsAll.slice(startIndex, endIndex);
 
-  container.innerHTML = pageRecords.map(record => `
+  container.innerHTML = pageRecords.map(record => {
+    const pricePerLiter = record.pricePerLiter || (record.totalCost && record.liters ? record.totalCost / record.liters : 0);
+    return `
     <div class="fuel-history-item" data-record-id="${record.id}">
       <div class="fuel-history-header">
         <div class="fuel-history-header-main">
@@ -4366,13 +4631,14 @@ function renderFuelPage() {
         <button class="delete-btn" onclick="deleteFuelRecord('${record.id}')" title="Delete"><i class="fas fa-trash"></i></button>
       </div>
       <div class="fuel-history-details">
-        <span class="odometer">${parseFloat(record.odometer).toLocaleString()} km</span>
-        <span class="liters">${parseFloat(record.liters).toFixed(2)} L</span>
-        <span class="price">${parseFloat(record.pricePerLiter).toFixed(2)} EGP/L</span>
-        <span class="total">${parseFloat(record.totalCost).toLocaleString()} EGP</span>
+        <span class="odometer">${parseFloat(record.odometer || 0).toLocaleString()} km</span>
+        <span class="liters">${parseFloat(record.liters || 0).toFixed(2)} L</span>
+        <span class="price">${parseFloat(pricePerLiter).toFixed(2)} EGP/L</span>
+        <span class="total">${parseFloat(record.totalCost || 0).toLocaleString()} EGP</span>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   if (fuelPaginationControls && fuelPageInfo && fuelPrevPageBtn && fuelNextPageBtn) {
     if (totalPages > 1) {
@@ -4397,6 +4663,7 @@ function changeFuelPage(direction) {
 
 function editFuelRecord(recordId) {
   if (typeof fuelApp !== 'undefined' && fuelApp) {
+    setActiveTab('fuel');
     fuelApp.editRecord(recordId);
   }
 }
@@ -4404,7 +4671,37 @@ function editFuelRecord(recordId) {
 function deleteFuelRecord(recordId) {
   if (typeof fuelApp !== 'undefined' && fuelApp) {
     fuelApp.deleteRecord(recordId);
+  } else {
+    // Fallback: delete directly from database
+    if (!db) return;
+    showConfirm('Delete this fuel record?').then(confirmed => {
+      if (!confirmed) return;
+      const tx = db.transaction('fuelRecords', 'readwrite');
+      const store = tx.objectStore('fuelRecords');
+      store.delete(recordId);
+      tx.oncomplete = () => {
+        showAlert('Fuel record deleted');
+        loadFuelRecordsDirectly();
+      };
+    });
   }
+}
+
+// Fallback function to load fuel records directly without fuelApp
+function loadFuelRecordsDirectly() {
+  if (!db) return;
+  const tx = db.transaction('fuelRecords', 'readonly');
+  const store = tx.objectStore('fuelRecords');
+  const records = [];
+  store.openCursor().onsuccess = e => {
+    const cursor = e.target.result;
+    if (cursor) {
+      records.push(cursor.value);
+      cursor.continue();
+    } else {
+      renderFuelHistoryPaginated(records);
+    }
+  };
 }
 
 // ================================
@@ -4416,11 +4713,13 @@ const addFundsBtn = document.getElementById('addFundsBtn');
 const addFundsPopup = document.getElementById('addFundsPopup');
 const saveFundBtn = document.getElementById('saveFundBtn');
 const fundDate = document.getElementById('fundDate');
+const fundTime = document.getElementById('fundTime');
 const fundAmount = document.getElementById('fundAmount');
 const fundSource = document.getElementById('fundSource');
+const fundType = document.getElementById('fundType');
 const fundCategory = document.getElementById('fundCategory');
 const fundNotes = document.getElementById('fundNotes');
-const financeTableBody = document.getElementById('financeTableBody');
+const transactionsList = document.getElementById('transactionsList');
 const financePaginationControls = document.getElementById('financePaginationControls');
 const financePrevPageBtn = document.getElementById('financePrevPageBtn');
 const financeNextPageBtn = document.getElementById('financeNextPageBtn');
@@ -4430,10 +4729,23 @@ const financeTotalSavings = document.getElementById('financeTotalSavings');
 const financeMonthlyIncome = document.getElementById('financeMonthlyIncome');
 const financeMonthlyExpenses = document.getElementById('financeMonthlyExpenses');
 const financeNetBalance = document.getElementById('financeNetBalance');
+const financePersonalBalance = document.getElementById('financePersonalBalance');
+const financeUberBalance = document.getElementById('financeUberBalance');
+const financeTypeFilter = document.getElementById('financeTypeFilter');
+const financeSourceFilter = document.getElementById('financeSourceFilter');
+const financeSortOrder = document.getElementById('financeSortOrder');
+const toggleFinanceFiltersBtn = document.getElementById('toggleFinanceFiltersBtn');
+const financeHistoryControls = document.getElementById('financeHistoryControls');
+const fundingSource = document.getElementById('fundingSource');
+const editTransactionType = document.getElementById('editTransactionType');
+const editTransactionFundingSource = document.getElementById('editTransactionFundingSource');
+const editFinanceCategoryType = document.getElementById('editFinanceCategoryType');
+const editFinanceCategoryTypeGroup = document.getElementById('editFinanceCategoryTypeGroup');
 const pageTitle = document.getElementById('pageTitle');
 const editTransactionPopup = document.getElementById('editTransactionPopup');
 const editTransactionId = document.getElementById('editTransactionId');
 const editTransactionDate = document.getElementById('editTransactionDate');
+const editTransactionTime = document.getElementById('editTransactionTime');
 const editTransactionAmount = document.getElementById('editTransactionAmount');
 const editTransactionDescription = document.getElementById('editTransactionDescription');
 const editTransactionCategory = document.getElementById('editTransactionCategory');
@@ -4442,11 +4754,224 @@ const saveTransactionEditBtn = document.getElementById('saveTransactionEditBtn')
 
 // Finance State
 let allFinanceRecords = [];
+let filteredFinanceRecords = [];
 let financeCurrentPage = 1;
-const financePerPage = 5;
+const financePerPage = 8;
+
+function getCurrentTimeInput() {
+  return new Date().toTimeString().slice(0, 5);
+}
+
+function getTodayDateInput() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function combineEventDateTime(date, time = '00:00') {
+  if (!date) return '';
+  const localDate = new Date(`${date}T${time || '00:00'}:00`);
+  return Number.isNaN(localDate.getTime()) ? '' : localDate.toISOString();
+}
+
+function getRecordEventTimestamp(record) {
+  if (record?.eventAt) {
+    const timestamp = new Date(record.eventAt).getTime();
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+  if (record?.date) {
+    const legacyTimestamp = new Date(`${record.date}T${record.time || '00:00'}:00`).getTime();
+    if (!Number.isNaN(legacyTimestamp)) return legacyTimestamp;
+  }
+  return 0;
+}
+
+function getRecordTimeInput(record) {
+  if (record?.time && /^\d{2}:\d{2}$/.test(record.time)) return record.time;
+  if (record?.eventAt) {
+    const date = new Date(record.eventAt);
+    if (!Number.isNaN(date.getTime())) return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+  return '00:00';
+}
+
+// Migrate old maintenance and fuel data to finance records
+function migrateOldDataToFinance(silent = false) {
+  if (!db) {
+    if (!silent) showAlert('Database not initialized');
+    return;
+  }
+
+  if (!silent) {
+    showConfirm('This will migrate your old maintenance sessions and fuel records to the transaction history. This may take a moment. Continue?', 'Migrate Old Data').then(confirmed => {
+      if (!confirmed) return;
+      performMigration(silent);
+    });
+  } else {
+    performMigration(silent);
+  }
+}
+
+function performMigration(silent = false) {
+  let migratedCount = 0;
+
+    // Start with a single transaction for all migration
+    const tx = db.transaction(['sessions', 'items', 'fuelRecords', 'financeRecords', 'financeCategories'], 'readwrite');
+    const sessionStore = tx.objectStore('sessions');
+    const itemStore = tx.objectStore('items');
+    const fuelStore = tx.objectStore('fuelRecords');
+    const financeStore = tx.objectStore('financeRecords');
+    const categoryStore = tx.objectStore('financeCategories');
+
+    // Get all sessions first
+    let allSessions = [];
+    const getSessionsRequest = sessionStore.openCursor();
+    getSessionsRequest.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        allSessions.push(cursor.value);
+        cursor.continue();
+      } else {
+        // All sessions collected, now process them
+        processSessions();
+      }
+    };
+
+    const processSessions = () => {
+      let processed = 0;
+
+      allSessions.forEach(session => {
+        // Get items for this session
+        const itemsRequest = itemStore.index('sessionId').getAll(session.id);
+        itemsRequest.onsuccess = (event) => {
+          const items = event.target.result || [];
+          const financeItems = items.filter(i => i.financeIncluded === true);
+          const totalCost = financeItems.reduce((sum, i) => sum + (i.price || 0), 0);
+
+          if (totalCost > 0 && (session.financeIncluded === true || financeItems.length > 0)) {
+            // Check if already migrated
+            const checkRequest = financeStore.index('sessionId').get(session.id);
+            checkRequest.onsuccess = (checkEvent) => {
+              if (!checkEvent.target.result) {
+                // Not migrated, so add it
+                const record = {
+                  date: session.date,
+                  amount: totalCost,
+                  description: session.merchant ? `Maintenance - ${session.merchant}` : 'Maintenance Session',
+                  category: 'Maintenance',
+                  categoryColor: '#f59e0b',
+                  notes: financeItems.map(i => `${i.name} (${i.price} EGP)`).join(', '),
+                  type: 'expense',
+                  sessionId: session.id,
+                  createdAt: new Date().toISOString()
+                };
+
+                const addRequest = financeStore.add(record);
+                addRequest.onsuccess = () => {
+                  migratedCount++;
+                };
+                addRequest.onerror = () => {
+                  console.error('Error adding maintenance record:', addRequest.error);
+                };
+              }
+            };
+          }
+
+          processed++;
+          if (processed === allSessions.length) {
+            // All sessions processed, now do fuel records
+            processFuel();
+          }
+        };
+      });
+
+      if (allSessions.length === 0) {
+        processFuel();
+      }
+    };
+
+    const processFuel = () => {
+      let allFuels = [];
+      const getFuelsRequest = fuelStore.openCursor();
+      getFuelsRequest.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          allFuels.push(cursor.value);
+          cursor.continue();
+        } else {
+          let processed = 0;
+
+          allFuels.forEach(fuel => {
+            if (fuel.totalCost > 0 && fuel.financeIncluded === true) {
+              // Check if already migrated
+              const checkRequest = financeStore.index('fuelRecordId').get(fuel.id);
+              checkRequest.onsuccess = (checkEvent) => {
+                if (!checkEvent.target.result) {
+                  // Not migrated, so add it
+                  const record = {
+                    date: fuel.date,
+                    amount: fuel.totalCost,
+                    description: `Fuel - ${parseFloat(fuel.liters || 0).toFixed(2)} L @ ${parseFloat(fuel.odometer || 0).toLocaleString()} km`,
+                    category: 'Fuel',
+                    categoryColor: '#ef4444',
+                    notes: fuel.notes || '',
+                    type: 'expense',
+                    fuelRecordId: fuel.id,
+                    createdAt: new Date().toISOString()
+                  };
+
+                  const addRequest = financeStore.add(record);
+                  addRequest.onsuccess = () => {
+                    migratedCount++;
+                  };
+                  addRequest.onerror = () => {
+                    console.error('Error adding fuel record:', addRequest.error);
+                  };
+                }
+              };
+            }
+
+            processed++;
+            if (processed === allFuels.length) {
+              // Done processing fuel
+            }
+          });
+        }
+      };
+    };
+
+    tx.oncomplete = () => {
+      if (!silent) {
+        if (migratedCount === 0) {
+          showAlert('No new records to migrate. All records have already been migrated.');
+        } else {
+          showAlert(`Migration completed! ${migratedCount} records added to transaction history.`);
+        }
+      }
+      loadFinanceRecords();
+      updateFinanceKPIs();
+    };
+
+    tx.onerror = () => {
+      console.error('Migration error:', tx.error);
+      if (!silent) showAlert('Migration failed. Please try again.');
+    };
+}
 
 // Finance Event Listeners
 function initializeFinanceEventListeners() {
+  fundType?.addEventListener('change', () => populateFinanceCategorySelect(fundCategory, fundType.value));
+  editTransactionType?.addEventListener('change', () => populateFinanceCategorySelect(editTransactionCategory, editTransactionType.value));
+  [financeTypeFilter, financeSourceFilter, financeSortOrder].forEach(control => {
+    control?.addEventListener('change', () => {
+      financeCurrentPage = 1;
+      renderFinancePage();
+    });
+  });
+  toggleFinanceFiltersBtn?.addEventListener('click', () => {
+    const expanded = toggleFinanceFiltersBtn.getAttribute('aria-expanded') === 'true';
+    toggleFinanceFiltersBtn.setAttribute('aria-expanded', String(!expanded));
+    if (financeHistoryControls) financeHistoryControls.hidden = expanded;
+  });
   if (addFundsBtn) {
     addFundsBtn.addEventListener('click', openAddFundsPopup);
   }
@@ -4462,16 +4987,64 @@ function initializeFinanceEventListeners() {
   if (financeNextPageBtn) {
     financeNextPageBtn.addEventListener('click', () => changeFinancePage(1));
   }
+  const migrateOldDataBtn = document.getElementById('migrateOldDataBtn');
+  if (migrateOldDataBtn) {
+    migrateOldDataBtn.addEventListener('click', migrateOldDataToFinance);
+  }
+
+  // KPI card click -> show floating breakdown popup
+  const totalSavingsCard = document.querySelector('.finance-kpi-card[data-kpi="totalSavings"]');
+  if (totalSavingsCard && totalSavingsCard.dataset.detailsBound !== 'true') {
+    totalSavingsCard.dataset.detailsBound = 'true';
+    totalSavingsCard.style.cursor = 'pointer';
+    totalSavingsCard.setAttribute('role', 'button');
+    totalSavingsCard.setAttribute('tabindex', '0');
+    totalSavingsCard.setAttribute('aria-label', 'Show total savings and money source details');
+    totalSavingsCard.addEventListener('click', () => showFinanceKPIDetails('totalSavings'));
+    totalSavingsCard.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        showFinanceKPIDetails('totalSavings');
+      }
+    });
+  }
+}
+
+function populateFinanceCategorySelect(selectElement, type, selectedName = '') {
+  if (!db || !selectElement) return;
+  const tx = db.transaction('financeCategories', 'readonly');
+  const request = tx.objectStore('financeCategories').getAll();
+  request.onsuccess = () => {
+    selectElement.innerHTML = '<option value="">Select category...</option>';
+    request.result
+      .filter(category => (category.type || inferFinanceCategoryType(category.name)) === type)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.name;
+        option.textContent = category.name;
+        option.dataset.color = category.color || '#6b7280';
+        if (category.name === selectedName) option.selected = true;
+        selectElement.appendChild(option);
+      });
+  };
+}
+
+function inferFinanceCategoryType(name) {
+  return ['Savings', 'Monthly Savings', 'Salary', 'Bonus', 'Refund', 'Uber Driving'].includes(name) ? 'income' : 'expense';
 }
 
 // Open Add Funds Popup
 function openAddFundsPopup() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateInput();
   if (fundDate) fundDate.value = today;
+  if (fundTime) fundTime.value = getCurrentTimeInput();
   if (fundAmount) fundAmount.value = '';
   if (fundSource) fundSource.value = '';
-  if (fundCategory) fundCategory.value = 'Savings';
+  if (fundType) fundType.value = 'income';
+  if (fundingSource) fundingSource.value = 'personal';
   if (fundNotes) fundNotes.value = '';
+  populateFinanceCategorySelect(fundCategory, 'income');
 
   if (addFundsPopup) {
     addFundsPopup.classList.add('active');
@@ -4496,10 +5069,14 @@ function saveFund() {
   saveFund.isSubmitting = true;
 
   const date = fundDate?.value;
+  const time = fundTime?.value || '00:00';
   const amount = parseFloat(fundAmount?.value);
   const source = fundSource?.value?.trim();
-  const category = fundCategory?.value;
+  const category = fundCategory?.value || 'Uncategorized';
+  const type = fundType?.value || 'income';
   const notes = fundNotes?.value?.trim();
+  const moneySource = fundingSource?.value || 'personal';
+  const eventAt = combineEventDateTime(date, time);
 
   if (!date || isNaN(amount) || amount <= 0) {
     showAlert('Please enter a valid date and amount');
@@ -4507,52 +5084,240 @@ function saveFund() {
     return;
   }
 
-  if (!source) {
-    showAlert('Please enter a source/description');
-    saveFund.isSubmitting = false;
-    return;
+  // Description fallback to category name if source is empty
+  const description = source || category || (type === 'income' ? 'Income' : 'Expense');
+
+  // Get category color from database
+  let categoryColor = '#6b7280'; // Default gray
+  if (category) {
+    const tx = db.transaction('financeCategories', 'readonly');
+    const store = tx.objectStore('financeCategories');
+    const request = store.getAll();
+
+    request.onsuccess = e => {
+      const categoryRecord = e.target.result.find(item => item.name === category && (item.type || inferFinanceCategoryType(item.name)) === type);
+      if (categoryRecord && categoryRecord.color) {
+        categoryColor = categoryRecord.color;
+      }
+
+      const record = {
+        date: date,
+        time: time,
+        eventAt,
+        amount: amount,
+        description: description,
+        category: category,
+        categoryColor: categoryColor,
+        categoryType: type,
+        fundingSource: moneySource,
+        notes: notes,
+        type: type,
+        sessionId: null,
+        fuelRecordId: null,
+        createdAt: new Date().toISOString()
+      };
+
+      const tx2 = db.transaction('financeRecords', 'readwrite');
+      const store2 = tx2.objectStore('financeRecords');
+      store2.add(record);
+
+      tx2.oncomplete = () => {
+        closeAddFundsPopup();
+        loadFinanceRecords();
+        updateFinanceKPIs();
+        saveFund.isSubmitting = false;
+      };
+
+      tx2.onerror = () => {
+        showAlert('Error saving transaction. Please try again.');
+        saveFund.isSubmitting = false;
+      };
+    };
+
+    request.onerror = () => {
+      // Fallback if category lookup fails
+      const record = {
+        date: date,
+        time: time,
+        eventAt,
+        amount: amount,
+        description: description,
+        category: category,
+        categoryColor: categoryColor,
+        categoryType: type,
+        fundingSource: moneySource,
+        notes: notes,
+        type: type,
+        sessionId: null,
+        fuelRecordId: null,
+        createdAt: new Date().toISOString()
+      };
+
+      const tx2 = db.transaction('financeRecords', 'readwrite');
+      const store2 = tx2.objectStore('financeRecords');
+      store2.add(record);
+
+      tx2.oncomplete = () => {
+        closeAddFundsPopup();
+        loadFinanceRecords();
+        updateFinanceKPIs();
+        saveFund.isSubmitting = false;
+      };
+
+      tx2.onerror = () => {
+        showAlert('Error saving transaction. Please try again.');
+        saveFund.isSubmitting = false;
+      };
+    };
+  } else {
+    // No category selected
+    const record = {
+      date: date,
+      time: time,
+      eventAt,
+      amount: amount,
+      description: description,
+      category: 'Other',
+      categoryColor: categoryColor,
+      categoryType: type,
+      fundingSource: moneySource,
+      notes: notes,
+      type: type,
+      sessionId: null,
+      fuelRecordId: null,
+      createdAt: new Date().toISOString()
+    };
+
+    const tx2 = db.transaction('financeRecords', 'readwrite');
+    const store2 = tx2.objectStore('financeRecords');
+    store2.add(record);
+
+    tx2.oncomplete = () => {
+      closeAddFundsPopup();
+      loadFinanceRecords();
+      updateFinanceKPIs();
+      saveFund.isSubmitting = false;
+    };
+
+    tx2.onerror = () => {
+      showAlert('Error saving transaction. Please try again.');
+      saveFund.isSubmitting = false;
+    };
   }
-
-  // Category colors for income categories
-  const categoryColors = {
-    'Savings': '#10b981', // Green
-    'Bonus': '#8b5cf6',   // Purple
-    'Refund': '#3b82f6',  // Blue
-    'Other': '#6b7280'    // Gray
-  };
-
-  const record = {
-    date: date,
-    amount: amount,
-    description: source,
-    category: category,
-    categoryColor: categoryColors[category] || '#6b7280',
-    notes: notes,
-    type: 'income',
-    sessionId: null,
-    createdAt: new Date().toISOString()
-  };
-
-  const tx = db.transaction('financeRecords', 'readwrite');
-  const store = tx.objectStore('financeRecords');
-  store.add(record);
-
-  tx.oncomplete = () => {
-    closeAddFundsPopup();
-    loadFinanceRecords();
-    updateFinanceKPIs();
-    saveFund.isSubmitting = false;
-  };
-
-  tx.onerror = () => {
-    showAlert('Error saving fund. Please try again.');
-    saveFund.isSubmitting = false;
-  };
 }
 
 // Load Finance Records
 function loadFinanceRecords() {
-  if (!db || !financeTableBody) return;
+  if (!db || !transactionsList) return;
+
+  reconcileLinkedFinanceRecords().then(() => loadFinanceRecordsFromStore()).catch(error => {
+    console.error('Finance reconciliation failed:', error);
+    loadFinanceRecordsFromStore();
+  });
+}
+
+function getStoreRecords(storeName) {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(storeName, 'readonly').objectStore(storeName).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function reconcileLinkedFinanceRecords() {
+  const [sessions, items, fuelRecords] = await Promise.all([
+    getStoreRecords('sessions'),
+    getStoreRecords('items'),
+    getStoreRecords('fuelRecords')
+  ]);
+
+  const expected = [];
+  sessions.forEach(session => {
+    if (session.financeIncluded === false) return;
+    const sessionItems = items.filter(item => String(item.sessionId) === String(session.id));
+    const financeItems = sessionItems.filter(item => (parseFloat(item.price) || 0) > 0);
+    const amount = financeItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    if (amount > 0) {
+      expected.push({
+        sourceField: 'sessionId', sourceId: session.id, amount,
+        date: session.date,
+        description: session.merchant ? `Maintenance - ${session.merchant}` : 'Maintenance Session',
+        category: 'Maintenance', categoryColor: '#f59e0b',
+        fundingSource: session.fundingSource || 'personal',
+        eventAt: session.eventAt || combineEventDateTime(session.date, session.time || '00:00'),
+        time: session.time || getRecordTimeInput(session),
+        notes: financeItems.map(item => `${item.name} (${item.price} EGP)`).join(', '),
+        odometer: session.odometer || 0,
+        includedItems: financeItems.map(item => ({ id: item.id, name: item.name, price: parseFloat(item.price) || 0 }))
+      });
+    }
+  });
+
+  fuelRecords.forEach(fuelRecord => {
+    if (fuelRecord.financeIncluded === false || !(parseFloat(fuelRecord.totalCost) > 0)) return;
+    expected.push({
+      sourceField: 'fuelRecordId', sourceId: fuelRecord.id,
+      amount: parseFloat(fuelRecord.totalCost), date: fuelRecord.date,
+      description: `Fuel - ${parseFloat(fuelRecord.liters || 0).toFixed(2)} L @ ${parseFloat(fuelRecord.odometer || 0).toLocaleString()} km`,
+      category: 'Fuel', categoryColor: '#ef4444', fundingSource: fuelRecord.fundingSource || 'uber',
+      eventAt: fuelRecord.eventAt || combineEventDateTime(fuelRecord.date, fuelRecord.time || '00:00'),
+      time: fuelRecord.time || getRecordTimeInput(fuelRecord), notes: fuelRecord.notes || ''
+    });
+  });
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
+    const expectedKeys = new Set(expected.map(record => `${record.sourceField}:${record.sourceId}`));
+    const retainedKeys = new Set();
+    const linkedRecords = [];
+
+    store.openCursor().onsuccess = event => {
+      const cursor = event.target.result;
+      if (cursor) {
+        const record = cursor.value;
+        if (record.sessionId != null || record.fuelRecordId != null) {
+          linkedRecords.push(record);
+        }
+        cursor.continue();
+      } else {
+        linkedRecords.forEach(record => {
+          const sourceField = record.sessionId != null ? 'sessionId' : 'fuelRecordId';
+          const key = `${sourceField}:${record[sourceField]}`;
+          if (!expectedKeys.has(key) || retainedKeys.has(key)) store.delete(record.id);
+          else retainedKeys.add(key);
+        });
+        expected.forEach(record => {
+          const existing = linkedRecords.find(candidate =>
+            String(candidate[record.sourceField]) === String(record.sourceId)
+          );
+          store.put({
+            ...(existing || {}),
+            date: record.date,
+            amount: record.amount,
+            description: record.description,
+            category: record.category,
+            categoryColor: record.categoryColor,
+            fundingSource: record.fundingSource,
+            eventAt: record.eventAt,
+            time: record.time,
+            notes: record.notes,
+            odometer: record.odometer,
+            includedItems: record.includedItems,
+            type: 'expense',
+            [record.sourceField]: record.sourceId,
+            createdAt: existing?.createdAt || new Date().toISOString()
+          });
+        });
+      }
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error || new Error('Finance reconciliation failed'));
+  });
+}
+
+function loadFinanceRecordsFromStore() {
+  if (!db || !transactionsList) return;
 
   // Reset the array to prevent duplicates
   allFinanceRecords = [];
@@ -4577,58 +5342,152 @@ function loadFinanceRecords() {
       });
 
       // Sort by date descending (newest first)
-      allFinanceRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-      financeCurrentPage = 1;
+      financeCurrentPage = Math.max(1, Math.min(financeCurrentPage, Math.max(1, Math.ceil(getFilteredFinanceRecords().length / financePerPage))));
       renderFinancePage();
       updateFinanceKPIs();
+      setupTransactionCardEventListeners();
     }
   };
 }
 
+function getFinanceRecordSource(record) {
+  return record.fundingSource || (record.fuelRecordId ? 'uber' : 'personal');
+}
+
+function getFilteredFinanceRecords() {
+  const typeFilter = financeTypeFilter?.value || 'all';
+  const sourceFilter = financeSourceFilter?.value || 'all';
+  const sortOrder = financeSortOrder?.value || 'newest';
+  const records = allFinanceRecords.filter(record =>
+    (typeFilter === 'all' || record.type === typeFilter) &&
+    (sourceFilter === 'all' || getFinanceRecordSource(record) === sourceFilter)
+  );
+  records.sort((a, b) => {
+    if (sortOrder === 'oldest' || sortOrder === 'newest') {
+      const difference = getRecordEventTimestamp(a) - getRecordEventTimestamp(b);
+      if (difference !== 0) return sortOrder === 'oldest' ? difference : -difference;
+      const createdDifference = new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (createdDifference !== 0) return sortOrder === 'oldest' ? createdDifference : -createdDifference;
+      return sortOrder === 'oldest' ? Number(a.id || 0) - Number(b.id || 0) : Number(b.id || 0) - Number(a.id || 0);
+    }
+    const amountDifference = (parseFloat(a.amount) || 0) - (parseFloat(b.amount) || 0);
+    if (amountDifference !== 0) return sortOrder === 'amount-asc' ? amountDifference : -amountDifference;
+    return getRecordEventTimestamp(b) - getRecordEventTimestamp(a);
+  });
+  return records;
+}
+
 // Render Finance Page
 function renderFinancePage() {
-  if (!financeTableBody) return;
+  if (!transactionsList) return;
 
-  if (allFinanceRecords.length === 0) {
-    financeTableBody.innerHTML = '';
-    if (financeEmptyState) financeEmptyState.style.display = 'block';
+  filteredFinanceRecords = getFilteredFinanceRecords();
+  if (filteredFinanceRecords.length === 0) {
+    transactionsList.innerHTML = '';
+    if (financeEmptyState) {
+      financeEmptyState.style.display = 'block';
+      const message = financeEmptyState.querySelector('p');
+      const hint = financeEmptyState.querySelector('span');
+      if (message) message.textContent = allFinanceRecords.length ? 'No matching transactions' : 'No transactions yet';
+      if (hint) hint.textContent = allFinanceRecords.length ? 'Try changing the filters above.' : 'Add funds or record maintenance to see transactions';
+    }
     if (financePaginationControls) financePaginationControls.style.display = 'none';
     return;
   }
 
   if (financeEmptyState) financeEmptyState.style.display = 'none';
 
-  const totalPages = Math.ceil(allFinanceRecords.length / financePerPage);
+  const totalPages = Math.ceil(filteredFinanceRecords.length / financePerPage);
   const startIndex = (financeCurrentPage - 1) * financePerPage;
   const endIndex = startIndex + financePerPage;
-  const pageRecords = allFinanceRecords.slice(startIndex, endIndex);
+  const pageRecords = filteredFinanceRecords.slice(startIndex, endIndex);
+  const monthTotals = new Map();
+  const monthLastIndexes = new Map();
+  filteredFinanceRecords.forEach((record, index) => {
+    const date = new Date(getRecordEventTimestamp(record));
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const totals = monthTotals.get(key) || { income: 0, expenses: 0, label: date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) };
+    const amount = parseFloat(record.amount) || 0;
+    if (record.type === 'income') totals.income += amount;
+    else totals.expenses += amount;
+    monthTotals.set(key, totals);
+    monthLastIndexes.set(key, index);
+  });
 
-  financeTableBody.innerHTML = pageRecords.map(record => {
+  transactionsList.innerHTML = pageRecords.map((record, pageIndex) => {
+    const absoluteIndex = startIndex + pageIndex;
     const isIncome = record.type === 'income';
-    const amountClass = isIncome ? 'amount-income' : 'amount-expense';
     const typeClass = isIncome ? 'income' : 'expense';
     const typeLabel = isIncome ? 'Income' : 'Expense';
     const amountPrefix = isIncome ? '+' : '-';
+    const amountColor = isIncome ? 'var(--color-success)' : 'var(--color-danger)';
 
     // Get category color (use gray if no color set)
     const categoryColor = record.categoryColor || '#9ca3af';
     const categoryStyle = `background-color: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;`;
 
-    // Allow delete for all records (income, fuel, maintenance)
-    const canDelete = true;
+    // Determine if this is a linked record (maintenance or fuel)
+    const isMaintenance = record.sessionId;
+    const isFuel = record.fuelRecordId;
 
-    return `
-      <tr data-record-id="${record.id}">
-        <td data-label="Date" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${formatDateToBritish(record.date)}</td>
-        <td data-label="Amount" class="${amountClass}" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${amountPrefix}${record.amount.toLocaleString()} EGP</td>
-        <td data-label="Item" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;">${record.description}</td>
-        <td data-label="Type" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;"><span class="transaction-type ${typeClass}">${typeLabel}</span></td>
-        <td data-label="Category" onclick="viewTransactionDetails('${record.id}')" style="cursor: pointer;"><span style="${categoryStyle}">${record.category || '-'}</span></td>
-        <td class="actions-cell">
-          <button class="action-btn edit-btn" onclick="event.stopPropagation(); editFinanceRecord('${record.id}')" title="Edit"><i class="fas fa-edit"></i></button>
-          <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteFinanceRecord('${record.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>
+    const sourceName = getFinanceRecordSource(record) === 'uber' ? 'Uber Earnings' : 'Personal Savings';
+    const eventDate = new Date(getRecordEventTimestamp(record));
+    const eventTimeLabel = Number.isNaN(eventDate.getTime()) ? '' : eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const eventMonthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthTotals = monthTotals.get(eventMonthKey);
+    const previousRecord = absoluteIndex > 0 ? filteredFinanceRecords[absoluteIndex - 1] : null;
+    const previousDate = previousRecord ? new Date(getRecordEventTimestamp(previousRecord)) : null;
+    const previousMonthKey = previousDate ? `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}` : null;
+    const showMonthHeading = pageIndex === 0 || absoluteIndex === 0 || eventMonthKey !== previousMonthKey;
+    const monthHeading = showMonthHeading
+      ? `<div class="finance-month-separator"><span class="finance-month-label">${currentMonthTotals.label}</span><span class="finance-month-connector" aria-hidden="true"></span><span class="finance-month-totals" aria-label="Monthly income and spending"><span class="month-income-total">+${currentMonthTotals.income.toLocaleString()}</span><span class="month-expense-total">−${currentMonthTotals.expenses.toLocaleString()}</span></span></div>`
+      : '';
+    let editAction = '';
+    if (isMaintenance) {
+      editAction = `data-action="edit-maintenance" data-session-id="${record.sessionId}" title="Edit Maintenance Session"`;
+    } else if (isFuel) {
+      editAction = `data-action="edit-fuel" data-fuel-record-id="${record.fuelRecordId}" title="Edit Fuel Entry"`;
+    } else {
+      editAction = `data-action="edit-finance" data-record-id="${record.id}" title="Edit Transaction"`;
+    }
+    const actionsHtml = `
+      <div class="transaction-actions">
+        <button class="edit-btn finance-action-btn" ${editAction}><i class="fas fa-edit"></i><span class="sr-only">Edit</span></button>
+        <button class="finance-action-btn finance-exclude-btn" data-action="exclude-finance" data-record-id="${record.id}" title="Remove from Finance"><i class="fas fa-eye-slash"></i><span class="sr-only">Remove from Finance</span></button>
+        <button class="delete-btn finance-action-btn" data-action="delete-everywhere" data-record-id="${record.id}" title="Delete everywhere"><i class="fas fa-trash"></i><span class="sr-only">Delete everywhere</span></button>
+      </div>`;
+
+    // Calculate relative event date
+    const relativeTime = getRelativeTime(record.date);
+    const timeContextColor = getTimeContextColor(record.date);
+    const tooltipDate = formatDateForTooltip(record.date);
+
+    return `${monthHeading}
+      <div class="transaction-card transaction-card-${typeClass}" data-record-id="${record.id}">
+        <div class="transaction-header">
+          <div class="transaction-header-main">
+            <h3>${formatDateToBritish(record.date)}</h3>
+            <div class="transaction-date-meta">
+              <span class="transaction-event-time">${eventTimeLabel}</span>
+              <span class="time-context transaction-relative-time time-context-${timeContextColor}" 
+                  title="Recorded on ${tooltipDate}">
+                ${relativeTime}
+              </span>
+            </div>
+          </div>
+        </div>
+        ${actionsHtml}
+        <p><strong>Money Source:</strong> ${sourceName}</p>
+        <p><strong>Description:</strong> ${isMaintenance ? 'Maintenance Session' : isFuel ? 'Fuel Entry' : record.description}</p>
+        ${isMaintenance && record.odometer ? `<p><strong>Odometer:</strong> ${record.odometer.toLocaleString()} km</p>` : ''}
+        ${isMaintenance ? `<p><strong>Included Items:</strong> ${record.includedItems?.length || 0}</p>` : ''}
+        <p><strong>Type:</strong> <span class="transaction-type ${typeClass}">${typeLabel}</span></p>
+        <p><strong>Category:</strong> <span style="${categoryStyle}">${record.category || '-'}</span></p>
+        <div class="transaction-total ${typeClass}">
+          <span class="transaction-total-label">Total</span>
+          <strong>${amountPrefix}${record.amount.toLocaleString()} EGP</strong>
+        </div>
+      </div>
     `;
   }).join('');
 
@@ -4646,7 +5505,7 @@ function renderFinancePage() {
 
 // Change Finance Page
 function changeFinancePage(direction) {
-  const totalPages = Math.ceil(allFinanceRecords.length / financePerPage);
+  const totalPages = Math.ceil(filteredFinanceRecords.length / financePerPage);
   const newPage = financeCurrentPage + direction;
 
   if (newPage >= 1 && newPage <= totalPages) {
@@ -4655,13 +5514,73 @@ function changeFinancePage(direction) {
   }
 }
 
+// Handle transaction card button clicks (delegated event listener)
+function setupTransactionCardEventListeners() {
+  const transactionsList = document.getElementById('transactionsList');
+  if (!transactionsList) return;
+  if (transactionsList.dataset.financeEventsBound === 'true') return;
+  transactionsList.dataset.financeEventsBound = 'true';
+
+  transactionsList.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-btn');
+    const deleteBtn = e.target.closest('.delete-btn');
+    const excludeBtn = e.target.closest('.finance-exclude-btn');
+
+    if (editBtn) {
+      e.stopPropagation();
+      const action = editBtn.dataset.action;
+      if (action === 'edit-maintenance') {
+        editSession(parseInt(editBtn.dataset.sessionId));
+      } else if (action === 'edit-fuel') {
+        editFuelRecord(editBtn.dataset.fuelRecordId);
+      } else if (action === 'edit-finance') {
+        editFinanceRecord(editBtn.dataset.recordId);
+      }
+    }
+
+    if (deleteBtn) {
+      e.stopPropagation();
+      const action = deleteBtn.dataset.action;
+      if (action === 'delete-everywhere') deleteFinanceRecordEverywhere(deleteBtn.dataset.recordId);
+    }
+    if (excludeBtn) {
+      e.stopPropagation();
+      removeTransactionFromFinance(excludeBtn.dataset.recordId);
+    }
+    if (!editBtn && !deleteBtn && !excludeBtn) {
+      const card = e.target.closest('.transaction-card[data-record-id]');
+      if (card) viewTransactionDetails(card.dataset.recordId);
+    }
+  });
+}
+
 // Update Finance KPIs
 function updateFinanceKPIs() {
+  // Add immediate visual feedback by triggering animation
+  const kpiElements = [financeTotalSavings, financeMonthlyIncome, financeMonthlyExpenses, financeNetBalance];
+  kpiElements.forEach(el => {
+    if (el) {
+      el.style.transition = 'color 0.3s ease';
+      el.style.color = 'var(--color-primary)';
+      setTimeout(() => {
+        el.style.color = 'var(--text-primary)';
+      }, 300);
+    }
+  });
+
   if (!allFinanceRecords.length) {
     if (financeTotalSavings) financeTotalSavings.textContent = '0';
     if (financeMonthlyIncome) financeMonthlyIncome.textContent = '0';
     if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = '0';
     if (financeNetBalance) financeNetBalance.textContent = '0';
+    if (financePersonalBalance) {
+      financePersonalBalance.textContent = '0';
+      financePersonalBalance.style.color = '#10b981';
+    }
+    if (financeUberBalance) {
+      financeUberBalance.textContent = '0';
+      financeUberBalance.style.color = '#10b981';
+    }
     return;
   }
 
@@ -4672,129 +5591,99 @@ function updateFinanceKPIs() {
   let totalSavings = 0;
   let monthlyIncome = 0;
   let monthlyExpenses = 0;
+  const sourceBalances = { personal: 0, uber: 0 };
 
   allFinanceRecords.forEach(record => {
     const recordDate = new Date(record.date);
-    const amount = parseFloat(record.amount);
+    const amount = parseFloat(record.amount) || 0;
+    const source = record.fundingSource || (record.fuelRecordId ? 'uber' : 'personal');
+    const sourceKey = source === 'uber' ? 'uber' : 'personal';
 
     if (record.type === 'income') {
       totalSavings += amount;
+      sourceBalances[sourceKey] += amount;
       if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
         monthlyIncome += amount;
       }
     } else {
       totalSavings -= amount;
+      sourceBalances[sourceKey] -= amount;
       if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
         monthlyExpenses += amount;
       }
     }
   });
 
-  const netBalance = monthlyIncome - monthlyExpenses;
+  // Balance is cumulative; monthly figures are informational only.
+  const netBalance = totalSavings;
 
-  if (financeTotalSavings) financeTotalSavings.textContent = totalSavings.toLocaleString();
+  if (financeTotalSavings) {
+    financeTotalSavings.textContent = totalSavings.toLocaleString();
+    financeTotalSavings.style.color = totalSavings >= 0 ? '#10b981' : '#ef4444';
+  }
   if (financeMonthlyIncome) financeMonthlyIncome.textContent = monthlyIncome.toLocaleString();
   if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = monthlyExpenses.toLocaleString();
-  if (financeNetBalance) financeNetBalance.textContent = netBalance.toLocaleString();
+  if (financeNetBalance) {
+    financeNetBalance.textContent = netBalance.toLocaleString();
+    financeNetBalance.style.color = netBalance >= 0 ? '#10b981' : '#ef4444';
+  }
+  if (financePersonalBalance) {
+    financePersonalBalance.textContent = sourceBalances.personal.toLocaleString();
+    financePersonalBalance.style.color = sourceBalances.personal >= 0 ? '#10b981' : '#ef4444';
+    financePersonalBalance.classList.toggle('balance-negative', sourceBalances.personal < 0);
+  }
+  if (financeUberBalance) {
+    financeUberBalance.textContent = sourceBalances.uber.toLocaleString();
+    financeUberBalance.style.color = sourceBalances.uber >= 0 ? '#10b981' : '#ef4444';
+    financeUberBalance.classList.toggle('balance-negative', sourceBalances.uber < 0);
+  }
 }
 
-// Add Maintenance Expense to Finance (called when maintenance session is saved)
-function addMaintenanceExpense(sessionId, date, items, merchant) {
+function syncLinkedFinanceRecord(sourceField, sourceId, included, recordData) {
   if (!db) return Promise.resolve();
-
   return new Promise((resolve, reject) => {
-    // Get categories for items
-    const tx = db.transaction(['categories'], 'readonly');
-    const categoryStore = tx.objectStore('categories');
-    const categories = {};
-
-    // Load categories first
-    categoryStore.openCursor().onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor) {
-        categories[cursor.value.id] = cursor.value;
-        cursor.continue();
+    const tx = db.transaction('financeRecords', 'readwrite');
+    const store = tx.objectStore('financeRecords');
+    store.index(sourceField).get(sourceId).onsuccess = event => {
+      const existing = event.target.result;
+      if (!included || !recordData || recordData.amount <= 0) {
+        if (existing) store.delete(existing.id);
+      } else {
+        store.put({ ...(existing || {}), ...recordData, [sourceField]: sourceId, type: 'expense', createdAt: existing?.createdAt || new Date().toISOString() });
       }
     };
-
-    tx.oncomplete = () => {
-      // Create a finance record for each item with its category
-      const totalCost = items.reduce((sum, i) => sum + (i.price || 0), 0);
-      const itemCategories = items.map(item => {
-        const cat = item.categoryId && categories[item.categoryId];
-        return cat ? { name: cat.name, color: cat.color } : { name: 'Uncategorized', color: '#9ca3af' };
-      });
-
-      // Get unique categories and use the first one's color
-      const firstCat = itemCategories[0];
-      const uniqueCategoryNames = [...new Set(itemCategories.map(c => c.name))];
-      const categoryDisplay = uniqueCategoryNames.length === 1
-        ? uniqueCategoryNames[0]
-        : uniqueCategoryNames.slice(0, 2).join(', ') + (uniqueCategoryNames.length > 2 ? '...' : '');
-
-      const record = {
-        date: date,
-        amount: totalCost,
-        description: merchant ? `Maintenance - ${merchant}` : 'Maintenance Session',
-        category: categoryDisplay,
-        categoryColor: firstCat?.color || '#9ca3af',
-        notes: items.map(i => `${i.name} (${i.price} EGP)`).join(', '),
-        type: 'expense',
-        sessionId: sessionId,
-        createdAt: new Date().toISOString()
-      };
-
-      const tx2 = db.transaction('financeRecords', 'readwrite');
-      const store = tx2.objectStore('financeRecords');
-      store.add(record);
-
-      tx2.oncomplete = () => {
-        resolve();
-      };
-
-      tx2.onerror = () => {
-        reject(new Error('Failed to add maintenance expense'));
-      };
-    };
-
-    tx.onerror = () => {
-      reject(new Error('Failed to load categories'));
-    };
+    tx.oncomplete = () => { loadFinanceRecords(); updateFinanceKPIs(); resolve(); };
+    tx.onerror = () => reject(new Error('Failed to sync linked finance record'));
   });
 }
 
-// Add Fuel Expense to Finance (called when fuel entry is saved)
+function syncMaintenanceFinance(sessionId, date, items, merchant, included, fundingSource = 'personal', eventAt = '') {
+  const includedItems = items.filter(item => (parseFloat(item.price) || 0) > 0);
+  return syncLinkedFinanceRecord('sessionId', sessionId, included, {
+    date,
+    amount: includedItems.reduce((sum, item) => sum + (item.price || 0), 0),
+    description: merchant ? `Maintenance - ${merchant}` : 'Maintenance Session',
+    category: 'Maintenance', categoryColor: '#f59e0b',
+    fundingSource,
+    eventAt: eventAt || combineEventDateTime(date, '00:00'),
+    time: eventAt ? getRecordTimeInput({ eventAt }) : '00:00',
+    notes: includedItems.map(item => `${item.name} (${item.price} EGP)`).join(', '),
+    includedItems: includedItems.map(item => ({ id: item.id, name: item.name, price: parseFloat(item.price) || 0 }))
+  });
+}
+
+function addMaintenanceExpense(sessionId, date, items, merchant) {
+  return syncMaintenanceFinance(sessionId, date, items, merchant, true, 'personal');
+}
+
 function addFuelExpense(fuelRecord) {
-  if (!db) return Promise.resolve();
-
-  return new Promise((resolve, reject) => {
-    const record = {
-      date: fuelRecord.date,
-      amount: fuelRecord.totalCost,
-      description: `Fuel - ${parseFloat(fuelRecord.liters).toFixed(2)} L @ ${parseFloat(fuelRecord.odometer).toLocaleString()} km`,
-      category: 'Fuel',
-      categoryColor: '#f59e0b', // Fuel orange color
-      notes: fuelRecord.notes || '',
-      type: 'expense',
-      fuelRecordId: fuelRecord.id,
-      createdAt: new Date().toISOString()
-    };
-
-    const tx = db.transaction('financeRecords', 'readwrite');
-    const store = tx.objectStore('financeRecords');
-    store.add(record);
-
-    tx.oncomplete = () => {
-      // Refresh finance if on finance tab
-      if (document.body.getAttribute('data-active-tab') === 'finance') {
-        loadFinanceRecords();
-      }
-      resolve();
-    };
-
-    tx.onerror = () => {
-      reject(new Error('Failed to add fuel expense'));
-    };
+  return syncLinkedFinanceRecord('fuelRecordId', fuelRecord.id, fuelRecord.financeIncluded !== false, {
+    date: fuelRecord.date,
+    eventAt: fuelRecord.eventAt || combineEventDateTime(fuelRecord.date, fuelRecord.time || '00:00'),
+    time: fuelRecord.time || getRecordTimeInput(fuelRecord),
+    amount: fuelRecord.totalCost,
+    description: `Fuel - ${parseFloat(fuelRecord.liters).toFixed(2)} L @ ${parseFloat(fuelRecord.odometer).toLocaleString()} km`,
+    category: 'Fuel', categoryColor: '#ef4444', fundingSource: fuelRecord.fundingSource || 'uber', notes: fuelRecord.notes || ''
   });
 }
 
@@ -4821,6 +5710,12 @@ function deleteFinanceRecordsByFuelRecord(fuelRecordId) {
     };
 
     tx.oncomplete = () => {
+      // Refresh finance if on finance tab
+      if (document.body.getAttribute('data-active-tab') === 'finance') {
+        loadFinanceRecords();
+      }
+      // Update KPIs
+      updateFinanceKPIs();
       resolve();
     };
 
@@ -4849,6 +5744,12 @@ function deleteFinanceRecordsBySession(sessionId) {
     };
 
     tx.oncomplete = () => {
+      // Refresh finance if on finance tab
+      if (document.body.getAttribute('data-active-tab') === 'finance') {
+        loadFinanceRecords();
+      }
+      // Update KPIs
+      updateFinanceKPIs();
       resolve();
     };
 
@@ -4859,19 +5760,26 @@ function deleteFinanceRecordsBySession(sessionId) {
 }
 
 // Delete single finance record
-function deleteFinanceRecord(recordId) {
+function deleteFinanceRecord(recordId, customWarning = null) {
   if (!db) return;
+  const numericRecordId = typeof recordId === 'string' ? parseInt(recordId, 10) : recordId;
+  if (!Number.isFinite(numericRecordId)) {
+    showAlert('Invalid transaction ID');
+    return;
+  }
 
-  showConfirm('Are you sure you want to delete this transaction?').then(confirmed => {
+  const warning = customWarning || 'Are you sure you want to delete this transaction?';
+  showConfirm(warning).then(confirmed => {
     if (!confirmed) return;
 
     const tx = db.transaction('financeRecords', 'readwrite');
     const store = tx.objectStore('financeRecords');
 
-    store.delete(recordId);
+    store.delete(numericRecordId);
 
     tx.oncomplete = () => {
       loadFinanceRecords();
+      updateFinanceKPIs();
     };
 
     tx.onerror = () => {
@@ -4880,23 +5788,121 @@ function deleteFinanceRecord(recordId) {
   });
 }
 
+function removeTransactionFromFinance(recordId) {
+  if (!db) return;
+  const numericRecordId = Number(recordId);
+  const record = allFinanceRecords.find(item => Number(item.id) === numericRecordId);
+  if (!record) return;
+  const linkedStore = record.sessionId != null ? 'sessions' : record.fuelRecordId != null ? 'fuelRecords' : null;
+  const message = linkedStore
+    ? 'Remove this transaction from Finance? The original maintenance or fuel record will remain saved.'
+    : 'Remove this transaction from Finance?';
+  showConfirm(message, 'Remove from Finance').then(confirmed => {
+    if (!confirmed || !db) return;
+    const stores = linkedStore ? [linkedStore, 'financeRecords'] : ['financeRecords'];
+    const tx = db.transaction(stores, 'readwrite');
+    if (linkedStore) {
+      const sourceId = linkedStore === 'sessions' ? record.sessionId : record.fuelRecordId;
+      const sourceStore = tx.objectStore(linkedStore);
+      sourceStore.get(sourceId).onsuccess = event => {
+        const sourceRecord = event.target.result;
+        if (sourceRecord) sourceStore.put({ ...sourceRecord, financeIncluded: false });
+      };
+    }
+    tx.objectStore('financeRecords').delete(numericRecordId);
+    tx.oncomplete = () => {
+      loadFinanceRecords();
+      updateFinanceKPIs();
+      if (typeof fuelApp !== 'undefined' && fuelApp) fuelApp.stateManager.loadSession('default');
+    };
+    tx.onerror = () => showAlert('Could not remove this transaction from Finance.');
+  });
+}
+
+function deleteFinanceRecordEverywhere(recordId) {
+  if (!db) return;
+  const numericRecordId = Number(recordId);
+  const record = allFinanceRecords.find(item => Number(item.id) === numericRecordId);
+  if (!record) return;
+  const linkedType = record.sessionId != null ? 'maintenance session and its items' : record.fuelRecordId != null ? 'fuel record' : '';
+  const confirmMessage = linkedType
+    ? `Permanently delete this Finance transaction and its linked ${linkedType}?`
+    : 'Permanently delete this Finance transaction?';
+  showConfirm(confirmMessage, 'Delete everywhere').then(async confirmed => {
+    if (!confirmed || !db) return;
+    try {
+      if (record.sessionId != null) {
+        const tx = db.transaction(['sessions', 'items', 'financeRecords'], 'readwrite');
+        tx.objectStore('sessions').delete(record.sessionId);
+        tx.objectStore('financeRecords').delete(numericRecordId);
+        const items = tx.objectStore('items');
+        items.openCursor().onsuccess = event => {
+          const cursor = event.target.result;
+          if (!cursor) return;
+          if (String(cursor.value.sessionId) === String(record.sessionId)) cursor.delete();
+          cursor.continue();
+        };
+        await new Promise((resolve, reject) => {
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error || new Error('Could not delete maintenance record'));
+        });
+      } else if (record.fuelRecordId != null) {
+        if (typeof FuelDataManager !== 'undefined') {
+          await FuelDataManager.deleteRecord(record.fuelRecordId);
+        } else {
+          const sourceTx = db.transaction('fuelRecords', 'readwrite');
+          sourceTx.objectStore('fuelRecords').delete(record.fuelRecordId);
+          await new Promise((resolve, reject) => {
+            sourceTx.oncomplete = resolve;
+            sourceTx.onerror = () => reject(sourceTx.error || new Error('Could not delete fuel record'));
+          });
+        }
+        const financeTx = db.transaction('financeRecords', 'readwrite');
+        financeTx.objectStore('financeRecords').delete(numericRecordId);
+        await new Promise((resolve, reject) => {
+          financeTx.oncomplete = resolve;
+          financeTx.onerror = () => reject(financeTx.error || new Error('Could not delete Finance transaction'));
+        });
+        if (typeof fuelApp !== 'undefined' && fuelApp) await fuelApp.stateManager.loadSession('default');
+      } else {
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('financeRecords', 'readwrite');
+          tx.objectStore('financeRecords').delete(numericRecordId);
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error || new Error('Could not delete transaction'));
+        });
+      }
+      renderAll();
+      loadFinanceRecords();
+    } catch (error) {
+      console.error('Delete everywhere failed:', error);
+      showAlert(error.message || 'Could not delete this transaction everywhere.');
+    }
+  });
+}
+
 // Edit Finance Record - Open Popup
 function editFinanceRecord(recordId) {
   if (!db || !editTransactionPopup) return;
+  const numericRecordId = typeof recordId === 'string' ? parseInt(recordId, 10) : recordId;
+  if (!Number.isFinite(numericRecordId)) return;
 
   const tx = db.transaction('financeRecords', 'readonly');
   const store = tx.objectStore('financeRecords');
 
-  store.get(recordId).onsuccess = e => {
+  store.get(numericRecordId).onsuccess = e => {
     const record = e.target.result;
     if (!record) return;
 
     // Populate the edit form
     editTransactionId.value = record.id;
     editTransactionDate.value = record.date;
+    if (editTransactionTime) editTransactionTime.value = getRecordTimeInput(record);
     editTransactionAmount.value = record.amount;
     editTransactionDescription.value = record.description;
-    editTransactionCategory.value = record.category || '';
+    if (editTransactionType) editTransactionType.value = record.type || 'expense';
+    if (editTransactionFundingSource) editTransactionFundingSource.value = record.fundingSource || (record.fuelRecordId ? 'uber' : 'personal');
+    populateFinanceCategorySelect(editTransactionCategory, record.type || 'expense', record.category || '');
     editTransactionNotes.value = record.notes || '';
 
     // Show the popup
@@ -4919,10 +5925,13 @@ function saveTransactionEdit() {
 
   const id = parseInt(editTransactionId.value);
   const date = editTransactionDate?.value;
+  const time = editTransactionTime?.value || '00:00';
   const amount = parseFloat(editTransactionAmount?.value);
   const description = editTransactionDescription?.value?.trim();
   const category = editTransactionCategory?.value?.trim();
   const notes = editTransactionNotes?.value?.trim();
+  const type = editTransactionType?.value || 'expense';
+  const moneySource = editTransactionFundingSource?.value || 'personal';
 
   if (!date || isNaN(amount) || amount <= 0) {
     showAlert('Please enter a valid date and amount');
@@ -4945,12 +5954,20 @@ function saveTransactionEdit() {
     }
 
     // Update the record
+    const previousCategoryType = record.categoryType || inferFinanceCategoryType(record.category);
+    const updatedCategory = category || (previousCategoryType === type ? record.category : 'Uncategorized');
     const updatedRecord = {
       ...record,
       date: date,
+      time,
+      eventAt: combineEventDateTime(date, time),
       amount: amount,
       description: description,
-      category: category || record.category,
+      category: updatedCategory,
+      categoryColor: editTransactionCategory?.selectedOptions?.[0]?.dataset.color || record.categoryColor || '#6b7280',
+      categoryType: type,
+      type,
+      fundingSource: moneySource,
       notes: notes
     };
 
@@ -4975,10 +5992,13 @@ const transactionDetailsContent = document.getElementById('transactionDetailsCon
 function viewTransactionDetails(recordId) {
   if (!db || !transactionDetailsPopup || !transactionDetailsContent) return;
 
+  // IDB autoIncrement keys are integers; onclick passes strings — coerce to int
+  const numericId = typeof recordId === 'string' ? parseInt(recordId, 10) : recordId;
+
   const tx = db.transaction('financeRecords', 'readonly');
   const store = tx.objectStore('financeRecords');
 
-  store.get(recordId).onsuccess = e => {
+  store.get(numericId).onsuccess = e => {
     const record = e.target.result;
     if (!record) return;
 
@@ -4988,47 +6008,373 @@ function viewTransactionDetails(recordId) {
     const amountClass = isIncome ? 'amount-income' : 'amount-expense';
     const amountPrefix = isIncome ? '+' : '-';
 
-    transactionDetailsContent.innerHTML = `
-      <div class="transaction-detail-row">
-        <label>Date:</label>
-        <span>${formatDateToBritish(record.date)}</span>
-      </div>
-      <div class="transaction-detail-row">
-        <label>Description:</label>
-        <span>${record.description}</span>
-      </div>
-      <div class="transaction-detail-row">
-        <label>Category:</label>
-        <span>${record.category || '-'}</span>
-      </div>
-      <div class="transaction-detail-row">
-        <label>Type:</label>
-        <span><span class="transaction-type ${typeClass}">${typeLabel}</span></span>
-      </div>
-      <div class="transaction-detail-row">
-        <label>Amount:</label>
-        <span class="${amountClass}">${amountPrefix}${record.amount.toLocaleString()} EGP</span>
-      </div>
-      ${record.notes ? `
-      <div class="transaction-detail-row">
-        <label>Details:</label>
-        <span>${record.notes}</span>
-      </div>
-      ` : ''}
-      <div class="transaction-detail-row">
-        <label>Recorded:</label>
-        <span>${new Date(record.createdAt).toLocaleString()}</span>
-      </div>
-    `;
+    // Check if this is a linked record
+    if (record.sessionId) {
+      // Load maintenance session details
+      const sessionTx = db.transaction(['sessions', 'items'], 'readonly');
+      const sessionStore = sessionTx.objectStore('sessions');
+      const itemsStore = sessionTx.objectStore('items');
 
-    transactionDetailsPopup.classList.add('active');
-    document.body.classList.add('modal-open');
+      // sessionId may be timestamp (number) or autoIncrement int — normalise
+      const sessionKey = typeof record.sessionId === 'string' ? parseInt(record.sessionId, 10) : record.sessionId;
+
+      sessionStore.get(sessionKey).onsuccess = sessionEvent => {
+        const session = sessionEvent.target.result;
+        if (!session) {
+          showLinkedRecordFallback(record, isIncome, typeClass, typeLabel, amountClass, amountPrefix);
+          return;
+        }
+
+        // items store has no sessionId index — use a cursor scan instead
+        const collectedItems = [];
+        itemsStore.openCursor().onsuccess = cursorEvt => {
+          const cursor = cursorEvt.target.result;
+          if (cursor) {
+            if (cursor.value.sessionId == record.sessionId &&
+              (!Array.isArray(record.includedItems) || record.includedItems.some(item => String(item.id) === String(cursor.value.id)))) {
+              collectedItems.push(cursor.value);
+            }
+            cursor.continue();
+          } else {
+            // cursor done — render
+            const items = collectedItems;
+            // (items found, fall through to render)
+            renderMaintenanceDetail(items);
+          }
+        };
+
+        function renderMaintenanceDetail(items) {
+          transactionDetailsContent.innerHTML = `
+            <div class="linked-record-header">
+              <h4>
+                <i class="fas fa-wrench" style="color: #f59e0b; font-size: 1.2rem;"></i> Maintenance Session
+              </h4>
+              <button class="secondary-btn details-link-btn" onclick="closeTransactionDetailsPopup(); viewSessionDetails(${JSON.stringify(record.sessionId)})"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Details</span></button>
+            </div>
+            <div class="transaction-detail-row">
+              <label style="font-weight: 600;">Date:</label>
+              <span>${formatDateToBritish(session.date)}</span>
+            </div>
+            <div class="transaction-detail-row"><label style="font-weight: 600;">Time:</label><span>${new Date(getRecordEventTimestamp(record)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+            <div class="transaction-detail-row"><label style="font-weight: 600;">Money Source:</label><span>${record.fundingSource === 'uber' ? 'Uber Earnings' : 'Personal Savings'}</span></div>
+            <div class="transaction-detail-row">
+              <label style="font-weight: 600;">Odometer:</label>
+              <span>${session.odometer?.toLocaleString() || '-'} km</span>
+            </div>
+            <div class="transaction-detail-row">
+              <label style="font-weight: 600;">Merchant:</label>
+              <span>${session.merchant || '-'}</span>
+            </div>
+            ${session.notes ? `
+            <div class="transaction-detail-row">
+              <label style="font-weight: 600;">Notes:</label>
+              <span style="white-space: pre-wrap;">${session.notes}</span>
+            </div>
+            ` : ''}
+            <section class="maintenance-items-panel transaction-items-row">
+              <h4>Included services <span>${items.length}</span></h4>
+              <div class="linked-items-list">
+                ${items.length ? items.map(item => `
+                  <div class="linked-item">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-price">${(parseFloat(item.price) || 0).toLocaleString()} EGP</span>
+                  </div>
+                `).join('') : '<em style="color:var(--text-muted);font-size:0.85rem;">No items recorded</em>'}
+              </div>
+              <div class="maintenance-items-total"><span>Total deducted from Finance</span><strong class="${amountClass}">${amountPrefix}${record.amount.toLocaleString()} EGP</strong></div>
+            </section>
+          `;
+
+          transactionDetailsPopup.classList.add('active');
+          document.body.classList.add('modal-open');
+        };
+      };
+    } else if (record.fuelRecordId) {
+      // Load fuel record details
+      const fuelTx = db.transaction('fuelRecords', 'readonly');
+      const fuelStore = fuelTx.objectStore('fuelRecords');
+
+      fuelStore.get(record.fuelRecordId).onsuccess = fuelEvent => {
+        const fuelRecord = fuelEvent.target.result;
+        if (!fuelRecord) {
+          showLinkedRecordFallback(record, isIncome, typeClass, typeLabel, amountClass, amountPrefix);
+          return;
+        }
+
+        transactionDetailsContent.innerHTML = `
+          <div class="linked-record-header">
+            <h4>
+              <i class="fas fa-gas-pump" style="color: #ef4444; font-size: 1.2rem;"></i> Fuel Entry
+            </h4>
+            <button class="secondary-btn details-link-btn" onclick="closeTransactionDetailsPopup(); editFuelRecord('${record.fuelRecordId}')"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Details</span></button>
+          </div>
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Date:</label>
+            <span>${formatDateToBritish(fuelRecord.date)}</span>
+          </div>
+          <div class="transaction-detail-row"><label style="font-weight: 600;">Time:</label><span>${new Date(getRecordEventTimestamp(record)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+          <div class="transaction-detail-row"><label style="font-weight: 600;">Money Source:</label><span>${record.fundingSource === 'personal' ? 'Personal Savings' : 'Uber Earnings'}</span></div>
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Odometer:</label>
+            <span>${parseFloat(fuelRecord.odometer).toLocaleString()} km</span>
+          </div>
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Liters Added:</label>
+            <span style="font-weight: 600; color: var(--color-primary);">${parseFloat(fuelRecord.liters).toFixed(2)} L</span>
+          </div>
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Price per Liter:</label>
+            <span>${parseFloat(fuelRecord.pricePerLiter).toFixed(2)} EGP/L</span>
+          </div>
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Full Tank Refill:</label>
+            <span>${fuelRecord.isFullTank ? '<i class="fas fa-check" style="color: #10b981;"></i> Yes' : '<i class="fas fa-times" style="color: #ef4444;"></i> No'}</span>
+          </div>
+          ${fuelRecord.notes ? `
+          <div class="transaction-detail-row">
+            <label style="font-weight: 600;">Notes:</label>
+            <span style="white-space: pre-wrap;">${fuelRecord.notes}</span>
+          </div>
+          ` : ''}
+          <div class="transaction-detail-row transaction-details-total">
+            <label style="font-weight: 600;">Total Cost:</label>
+            <span class="${amountClass}" style="font-weight: 600; font-size: 1.1rem;">${amountPrefix}${parseFloat(fuelRecord.totalCost).toLocaleString()} EGP</span>
+          </div>
+        `;
+
+        transactionDetailsPopup.classList.add('active');
+        document.body.classList.add('modal-open');
+      };
+    } else {
+      // Manual transaction - show basic details
+      transactionDetailsContent.innerHTML = `
+        <div class="linked-record-header">
+          <h4>
+            ${isIncome ? '<i class="fas fa-money-bill-wave" style="color: #10b981; font-size: 1.2rem;"></i>' : '<i class="fas fa-credit-card" style="color: #ef4444; font-size: 1.2rem;"></i>'}
+            ${record.description}
+          </h4>
+          <span class="transaction-type ${typeClass}">${typeLabel}</span>
+        </div>
+        <div class="transaction-detail-row">
+          <label style="font-weight: 600;">Date:</label>
+          <span>${formatDateToBritish(record.date)}</span>
+        </div>
+        <div class="transaction-detail-row"><label style="font-weight: 600;">Time:</label><span>${new Date(getRecordEventTimestamp(record)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div class="transaction-detail-row">
+          <label style="font-weight: 600;">Category:</label>
+          <span style="display: inline-block; padding: 4px 12px; background-color: ${record.categoryColor || '#9ca3af'}; color: white; border-radius: 4px; font-size: 0.85rem;">${record.category || '-'}</span>
+        </div>
+        <div class="transaction-detail-row"><label style="font-weight: 600;">Money Source:</label><span>${record.fundingSource === 'uber' ? 'Uber Earnings' : 'Personal Savings'}</span></div>
+        ${record.notes ? `
+        <div class="transaction-detail-row">
+          <label style="font-weight: 600;">Notes:</label>
+          <span style="white-space: pre-wrap; background: var(--bg-hover); padding: var(--space-2); border-radius: var(--radius-sm);">${record.notes}</span>
+        </div>
+        ` : ''}
+        <div class="transaction-detail-row transaction-details-total">
+          <label style="font-weight: 600;">Amount:</label>
+          <span class="${amountClass}" style="font-weight: 600; font-size: 1.1rem;">${amountPrefix}${record.amount.toLocaleString()} EGP</span>
+        </div>
+      `;
+
+      transactionDetailsPopup.classList.add('active');
+      document.body.classList.add('modal-open');
+    }
   };
+}
+
+function showLinkedRecordFallback(record, isIncome, typeClass, typeLabel, amountClass, amountPrefix) {
+  transactionDetailsContent.innerHTML = `
+    <div class="linked-record-header warning">
+      <h4><i class="fas fa-exclamation-triangle"></i> Linked Record Not Found</h4>
+    </div>
+    <div class="transaction-detail-row">
+      <label>Date:</label>
+      <span>${formatDateToBritish(record.date)}</span>
+    </div>
+    <div class="transaction-detail-row">
+      <label>Description:</label>
+      <span>${record.description}</span>
+    </div>
+    <div class="transaction-detail-row">
+      <label>Type:</label>
+      <span><span class="transaction-type ${typeClass}">${typeLabel}</span></span>
+    </div>
+    <div class="transaction-detail-row">
+      <label>Amount:</label>
+      <span class="${amountClass}">${amountPrefix}${record.amount.toLocaleString()} EGP</span>
+    </div>
+    <div class="transaction-detail-row">
+      <label>Note:</label>
+      <span>The linked ${record.sessionId ? 'maintenance session' : 'fuel entry'} may have been deleted.</span>
+    </div>
+  `;
+
+  transactionDetailsPopup.classList.add('active');
+  document.body.classList.add('modal-open');
 }
 
 function closeTransactionDetailsPopup() {
   if (transactionDetailsPopup) {
     transactionDetailsPopup.classList.remove('active');
+    document.body.classList.remove('modal-open');
+    transactionDetailsContent.innerHTML = '';
+  }
+}
+
+// Ensure popup closes on escape key
+if (document && transactionDetailsPopup) {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && transactionDetailsPopup && transactionDetailsPopup.classList.contains('active')) {
+      closeTransactionDetailsPopup();
+    }
+  });
+}
+
+// ================================
+// Finance KPI Detail Popup
+// ================================
+function showFinanceKPIDetails(kpiType) {
+  if (!allFinanceRecords.length && kpiType !== 'totalSavings') {
+    showAlert('No finance records yet. Add a transaction first.');
+    return;
+  }
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const kpiPopup = document.getElementById('financeKpiDetailPopup');
+  const kpiPopupTitle = document.getElementById('financeKpiDetailTitle');
+  const kpiPopupBody = document.getElementById('financeKpiDetailBody');
+
+  if (!kpiPopup || !kpiPopupTitle || !kpiPopupBody) return;
+
+  let title = '';
+  let html = '';
+
+  if (kpiType === 'totalSavings') {
+    title = 'Total Savings Breakdown';
+    const totalIn = allFinanceRecords.filter(r => r.type === 'income').reduce((s, r) => s + parseFloat(r.amount), 0);
+    const totalOut = allFinanceRecords.filter(r => r.type === 'expense').reduce((s, r) => s + parseFloat(r.amount), 0);
+    const net = totalIn - totalOut;
+    const personalBalance = allFinanceRecords.filter(r => getFinanceRecordSource(r) === 'personal')
+      .reduce((sum, record) => sum + (record.type === 'income' ? 1 : -1) * (parseFloat(record.amount) || 0), 0);
+    const uberBalance = allFinanceRecords.filter(r => getFinanceRecordSource(r) === 'uber')
+      .reduce((sum, record) => sum + (record.type === 'income' ? 1 : -1) * (parseFloat(record.amount) || 0), 0);
+
+    html = `
+      <div class="kpi-detail-row">
+        <span class="kpi-detail-label">Total Income (all time)</span>
+        <span class="kpi-detail-value income-text">+${totalIn.toLocaleString()} EGP</span>
+      </div>
+      <div class="kpi-detail-row">
+        <span class="kpi-detail-label">Total Expenses (all time)</span>
+        <span class="kpi-detail-value expense-text">-${totalOut.toLocaleString()} EGP</span>
+      </div>
+      <div class="kpi-detail-divider"></div>
+      <div class="kpi-detail-row kpi-detail-total">
+        <span class="kpi-detail-label">Net Savings</span>
+        <span class="kpi-detail-value ${net >= 0 ? 'income-text' : 'expense-text'}">${net >= 0 ? '+' : ''}${net.toLocaleString()} EGP</span>
+      </div>
+      <div class="kpi-detail-divider"></div>
+      <div class="kpi-detail-row"><span class="kpi-detail-label">Personal Savings remaining</span><span class="kpi-detail-value">${personalBalance.toLocaleString()} EGP</span></div>
+      <div class="kpi-detail-row"><span class="kpi-detail-label">Uber Earnings remaining</span><span class="kpi-detail-value">${uberBalance.toLocaleString()} EGP</span></div>
+      <p class="kpi-detail-note">Based on ${allFinanceRecords.length} total transaction${allFinanceRecords.length !== 1 ? 's' : ''}</p>
+    `;
+  } else if (kpiType === 'monthlyIncome') {
+    title = 'Monthly Income Breakdown';
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const monthRecords = allFinanceRecords.filter(r => {
+      const d = new Date(r.date);
+      return r.type === 'income' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    const total = monthRecords.reduce((s, r) => s + parseFloat(r.amount), 0);
+
+    if (monthRecords.length === 0) {
+      html = `<p class="kpi-detail-note">No income recorded for ${monthName}.</p>`;
+    } else {
+      html = monthRecords.map(r => `
+        <div class="kpi-detail-row">
+          <span class="kpi-detail-label">
+            <span class="kpi-cat-dot" style="background:${r.categoryColor || '#6b7280'}"></span>
+            ${r.description || r.category || '-'}
+          </span>
+          <span class="kpi-detail-value income-text">+${parseFloat(r.amount).toLocaleString()} EGP</span>
+        </div>
+      `).join('');
+      html += `<div class="kpi-detail-divider"></div>
+        <div class="kpi-detail-row kpi-detail-total">
+          <span class="kpi-detail-label">Total (${monthName})</span>
+          <span class="kpi-detail-value income-text">+${total.toLocaleString()} EGP</span>
+        </div>`;
+    }
+  } else if (kpiType === 'monthlyExpenses') {
+    title = 'Monthly Expenses Breakdown';
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const monthRecords = allFinanceRecords.filter(r => {
+      const d = new Date(r.date);
+      return r.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    const total = monthRecords.reduce((s, r) => s + parseFloat(r.amount), 0);
+
+    if (monthRecords.length === 0) {
+      html = `<p class="kpi-detail-note">No expenses recorded for ${monthName}.</p>`;
+    } else {
+      html = monthRecords.map(r => `
+        <div class="kpi-detail-row">
+          <span class="kpi-detail-label">
+            <span class="kpi-cat-dot" style="background:${r.categoryColor || '#6b7280'}"></span>
+            ${r.description || r.category || '-'}
+          </span>
+          <span class="kpi-detail-value expense-text">-${parseFloat(r.amount).toLocaleString()} EGP</span>
+        </div>
+      `).join('');
+      html += `<div class="kpi-detail-divider"></div>
+        <div class="kpi-detail-row kpi-detail-total">
+          <span class="kpi-detail-label">Total (${monthName})</span>
+          <span class="kpi-detail-value expense-text">-${total.toLocaleString()} EGP</span>
+        </div>`;
+    }
+  } else if (kpiType === 'netBalance') {
+    title = 'Net Balance Breakdown';
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const monthIncome = allFinanceRecords
+      .filter(r => { const d = new Date(r.date); return r.type === 'income' && d.getMonth() === currentMonth && d.getFullYear() === currentYear; })
+      .reduce((s, r) => s + parseFloat(r.amount), 0);
+    const monthExpenses = allFinanceRecords
+      .filter(r => { const d = new Date(r.date); return r.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear; })
+      .reduce((s, r) => s + parseFloat(r.amount), 0);
+    const net = monthIncome - monthExpenses;
+
+    html = `
+      <div class="kpi-detail-row">
+        <span class="kpi-detail-label">Income (${monthName})</span>
+        <span class="kpi-detail-value income-text">+${monthIncome.toLocaleString()} EGP</span>
+      </div>
+      <div class="kpi-detail-row">
+        <span class="kpi-detail-label">Expenses (${monthName})</span>
+        <span class="kpi-detail-value expense-text">-${monthExpenses.toLocaleString()} EGP</span>
+      </div>
+      <div class="kpi-detail-divider"></div>
+      <div class="kpi-detail-row kpi-detail-total">
+        <span class="kpi-detail-label">Net Balance</span>
+        <span class="kpi-detail-value ${net >= 0 ? 'income-text' : 'expense-text'}">${net >= 0 ? '+' : ''}${net.toLocaleString()} EGP</span>
+      </div>
+      <p class="kpi-detail-note">${net >= 0 ? '✅ Spending less than earned this month.' : '⚠️ Spending more than earned this month.'}</p>
+    `;
+  }
+
+  kpiPopupTitle.textContent = title;
+  kpiPopupBody.innerHTML = html;
+  kpiPopup.classList.add('active');
+  document.body.classList.add('modal-open');
+}
+
+function closeFinanceKPIDetailPopup() {
+  const kpiPopup = document.getElementById('financeKpiDetailPopup');
+  if (kpiPopup) {
+    kpiPopup.classList.remove('active');
     document.body.classList.remove('modal-open');
   }
 }
@@ -5159,6 +6505,8 @@ window.editFinanceRecord = editFinanceRecord;
 window.closeEditTransactionPopup = closeEditTransactionPopup;
 window.saveTransactionEdit = saveTransactionEdit;
 window.updateLastExportCounter = updateLastExportCounter;
+window.showFinanceKPIDetails = showFinanceKPIDetails;
+window.closeFinanceKPIDetailPopup = closeFinanceKPIDetailPopup;
 
 // ========================================
 // Header Actions: Data Blur & Export
@@ -5240,4 +6588,3 @@ function updateLastExportCounter() {
     counterEl.classList.add("export-danger");
   }
 }
-

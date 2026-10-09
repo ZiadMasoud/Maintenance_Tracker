@@ -5,8 +5,41 @@
 // ================================
 
 const DB_NAME = "carMaintainDB";
-const DB_VERSION = 7;
+const DB_VERSION = 11;
 const SELECTIVE_BACKUP_STORE = "selectiveBackups";
+const DEFAULT_MAINTENANCE_CATEGORIES = [
+  { name: "Oil Change", color: "#667eea" },
+  { name: "Brake Service", color: "#f56565" },
+  { name: "Tire Service", color: "#ed8936" },
+  { name: "Engine Repair", color: "#48bb78" },
+  { name: "General Maintenance", color: "#764ba2" },
+  { name: "Battery", color: "#38b2ac" },
+  { name: "Transmission", color: "#9f7aea" },
+  { name: "Suspension", color: "#ed64a6" },
+  { name: "Cooling System", color: "#4299e1" },
+  { name: "Exhaust", color: "#f6ad55" },
+  { name: "Air Filter", color: "#68d391" },
+  { name: "Spark Plugs", color: "#fc8181" },
+  { name: "Belts & Hoses", color: "#63b3ed" },
+  { name: "Lights & Electrical", color: "#f687b3" },
+  { name: "AC & Heating", color: "#4fd1c5" }
+];
+const DEFAULT_FINANCE_CATEGORIES = [
+  { name: "Savings", type: "income", color: "#10b981" },
+  { name: "Salary", type: "income", color: "#2563eb" },
+  { name: "Personal Contribution", type: "income", color: "#0891b2" },
+  { name: "Uber Driving", type: "income", color: "#3b82f6" },
+  { name: "Bonus", type: "income", color: "#8b5cf6" },
+  { name: "Refund", type: "income", color: "#06b6d4" },
+  { name: "Maintenance", type: "expense", color: "#f59e0b" },
+  { name: "Repairs & Parts", type: "expense", color: "#ea580c" },
+  { name: "Registration & Permits", type: "expense", color: "#0f766e" },
+  { name: "Fuel", type: "expense", color: "#ef4444" },
+  { name: "Car Purchase", type: "expense", color: "#7c3aed" },
+  { name: "Insurance", type: "expense", color: "#ec4899" },
+  { name: "Tolls", type: "expense", color: "#6366f1" },
+  { name: "Other", type: "expense", color: "#6b7280" }
+];
 
 let db;
 let dbOpenPromise = null;
@@ -16,7 +49,7 @@ function checkDatabaseHealth() {
   if (!db) return false;
 
   try {
-    const requiredStores = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords"];
+    const requiredStores = ["sessions", "items", "categories", "fuelRecords", "fuelSessions", "financeRecords", "financeCategories"];
     for (const storeName of requiredStores) {
       if (!db.objectStoreNames.contains(storeName)) {
         console.error(`Missing required object store: ${storeName}`);
@@ -50,30 +83,14 @@ function openDatabase() {
         database.createObjectStore("sessions", { keyPath: "id", autoIncrement: true });
       }
       if (!database.objectStoreNames.contains("items")) {
-        database.createObjectStore("items", { keyPath: "id", autoIncrement: true });
+        const itemStore = database.createObjectStore("items", { keyPath: "id", autoIncrement: true });
+        itemStore.createIndex("sessionId", "sessionId", { unique: false });
       }
       if (!database.objectStoreNames.contains("categories")) {
         const categoryStore = database.createObjectStore("categories", { keyPath: "id", autoIncrement: true });
         categoryStore.createIndex("name", "name", { unique: true });
 
-        const defaultCategories = [
-          { name: "Oil Change", color: "#667eea" },
-          { name: "Brake Service", color: "#f56565" },
-          { name: "Tire Service", color: "#ed8936" },
-          { name: "Engine Repair", color: "#48bb78" },
-          { name: "General Maintenance", color: "#764ba2" },
-          { name: "Battery", color: "#38b2ac" },
-          { name: "Transmission", color: "#9f7aea" },
-          { name: "Suspension", color: "#ed64a6" },
-          { name: "Cooling System", color: "#4299e1" },
-          { name: "Exhaust", color: "#f6ad55" },
-          { name: "Air Filter", color: "#68d391" },
-          { name: "Spark Plugs", color: "#fc8181" },
-          { name: "Belts & Hoses", color: "#63b3ed" },
-          { name: "Lights & Electrical", color: "#f687b3" },
-          { name: "AC & Heating", color: "#4fd1c5" }
-        ];
-        defaultCategories.forEach(cat => categoryStore.add(cat));
+        DEFAULT_MAINTENANCE_CATEGORIES.forEach(category => categoryStore.add(category));
       }
       if (!database.objectStoreNames.contains("fuelRecords")) {
         const fuelStore = database.createObjectStore("fuelRecords", { keyPath: "id" });
@@ -93,6 +110,51 @@ function openDatabase() {
         financeStore.createIndex("date", "date", { unique: false });
         financeStore.createIndex("type", "type", { unique: false });
         financeStore.createIndex("sessionId", "sessionId", { unique: false });
+        financeStore.createIndex("fuelRecordId", "fuelRecordId", { unique: false });
+      }
+      if (!database.objectStoreNames.contains("financeCategories")) {
+        const financeCategoryStore = database.createObjectStore("financeCategories", { keyPath: "id", autoIncrement: true });
+        financeCategoryStore.createIndex("name", "name", { unique: false });
+        financeCategoryStore.createIndex("type", "type", { unique: false });
+
+        DEFAULT_FINANCE_CATEGORIES.forEach(category => financeCategoryStore.add(category));
+      } else if (oldVersion < 10) {
+        const financeCategoryStore = request.transaction.objectStore("financeCategories");
+        if (financeCategoryStore.indexNames.contains("name")) financeCategoryStore.deleteIndex("name");
+        financeCategoryStore.createIndex("name", "name", { unique: false });
+        if (!financeCategoryStore.indexNames.contains("type")) financeCategoryStore.createIndex("type", "type", { unique: false });
+        const addedFinanceDefaults = [
+          { name: "Uber Driving", type: "income", color: "#3b82f6" },
+          { name: "Car Purchase", type: "expense", color: "#7c3aed" }
+        ];
+        financeCategoryStore.getAll().onsuccess = event => {
+          const existingNames = new Set(event.target.result.map(category => category.name.toLowerCase()));
+          addedFinanceDefaults.forEach(category => {
+            if (!existingNames.has(category.name.toLowerCase())) financeCategoryStore.add(category);
+          });
+        };
+        financeCategoryStore.openCursor().onsuccess = event => {
+          const cursor = event.target.result;
+          if (cursor) {
+            const category = cursor.value;
+            category.type = category.type || (["Savings", "Monthly Savings", "Salary", "Bonus", "Refund", "Uber Driving"].includes(category.name) ? "income" : "expense");
+            cursor.update(category);
+            cursor.continue();
+          }
+        };
+      }
+      if (oldVersion === 10) {
+        const financeCategoryStore = request.transaction.objectStore("financeCategories");
+        const addedFinanceDefaults = [
+          { name: "Uber Driving", type: "income", color: "#3b82f6" },
+          { name: "Car Purchase", type: "expense", color: "#7c3aed" }
+        ];
+        financeCategoryStore.getAll().onsuccess = event => {
+          const existingNames = new Set(event.target.result.map(category => category.name.toLowerCase()));
+          addedFinanceDefaults.forEach(category => {
+            if (!existingNames.has(category.name.toLowerCase())) financeCategoryStore.add(category);
+          });
+        };
       }
       if (!database.objectStoreNames.contains(SELECTIVE_BACKUP_STORE)) {
         const backupStore = database.createObjectStore(SELECTIVE_BACKUP_STORE, { keyPath: "id" });
@@ -101,6 +163,21 @@ function openDatabase() {
 
       if (oldVersion < 7) {
         console.log("Performing version 7 migration - no schema changes needed");
+      }
+
+      if (oldVersion < 8) {
+        console.log("Performing version 8 migration - adding financeCategories store and fuelRecordId index");
+        // Add fuelRecordId index to financeRecords if it doesn't exist
+        if (database.objectStoreNames.contains("financeRecords")) {
+          const financeStore = request.transaction.objectStore("financeRecords");
+          if (!financeStore.indexNames.contains("fuelRecordId")) {
+            financeStore.createIndex("fuelRecordId", "fuelRecordId", { unique: false });
+          }
+        }
+      }
+
+      if (oldVersion < 9) {
+        console.log("Performing version 9 migration - no schema changes needed");
       }
     };
 
@@ -156,24 +233,7 @@ dbInitRequest.onupgradeneeded = function (e) {
     const categoryStore = db.createObjectStore("categories", { keyPath: "id", autoIncrement: true });
     categoryStore.createIndex("name", "name", { unique: true });
 
-    const defaultCategories = [
-      { name: "Oil Change", color: "#667eea" },
-      { name: "Brake Service", color: "#f56565" },
-      { name: "Tire Service", color: "#ed8936" },
-      { name: "Engine Repair", color: "#48bb78" },
-      { name: "General Maintenance", color: "#764ba2" },
-      { name: "Battery", color: "#38b2ac" },
-      { name: "Transmission", color: "#9f7aea" },
-      { name: "Suspension", color: "#ed64a6" },
-      { name: "Cooling System", color: "#4299e1" },
-      { name: "Exhaust", color: "#f6ad55" },
-      { name: "Air Filter", color: "#68d391" },
-      { name: "Spark Plugs", color: "#fc8181" },
-      { name: "Belts & Hoses", color: "#63b3ed" },
-      { name: "Lights & Electrical", color: "#f687b3" },
-      { name: "AC & Heating", color: "#4fd1c5" }
-    ];
-    defaultCategories.forEach(cat => categoryStore.add(cat));
+    DEFAULT_MAINTENANCE_CATEGORIES.forEach(category => categoryStore.add(category));
   }
   if (!db.objectStoreNames.contains("fuelRecords")) {
     const fuelStore = db.createObjectStore("fuelRecords", { keyPath: "id" });
@@ -193,6 +253,14 @@ dbInitRequest.onupgradeneeded = function (e) {
     financeStore.createIndex("date", "date", { unique: false });
     financeStore.createIndex("type", "type", { unique: false });
     financeStore.createIndex("sessionId", "sessionId", { unique: false });
+    financeStore.createIndex("fuelRecordId", "fuelRecordId", { unique: false });
+  }
+  if (!db.objectStoreNames.contains("financeCategories")) {
+    const financeCategoryStore = db.createObjectStore("financeCategories", { keyPath: "id", autoIncrement: true });
+    financeCategoryStore.createIndex("name", "name", { unique: false });
+    financeCategoryStore.createIndex("type", "type", { unique: false });
+
+    DEFAULT_FINANCE_CATEGORIES.forEach(category => financeCategoryStore.add(category));
   }
   if (!db.objectStoreNames.contains(SELECTIVE_BACKUP_STORE)) {
     const backupStore = db.createObjectStore(SELECTIVE_BACKUP_STORE, { keyPath: "id" });
@@ -201,6 +269,66 @@ dbInitRequest.onupgradeneeded = function (e) {
 
   if (oldVersion < 7) {
     console.log("Performing version 7 migration - no schema changes needed");
+  }
+
+  if (oldVersion < 8) {
+    console.log("Performing version 8 migration - adding financeCategories store and fuelRecordId index");
+    // Add fuelRecordId index to financeRecords if it doesn't exist
+    if (db.objectStoreNames.contains("financeRecords")) {
+      const financeStore = dbInitRequest.transaction.objectStore("financeRecords");
+      if (!financeStore.indexNames.contains("fuelRecordId")) {
+        financeStore.createIndex("fuelRecordId", "fuelRecordId", { unique: false });
+      }
+    }
+  }
+
+  if (oldVersion < 9) {
+    console.log("Performing version 9 migration - adding sessionId index to items store");
+    // Add sessionId index to items store if it doesn't exist
+    if (db.objectStoreNames.contains("items")) {
+      const itemStore = dbInitRequest.transaction.objectStore("items");
+      if (!itemStore.indexNames.contains("sessionId")) {
+        itemStore.createIndex("sessionId", "sessionId", { unique: false });
+      }
+    }
+  }
+  if (oldVersion > 0 && oldVersion < 10) {
+    const financeCategoryStore = dbInitRequest.transaction.objectStore("financeCategories");
+    if (financeCategoryStore.indexNames.contains("name")) financeCategoryStore.deleteIndex("name");
+    financeCategoryStore.createIndex("name", "name", { unique: false });
+    if (!financeCategoryStore.indexNames.contains("type")) financeCategoryStore.createIndex("type", "type", { unique: false });
+    const addedFinanceDefaults = [
+      { name: "Uber Driving", type: "income", color: "#3b82f6" },
+      { name: "Car Purchase", type: "expense", color: "#7c3aed" }
+    ];
+    financeCategoryStore.getAll().onsuccess = event => {
+      const existingNames = new Set(event.target.result.map(category => category.name.toLowerCase()));
+      addedFinanceDefaults.forEach(category => {
+        if (!existingNames.has(category.name.toLowerCase())) financeCategoryStore.add(category);
+      });
+    };
+    financeCategoryStore.openCursor().onsuccess = event => {
+      const cursor = event.target.result;
+      if (cursor) {
+        const category = cursor.value;
+        category.type = category.type || (["Savings", "Monthly Savings", "Salary", "Bonus", "Refund", "Uber Driving"].includes(category.name) ? "income" : "expense");
+        cursor.update(category);
+        cursor.continue();
+      }
+    };
+  }
+  if (oldVersion === 10) {
+    const financeCategoryStore = dbInitRequest.transaction.objectStore("financeCategories");
+    const addedFinanceDefaults = [
+      { name: "Uber Driving", type: "income", color: "#3b82f6" },
+      { name: "Car Purchase", type: "expense", color: "#7c3aed" }
+    ];
+    financeCategoryStore.getAll().onsuccess = event => {
+      const existingNames = new Set(event.target.result.map(category => category.name.toLowerCase()));
+      addedFinanceDefaults.forEach(category => {
+        if (!existingNames.has(category.name.toLowerCase())) financeCategoryStore.add(category);
+      });
+    };
   }
 };
 
@@ -288,7 +416,7 @@ function closeOpenDatabases() {
 }
 
 function deleteDatabase() {
-  showConfirm('This will delete the entire database and reload the page. You will need to import your data afterwards. Continue?', 'Delete Database').then(confirmed => {
+  showConfirm('This will delete the entire database and reload the page. Default maintenance and finance categories will be recreated automatically; import your data afterwards to restore your records. Continue?', 'Delete Database').then(confirmed => {
     if (!confirmed) return;
 
     closeOpenDatabases();
@@ -454,7 +582,7 @@ function deleteFuelData() {
 }
 
 function deleteFinanceData() {
-  return showConfirm('Delete all finance records? This will remove finance history. A backup will be created so you can undo.', 'Delete Finance Data')
+  return showConfirm('Delete all finance records? This will remove finance history but keep your categories. A backup will be created so you can undo.', 'Delete Finance Data')
     .then(confirmed => {
       if (!confirmed) return Promise.reject(new Error('Cancelled'));
       if (typeof exportAllDataInternal !== 'function' || typeof saveSelectiveBackup !== 'function') {
@@ -548,4 +676,3 @@ function restoreBackupObject(backup) {
     }
   });
 }
-
