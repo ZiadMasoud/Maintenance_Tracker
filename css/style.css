@@ -2448,7 +2448,7 @@ section h2::before {
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
-  z-index: 200;
+  z-index: 300;
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
@@ -2638,6 +2638,10 @@ body.modal-open .floating-btn {
   display: none;
 }
 
+body.modal-open .mobile-bottom-nav {
+  display: none;
+}
+
 body.modal-open {
   overflow: hidden;
 }
@@ -2671,6 +2675,12 @@ body.modal-open {
 
 .fuel-entry-section .form-group {
   margin-bottom: 0;
+}
+
+.fuel-entry-section .fuel-cost-column {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .fuel-entry-section input[readonly] {
@@ -4389,7 +4399,18 @@ body.modal-open {
     display: none;
   }
   .add-transaction-mobile {
-    display: inline;
+    display: none;
+  }
+
+  .finance-transactions-section .header-actions > button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .finance-transactions-section .header-actions > button span {
+    display: none;
   }
 
   #transactionsList .transaction-header {
@@ -4791,10 +4812,47 @@ body.modal-open {
   width: 100%;
 }
 
+.fuel-checkbox-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.fuel-checkbox-row .checkbox-label {
+  flex: 0 1 auto;
+}
+
+.record-section .finance-include-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: fit-content;
+  max-width: 100%;
+}
+
 .fuel-funding-control {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+  width: 100%;
+}
+
+.fuel-funding-control .fuel-finance-source-label {
+  flex: 0 0 auto;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.fuel-funding-control .fuel-finance-source {
+  flex: 1 1 auto;
+  width: auto;
   min-width: 0;
 }
 
@@ -4985,6 +5043,36 @@ body.modal-open {
 }
 
 @media (max-width: 767px) {
+  .finance-transactions-section .section-header-with-action {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .finance-transactions-section .section-header-with-action h2 {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(1rem, 5vw, 1.25rem);
+  }
+
+  .finance-transactions-section .section-header-with-action .header-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+  }
+
+  .finance-transactions-section .header-actions > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
   .finance-category-groups {
     grid-template-columns: 1fr;
   }

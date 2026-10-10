@@ -506,11 +506,15 @@ function getLatestSelectiveBackup() {
 
       request.onsuccess = (event) => {
         const cursor = event.target.result;
-        if (cursor && cursor.value) {
-          resolve(cursor.value);
-        } else {
+        if (!cursor || !cursor.value) {
           resolve(null);
+          return;
         }
+        if (cursor.value.backup?.meta?.action === 'finance-start-fresh') {
+          cursor.continue();
+          return;
+        }
+        resolve(cursor.value);
       };
       request.onerror = (event) => reject(event.target.error || new Error('Failed to read backup'));
     } catch (e) {

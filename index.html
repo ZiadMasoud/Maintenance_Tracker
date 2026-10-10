@@ -377,9 +377,18 @@
                 </div>
 
                 <div class="form-row">
-                  <div class="form-group">
-                    <label for="fuelTotalCost">Total Cost (EGP):</label>
-                    <input type="number" id="fuelTotalCost" placeholder="e.g., 500" min="0.01" step="0.01" required />
+                  <div class="fuel-cost-column">
+                    <div class="form-group">
+                      <label for="fuelTotalCost">Total Cost (EGP):</label>
+                      <input type="number" id="fuelTotalCost" placeholder="e.g., 500" min="0.01" step="0.01" required />
+                    </div>
+                    <div class="form-group fuel-funding-control">
+                      <label class="fuel-finance-source-label" for="fuelFundingSource">Fuel paid from:</label>
+                      <select id="fuelFundingSource" class="styled-input fuel-finance-source">
+                        <option value="uber">Uber Earnings</option>
+                        <option value="personal">Personal Savings</option>
+                      </select>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label for="fuelLiters">Liters (auto-calculated):</label>
@@ -394,22 +403,17 @@
 
                 <div class="form-row inline-actions-row">
                   <div class="fuel-entry-controls">
-                    <label class="checkbox-label full-tank-label">
-                      <input type="checkbox" id="fuelFullTank" />
-                      <span class="checkmark"></span>
-                      <span class="full-tank-text">Full Tank Refill</span>
-                    </label>
-                    <label class="checkbox-label finance-include-label">
-                      <input type="checkbox" id="fuelFinanceIncluded" checked />
-                      <span class="checkmark"></span>
-                      <span>Include in Finance</span>
-                    </label>
-                    <div class="fuel-funding-control">
-                      <label class="fuel-finance-source-label" for="fuelFundingSource">Fuel paid from:</label>
-                      <select id="fuelFundingSource" class="styled-input fuel-finance-source">
-                        <option value="uber">Uber Earnings</option>
-                        <option value="personal">Personal Savings</option>
-                      </select>
+                    <div class="fuel-checkbox-row">
+                      <label class="checkbox-label full-tank-label">
+                        <input type="checkbox" id="fuelFullTank" />
+                        <span class="checkmark"></span>
+                        <span class="full-tank-text">Full Tank Refill</span>
+                      </label>
+                      <label class="checkbox-label finance-include-label">
+                        <input type="checkbox" id="fuelFinanceIncluded" checked />
+                        <span class="checkmark"></span>
+                        <span>Include in Finance</span>
+                      </label>
                     </div>
                   </div>
                   <div class="actions inline-actions">
@@ -534,8 +538,11 @@
             <div class="section-header-with-action">
               <h2>Transaction History</h2>
               <div class="header-actions">
-                <button id="addFundsBtn" class="primary-btn">
-                  <i class="fas fa-plus"></i><span class="add-transaction-desktop">Add Transaction</span><span class="add-transaction-mobile">Add</span>
+                <button id="clearFinanceHistoryBtn" class="secondary-btn" type="button" title="Start fresh" aria-label="Start fresh">
+                  <i class="fas fa-broom" aria-hidden="true"></i><span>Start Fresh</span>
+                </button>
+                <button id="addFundsBtn" class="primary-btn" type="button" title="Add transaction" aria-label="Add transaction">
+                  <i class="fas fa-plus" aria-hidden="true"></i><span class="add-transaction-desktop">Add Transaction</span><span class="add-transaction-mobile">Add</span>
                 </button>
               </div>
             </div>
@@ -604,10 +611,6 @@
               <div class="form-group">
                 <label>Date:</label>
                 <input type="date" id="sessionDate" class="styled-input" />
-              </div>
-              <div class="form-group">
-                <label for="sessionTime">Time:</label>
-                <input type="time" id="sessionTime" class="styled-input" />
               </div>
 
               <div class="form-group">
@@ -779,6 +782,14 @@
                       <div id="selectiveBackupInfo" class="backup-info" style="margin-top: var(--space-3);">No backup created yet</div>
                       <button id="undoSelectiveDeleteBtn" class="secondary-btn full-width" style="margin-top: var(--space-3);">
                         <i class="fas fa-undo"></i> Undo Last Selective Delete
+                      </button>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: var(--space-4); margin-top: var(--space-4);">
+                      <p class="danger-description" style="margin-bottom: var(--space-3); font-weight: 600;">Finance History</p>
+                      <p class="danger-description" style="margin-bottom: var(--space-3);">Reread maintenance and fuel records hidden by Start Fresh and show their Finance entries again. Other transactions are not replaced.</p>
+                      <button id="undoFinanceFreshBtn" class="secondary-btn full-width" type="button" disabled>
+                        <i class="fas fa-undo"></i> Undo Start Fresh
                       </button>
                     </div>
 
@@ -1090,12 +1101,16 @@
           <input type="date" id="fundDate" class="styled-input" />
         </div>
         <div class="form-group">
-          <label for="fundTime">Time:</label>
-          <input type="time" id="fundTime" class="styled-input" />
-        </div>
-        <div class="form-group">
           <label for="fundNotes">Notes (optional):</label>
           <textarea id="fundNotes" placeholder="Additional notes..." class="styled-input"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label finance-include-label">
+            <input type="checkbox" id="fundExcludeFromKpis" />
+            <span class="checkmark"></span>
+            <span>Exclude from Finance KPIs</span>
+          </label>
+          <p class="help-text">Keep this transaction in history but exclude it from income, spending, and balance totals.</p>
         </div>
       </div>
       <div class="popup-actions">
@@ -1135,10 +1150,6 @@
           <input type="date" id="editTransactionDate" class="styled-input" />
         </div>
         <div class="form-group">
-          <label for="editTransactionTime">Time:</label>
-          <input type="time" id="editTransactionTime" class="styled-input" />
-        </div>
-        <div class="form-group">
           <label for="editTransactionAmount">Amount (EGP):</label>
           <input type="number" id="editTransactionAmount" placeholder="e.g., 1000" min="0.01" step="0.01"
             class="styled-input" />
@@ -1155,6 +1166,14 @@
         <div class="form-group">
           <label for="editTransactionNotes">Notes (optional):</label>
           <textarea id="editTransactionNotes" placeholder="Additional notes..." class="styled-input"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label finance-include-label">
+            <input type="checkbox" id="editTransactionExcludeFromKpis" />
+            <span class="checkmark"></span>
+            <span>Exclude from Finance KPIs</span>
+          </label>
+          <p class="help-text">Keep this transaction in history but exclude it from income, spending, and balance totals.</p>
         </div>
       </div>
       <div class="popup-actions">

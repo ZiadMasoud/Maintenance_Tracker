@@ -282,13 +282,14 @@ class FuelDataManager {
     const pricePerLiter = parseFloat(data.pricePerLiter) || parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
     const liters = parseFloat(data.liters) || 0;
     const totalCost = parseFloat(data.totalCost) || (liters * pricePerLiter);
+    const time = data.time || new Date().toTimeString().slice(0, 5);
     
     return {
       id,
       sessionId,
       date: data.date,
-      time: data.time || '00:00',
-      eventAt: data.eventAt || (typeof combineEventDateTime === 'function' ? combineEventDateTime(data.date, data.time || '00:00') : undefined),
+      time,
+      eventAt: data.eventAt || (typeof combineEventDateTime === 'function' ? combineEventDateTime(data.date, time) : undefined),
       odometer: parseFloat(data.odometer),
       liters: parseFloat(liters.toFixed(2)),
       pricePerLiter: parseFloat(pricePerLiter.toFixed(2)),
@@ -1299,11 +1300,7 @@ class FuelEntryForm {
     const totalCost = parseFloat(this.inputs.totalCost?.value) || 0;
     const pricePerLiter = parseFloat(localStorage.getItem('fuelPricePerLiter')) || 0;
     const liters = pricePerLiter > 0 ? totalCost / pricePerLiter : 0;
-    const time = fuelApp?.editingRecord
-      ? (typeof getRecordTimeInput === 'function'
-        ? getRecordTimeInput(fuelApp.editingRecord)
-        : (fuelApp.editingRecord.time || '00:00'))
-      : new Date().toTimeString().slice(0, 5);
+    const time = new Date().toTimeString().slice(0, 5);
     return {
       date: this.inputs.date?.value,
       odometer: this.inputs.odometer?.value,

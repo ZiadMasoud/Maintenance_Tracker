@@ -1771,7 +1771,6 @@ function openRecordForm(session = null) {
 
   if (session) {
     document.getElementById("sessionDate").value = session.date;
-    document.getElementById("sessionTime").value = getRecordTimeInput(session);
     document.getElementById("sessionOdometer").value = session.odometer;
     document.getElementById("sessionMerchant").value = session.merchant || '';
     document.getElementById("sessionNotes").value = session.notes || '';
@@ -1781,7 +1780,6 @@ function openRecordForm(session = null) {
   } else {
     const iso = getTodayDateInput();
     document.getElementById("sessionDate").value = iso;
-    document.getElementById("sessionTime").value = getCurrentTimeInput();
     document.getElementById("sessionOdometer").value = "";
     document.getElementById("sessionMerchant").value = "";
     document.getElementById("sessionNotes").value = "";
@@ -1942,7 +1940,7 @@ function saveSession() {
   const notes = document.getElementById("sessionNotes").value.trim();
   const fundingSource = document.getElementById('maintenanceFundingSource')?.value || 'personal';
   const financeIncluded = document.getElementById('maintenanceFinanceIncluded')?.checked !== false;
-  const time = document.getElementById('sessionTime')?.value || '00:00';
+  const time = getCurrentTimeInput();
   const eventAt = combineEventDateTime(date, time);
 
   if (odometer && odometer > currentOdometer) {
@@ -4710,10 +4708,12 @@ function loadFuelRecordsDirectly() {
 
 // Finance DOM Elements
 const addFundsBtn = document.getElementById('addFundsBtn');
+const clearFinanceHistoryBtn = document.getElementById('clearFinanceHistoryBtn');
+const undoFinanceFreshBtn = document.getElementById('undoFinanceFreshBtn');
 const addFundsPopup = document.getElementById('addFundsPopup');
 const saveFundBtn = document.getElementById('saveFundBtn');
 const fundDate = document.getElementById('fundDate');
-const fundTime = document.getElementById('fundTime');
+const fundExcludeFromKpis = document.getElementById('fundExcludeFromKpis');
 const fundAmount = document.getElementById('fundAmount');
 const fundSource = document.getElementById('fundSource');
 const fundType = document.getElementById('fundType');
@@ -4745,7 +4745,7 @@ const pageTitle = document.getElementById('pageTitle');
 const editTransactionPopup = document.getElementById('editTransactionPopup');
 const editTransactionId = document.getElementById('editTransactionId');
 const editTransactionDate = document.getElementById('editTransactionDate');
-const editTransactionTime = document.getElementById('editTransactionTime');
+const editTransactionExcludeFromKpis = document.getElementById('editTransactionExcludeFromKpis');
 const editTransactionAmount = document.getElementById('editTransactionAmount');
 const editTransactionDescription = document.getElementById('editTransactionDescription');
 const editTransactionCategory = document.getElementById('editTransactionCategory');
@@ -4975,6 +4975,9 @@ function initializeFinanceEventListeners() {
   if (addFundsBtn) {
     addFundsBtn.addEventListener('click', openAddFundsPopup);
   }
+  clearFinanceHistoryBtn?.addEventListener('click', clearFinanceHistory);
+  undoFinanceFreshBtn?.addEventListener('click', undoFinanceFresh);
+  refreshFinanceFreshUndoButton();
   if (saveFundBtn) {
     saveFundBtn.addEventListener('click', saveFund);
   }
@@ -5038,7 +5041,7 @@ function inferFinanceCategoryType(name) {
 function openAddFundsPopup() {
   const today = getTodayDateInput();
   if (fundDate) fundDate.value = today;
-  if (fundTime) fundTime.value = getCurrentTimeInput();
+  if (fundExcludeFromKpis) fundExcludeFromKpis.checked = false;
   if (fundAmount) fundAmount.value = '';
   if (fundSource) fundSource.value = '';
   if (fundType) fundType.value = 'income';
@@ -5060,6 +5063,197 @@ function closeAddFundsPopup() {
   }
 }
 
+function clearFinanceHistory() {
+  if (!db) return;
+
+  showConfirm(
+    'Hide Finance entries created from maintenance and fuel records? The source records and unrelated Finance transactions will remain saved. You can undo this from Settings.',
+    'Start Fresh'
+  ).then(confirmed => {
+    if (!confirmed || !db) return;
+
+    getLatestFinanceFreshBackup().then(existingBackup => {
+      if (existingBackup) {
+        showAlert('Finance Start Fresh is already active. Use Undo Start Fresh in Settings before starting again.');
+        return false;
+      }
+      return Promise.all([getStoreRecords('sessions'), getStoreRecords('fuelRecords')])
+        .then(([sessions, fuelRecords]) => {
+          const sessionFinanceFlags = sessions
+            .filter(session => session.financeIncluded !== false)
+            .map(({ id, financeIncluded }) => ({ id, financeIncluded }));
+          const fuelFinanceFlags = fuelRecords
+            .filter(record => record.financeIncluded !== false)
+            .map(({ id, financeIncluded }) => ({ id, financeIncluded }));
+
+          if (!sessionFinanceFlags.length && !fuelFinanceFlags.length) {
+            showAlert('There are no included maintenance or fuel records to hide.');
+            return false;
+          }
+          if (typeof saveSelectiveBackup !== 'function') {
+            throw new Error('Finance undo marker helper unavailable');
+          }
+
+          return saveSelectiveBackup({
+            stores: {},
+            meta: { action: 'finance-start-fresh', sessionFinanceFlags, fuelFinanceFlags }
+          }).then(() => new Promise((resolve, reject) => {
+            const tx = db.transaction(['sessions', 'fuelRecords'], 'readwrite');
+            [
+              ['sessions', sessionFinanceFlags],
+              ['fuelRecords', fuelFinanceFlags]
+            ].forEach(([storeName, records]) => {
+              const ids = new Set(records.map(record => String(record.id)));
+              const store = tx.objectStore(storeName);
+              store.openCursor().onsuccess = event => {
+                const cursor = event.target.result;
+                if (!cursor) return;
+                if (ids.has(String(cursor.value.id))) {
+                  cursor.update({ ...cursor.value, financeIncluded: false });
+                }
+                cursor.continue();
+              };
+            });
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error || new Error('Could not hide linked Finance entries'));
+          })).then(() => true);
+        });
+    }).then(didStartFresh => {
+      if (!didStartFresh || !db) return;
+      reconcileLinkedFinanceRecords().then(() => {
+        loadFinanceRecordsFromStore();
+        updateFinanceKPIs();
+        refreshFinanceFreshUndoButton();
+        if (typeof fuelApp !== 'undefined' && fuelApp) {
+          fuelApp.stateManager.loadSession('default');
+        }
+        showAlert('Maintenance and fuel Finance entries are hidden. You can undo this from Settings.');
+      }).catch(error => {
+        console.error('Could not refresh Finance after Start Fresh:', error);
+        showAlert('The source records were preserved, but Finance could not be refreshed. Please reload and try again.');
+      });
+    }).catch(error => {
+      console.error('Could not apply Finance Start Fresh:', error);
+      showAlert('Could not start fresh in Finance. Please try again.');
+    });
+  });
+}
+
+function getLatestFinanceFreshBackup() {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error('Database not initialized'));
+      return;
+    }
+
+    try {
+      const tx = db.transaction([SELECTIVE_BACKUP_STORE], 'readonly');
+      const request = tx.objectStore(SELECTIVE_BACKUP_STORE)
+        .index('createdAt')
+        .openCursor(null, 'prev');
+
+      request.onsuccess = event => {
+        const cursor = event.target.result;
+        if (!cursor) {
+          resolve(null);
+          return;
+        }
+        if (cursor.value.backup?.meta?.action === 'finance-start-fresh') {
+          resolve(cursor.value);
+          return;
+        }
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error || new Error('Could not read Finance backup'));
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function refreshFinanceFreshUndoButton() {
+  if (!undoFinanceFreshBtn) return;
+  undoFinanceFreshBtn.disabled = true;
+  getLatestFinanceFreshBackup().then(backup => {
+    undoFinanceFreshBtn.disabled = !backup;
+  }).catch(error => {
+    console.error('Could not check for a Finance Start Fresh backup:', error);
+  });
+}
+
+function undoFinanceFresh() {
+  if (!db) return;
+
+  getLatestFinanceFreshBackup().then(backupRecord => {
+    if (!backupRecord?.backup) {
+      showAlert('No Start Fresh backup is available to restore.');
+      refreshFinanceFreshUndoButton();
+      return;
+    }
+
+    showConfirm(
+      'Show Finance entries again for the maintenance and fuel records that Start Fresh hid? Current source records will be reread, and unrelated Finance transactions will not be changed.',
+      'Undo Start Fresh'
+    ).then(confirmed => {
+      if (!confirmed || !db) return;
+
+      const backup = backupRecord.backup;
+      const transaction = db.transaction(['sessions', 'fuelRecords', SELECTIVE_BACKUP_STORE], 'readwrite');
+      [
+        ['sessions', backup.meta.sessionFinanceFlags || []],
+        ['fuelRecords', backup.meta.fuelFinanceFlags || []]
+      ].forEach(([storeName, flags]) => {
+        const originalFlags = new Map(flags.map(({ id, financeIncluded }) => [String(id), financeIncluded]));
+        const store = transaction.objectStore(storeName);
+        store.openCursor().onsuccess = event => {
+          const cursor = event.target.result;
+          if (!cursor) return;
+
+          const key = String(cursor.value.id);
+          if (originalFlags.has(key) && cursor.value.financeIncluded === false) {
+            const restoredRecord = { ...cursor.value };
+            const financeIncluded = originalFlags.get(key);
+            if (financeIncluded === undefined) delete restoredRecord.financeIncluded;
+            else restoredRecord.financeIncluded = financeIncluded;
+            cursor.update(restoredRecord);
+          }
+          cursor.continue();
+        };
+      });
+      transaction.objectStore(SELECTIVE_BACKUP_STORE).openCursor().onsuccess = event => {
+        const cursor = event.target.result;
+        if (!cursor) return;
+        if (cursor.value.backup?.meta?.action === 'finance-start-fresh') cursor.delete();
+        cursor.continue();
+      };
+
+      transaction.oncomplete = () => {
+        financeCurrentPage = 1;
+        reconcileLinkedFinanceRecords().then(() => {
+          loadFinanceRecordsFromStore();
+          updateFinanceKPIs();
+          refreshFinanceFreshUndoButton();
+          if (typeof fuelApp !== 'undefined' && fuelApp) {
+            fuelApp.stateManager.loadSession('default');
+          }
+          showAlert('Finance entries were reread from the current maintenance and fuel records.');
+        }).catch(error => {
+          console.error('Could not reconcile Finance after Undo Start Fresh:', error);
+          showAlert('The source records were restored, but Finance could not be refreshed. Please reload.');
+        });
+      };
+
+      transaction.onerror = () => {
+        console.error('Could not undo Finance Start Fresh:', transaction.error);
+        showAlert('Could not undo Finance Start Fresh. Please try again.');
+      };
+    });
+  }).catch(error => {
+    console.error('Could not load Finance Start Fresh backup:', error);
+    showAlert('Could not load the Finance backup. Please try again.');
+  });
+}
+
 // Save Fund
 function saveFund() {
   if (!db) return;
@@ -5069,7 +5263,7 @@ function saveFund() {
   saveFund.isSubmitting = true;
 
   const date = fundDate?.value;
-  const time = fundTime?.value || '00:00';
+  const time = getCurrentTimeInput();
   const amount = parseFloat(fundAmount?.value);
   const source = fundSource?.value?.trim();
   const category = fundCategory?.value || 'Uncategorized';
@@ -5112,6 +5306,7 @@ function saveFund() {
         fundingSource: moneySource,
         notes: notes,
         type: type,
+        excludeFromKpis: fundExcludeFromKpis?.checked === true,
         sessionId: null,
         fuelRecordId: null,
         createdAt: new Date().toISOString()
@@ -5148,6 +5343,7 @@ function saveFund() {
         fundingSource: moneySource,
         notes: notes,
         type: type,
+        excludeFromKpis: fundExcludeFromKpis?.checked === true,
         sessionId: null,
         fuelRecordId: null,
         createdAt: new Date().toISOString()
@@ -5183,6 +5379,7 @@ function saveFund() {
       fundingSource: moneySource,
       notes: notes,
       type: type,
+      excludeFromKpis: fundExcludeFromKpis?.checked === true,
       sessionId: null,
       fuelRecordId: null,
       createdAt: new Date().toISOString()
@@ -5594,6 +5791,7 @@ function updateFinanceKPIs() {
   const sourceBalances = { personal: 0, uber: 0 };
 
   allFinanceRecords.forEach(record => {
+    if (record.excludeFromKpis === true) return;
     const recordDate = new Date(record.date);
     const amount = parseFloat(record.amount) || 0;
     const source = record.fundingSource || (record.fuelRecordId ? 'uber' : 'personal');
@@ -5897,7 +6095,7 @@ function editFinanceRecord(recordId) {
     // Populate the edit form
     editTransactionId.value = record.id;
     editTransactionDate.value = record.date;
-    if (editTransactionTime) editTransactionTime.value = getRecordTimeInput(record);
+    if (editTransactionExcludeFromKpis) editTransactionExcludeFromKpis.checked = record.excludeFromKpis === true;
     editTransactionAmount.value = record.amount;
     editTransactionDescription.value = record.description;
     if (editTransactionType) editTransactionType.value = record.type || 'expense';
@@ -5925,7 +6123,7 @@ function saveTransactionEdit() {
 
   const id = parseInt(editTransactionId.value);
   const date = editTransactionDate?.value;
-  const time = editTransactionTime?.value || '00:00';
+  const time = getCurrentTimeInput();
   const amount = parseFloat(editTransactionAmount?.value);
   const description = editTransactionDescription?.value?.trim();
   const category = editTransactionCategory?.value?.trim();
@@ -5968,7 +6166,8 @@ function saveTransactionEdit() {
       categoryType: type,
       type,
       fundingSource: moneySource,
-      notes: notes
+      notes: notes,
+      excludeFromKpis: editTransactionExcludeFromKpis?.checked === true
     };
 
     store.put(updatedRecord);
@@ -6235,7 +6434,8 @@ if (document && transactionDetailsPopup) {
 // Finance KPI Detail Popup
 // ================================
 function showFinanceKPIDetails(kpiType) {
-  if (!allFinanceRecords.length && kpiType !== 'totalSavings') {
+  const kpiRecords = allFinanceRecords.filter(record => record.excludeFromKpis !== true);
+  if (!kpiRecords.length && kpiType !== 'totalSavings') {
     showAlert('No finance records yet. Add a transaction first.');
     return;
   }
@@ -6255,12 +6455,12 @@ function showFinanceKPIDetails(kpiType) {
 
   if (kpiType === 'totalSavings') {
     title = 'Total Savings Breakdown';
-    const totalIn = allFinanceRecords.filter(r => r.type === 'income').reduce((s, r) => s + parseFloat(r.amount), 0);
-    const totalOut = allFinanceRecords.filter(r => r.type === 'expense').reduce((s, r) => s + parseFloat(r.amount), 0);
+    const totalIn = kpiRecords.filter(r => r.type === 'income').reduce((s, r) => s + parseFloat(r.amount), 0);
+    const totalOut = kpiRecords.filter(r => r.type === 'expense').reduce((s, r) => s + parseFloat(r.amount), 0);
     const net = totalIn - totalOut;
-    const personalBalance = allFinanceRecords.filter(r => getFinanceRecordSource(r) === 'personal')
+    const personalBalance = kpiRecords.filter(r => getFinanceRecordSource(r) === 'personal')
       .reduce((sum, record) => sum + (record.type === 'income' ? 1 : -1) * (parseFloat(record.amount) || 0), 0);
-    const uberBalance = allFinanceRecords.filter(r => getFinanceRecordSource(r) === 'uber')
+    const uberBalance = kpiRecords.filter(r => getFinanceRecordSource(r) === 'uber')
       .reduce((sum, record) => sum + (record.type === 'income' ? 1 : -1) * (parseFloat(record.amount) || 0), 0);
 
     html = `
@@ -6280,12 +6480,12 @@ function showFinanceKPIDetails(kpiType) {
       <div class="kpi-detail-divider"></div>
       <div class="kpi-detail-row"><span class="kpi-detail-label">Personal Savings remaining</span><span class="kpi-detail-value">${personalBalance.toLocaleString()} EGP</span></div>
       <div class="kpi-detail-row"><span class="kpi-detail-label">Uber Earnings remaining</span><span class="kpi-detail-value">${uberBalance.toLocaleString()} EGP</span></div>
-      <p class="kpi-detail-note">Based on ${allFinanceRecords.length} total transaction${allFinanceRecords.length !== 1 ? 's' : ''}</p>
+      <p class="kpi-detail-note">Based on ${kpiRecords.length} included transaction${kpiRecords.length !== 1 ? 's' : ''}</p>
     `;
   } else if (kpiType === 'monthlyIncome') {
     title = 'Monthly Income Breakdown';
     const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-    const monthRecords = allFinanceRecords.filter(r => {
+    const monthRecords = kpiRecords.filter(r => {
       const d = new Date(r.date);
       return r.type === 'income' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
@@ -6312,7 +6512,7 @@ function showFinanceKPIDetails(kpiType) {
   } else if (kpiType === 'monthlyExpenses') {
     title = 'Monthly Expenses Breakdown';
     const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-    const monthRecords = allFinanceRecords.filter(r => {
+    const monthRecords = kpiRecords.filter(r => {
       const d = new Date(r.date);
       return r.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
@@ -6339,10 +6539,10 @@ function showFinanceKPIDetails(kpiType) {
   } else if (kpiType === 'netBalance') {
     title = 'Net Balance Breakdown';
     const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-    const monthIncome = allFinanceRecords
+    const monthIncome = kpiRecords
       .filter(r => { const d = new Date(r.date); return r.type === 'income' && d.getMonth() === currentMonth && d.getFullYear() === currentYear; })
       .reduce((s, r) => s + parseFloat(r.amount), 0);
-    const monthExpenses = allFinanceRecords
+    const monthExpenses = kpiRecords
       .filter(r => { const d = new Date(r.date); return r.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear; })
       .reduce((s, r) => s + parseFloat(r.amount), 0);
     const net = monthIncome - monthExpenses;
