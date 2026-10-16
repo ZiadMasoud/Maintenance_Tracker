@@ -2197,6 +2197,11 @@ function updateFuelEfficiencyIndicator(consumption, indicatorId) {
 
   // Add new class
   indicator.classList.add(efficiencyClass);
+  const fuelKpi = indicator.closest('.kpi-fuel');
+  if (fuelKpi) {
+    fuelKpi.classList.remove('efficiency-good', 'efficiency-average', 'efficiency-poor');
+    fuelKpi.classList.add(efficiencyClass);
+  }
 
   // Update text
   text.textContent = efficiencyLabel;

@@ -4470,25 +4470,39 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
 }
 
-.kpi-value-right {
+.kpi-sub-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  min-width: 10rem;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
-.kpi-value-row .fuel-efficiency-indicator {
+.kpi-sub-row .fuel-efficiency-indicator {
+  position: static;
+  top: auto;
+  right: auto;
   margin-top: 0;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.kpi-fuel .fuel-efficiency-indicator {
-  position: static;
-  top: auto;
-  right: auto;
+.kpi-card.kpi-fuel.efficiency-good,
+.kpi-card.kpi-fuel.efficiency-good:hover {
+  border: 3px solid var(--color-success);
+}
+
+.kpi-card.kpi-fuel.efficiency-average,
+.kpi-card.kpi-fuel.efficiency-average:hover {
+  border: 3px solid var(--color-warning);
+}
+
+.kpi-card.kpi-fuel.efficiency-poor,
+.kpi-card.kpi-fuel.efficiency-poor:hover {
+  border: 3px solid var(--color-danger);
 }
 
 /* Fuel KPI card adjustments */
