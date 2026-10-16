@@ -2439,6 +2439,28 @@ section h2::before {
   margin-top: var(--space-6);
 }
 
+#editTransactionPopup .popup-card {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 520px);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(16px, 4vw, 24px);
+}
+
+#editTransactionPopup .popup-header,
+#editTransactionPopup .popup-actions {
+  flex: 0 0 auto;
+}
+
+#editTransactionPopup .popup-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* ========================================
    Modals
    ======================================== */
@@ -3592,7 +3614,17 @@ body.modal-open {
   }
 
   .kpi-cards-group {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-cards-group .kpi-monthly-overview {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .kpi-cards-group .kpi-fuel {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .item-inputs {
@@ -3667,6 +3699,12 @@ body.modal-open {
 
   .kpi-cards-group {
     grid-template-columns: 1fr;
+  }
+
+  .kpi-cards-group .kpi-monthly-overview,
+  .kpi-cards-group .kpi-fuel {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   /* Mobile sidebar improvements */
@@ -4037,7 +4075,7 @@ body.modal-open {
 /* Finance KPIs Grid - Floosy Style */
 .finance-kpis-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
@@ -4125,6 +4163,10 @@ body.modal-open {
   border-color: #ef4444;
 }
 
+.finance-kpi-card.kpi-monthly-overview {
+  border-color: #0ea5e9;
+}
+
 .finance-kpi-card.kpi-balance {
   border-color: #f59e0b;
 }
@@ -4168,6 +4210,11 @@ body.modal-open {
 .finance-kpi-card.kpi-expenses::after {
   content: '\f068';
   color: #ef4444;
+}
+
+.finance-kpi-card.kpi-monthly-overview::after {
+  content: '\f201';
+  color: #0ea5e9;
 }
 
 .finance-kpi-card.kpi-balance::after {
@@ -4264,6 +4311,88 @@ body.modal-open {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   font-weight: var(--font-weight-medium);
+}
+
+.monthly-kpi-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.monthly-kpi-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 4px;
+  border-radius: var(--radius-md);
+}
+
+.monthly-kpi-income {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.monthly-kpi-expenses {
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.monthly-kpi-label {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.monthly-kpi-value {
+  max-width: 100%;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: var(--font-weight-black);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-card.kpi-monthly-overview {
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.kpi-card.kpi-monthly-overview .monthly-kpi-values {
+  gap: 6px;
+}
+
+.kpi-card.kpi-monthly-overview .monthly-kpi-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.kpi-card.kpi-monthly-overview .monthly-kpi-value {
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+}
+
+.monthly-kpi-income .monthly-kpi-value {
+  color: #059669;
+}
+
+.monthly-kpi-expenses .monthly-kpi-value {
+  color: #dc2626;
+}
+
+.monthly-kpi-unit {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.1;
 }
 
 /* ========================================

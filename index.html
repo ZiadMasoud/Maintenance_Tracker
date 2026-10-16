@@ -140,11 +140,21 @@
                   </button>
                 </div>
 
-                <!-- Total Spent KPI -->
-                <div class="kpi-card kpi-total" data-kpi="totalSpent">
-                  <div class="kpi-label">Total Spent</div>
-                  <div class="kpi-main" id="kpiTotalSpentValue">0</div>
-                  <div class="kpi-sub">EGP</div>
+                <!-- Monthly Income and Expenses KPI -->
+                <div class="kpi-card kpi-total kpi-monthly-overview" data-kpi="monthlyOverview" aria-label="Monthly income and expenses">
+                  <div class="kpi-label">This Month</div>
+                  <div class="monthly-kpi-values">
+                    <div class="monthly-kpi-item monthly-kpi-income">
+                      <div class="monthly-kpi-label">Income</div>
+                      <div class="monthly-kpi-value" id="homeMonthlyIncomeValue">0</div>
+                      <div class="monthly-kpi-unit">EGP</div>
+                    </div>
+                    <div class="monthly-kpi-item monthly-kpi-expenses">
+                      <div class="monthly-kpi-label">Expenses</div>
+                      <div class="monthly-kpi-value" id="homeMonthlyExpensesValue">0</div>
+                      <div class="monthly-kpi-unit">EGP</div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Fuel Consumption KPI -->
@@ -515,15 +525,20 @@
                   <span><span>Uber Earnings</span><strong id="financeUberBalance">0</strong><small>EGP</small></span>
                 </div>
               </div>
-              <div class="finance-kpi-card kpi-income" data-kpi="monthlyIncome">
-                <div class="finance-kpi-label">Monthly Income</div>
-                <div class="finance-kpi-main" id="financeMonthlyIncome">0</div>
-                <div class="finance-kpi-sub">EGP</div>
-              </div>
-              <div class="finance-kpi-card kpi-expenses" data-kpi="monthlyExpenses">
-                <div class="finance-kpi-label">Monthly Expenses</div>
-                <div class="finance-kpi-main" id="financeMonthlyExpenses">0</div>
-                <div class="finance-kpi-sub">EGP</div>
+              <div class="finance-kpi-card kpi-monthly-overview" data-kpi="monthlyOverview">
+                <div class="finance-kpi-label">This Month</div>
+                <div class="monthly-kpi-values">
+                  <div class="monthly-kpi-item monthly-kpi-income">
+                    <div class="monthly-kpi-label">Income</div>
+                    <div class="monthly-kpi-value" id="financeMonthlyIncome">0</div>
+                    <div class="monthly-kpi-unit">EGP</div>
+                  </div>
+                  <div class="monthly-kpi-item monthly-kpi-expenses">
+                    <div class="monthly-kpi-label">Expenses</div>
+                    <div class="monthly-kpi-value" id="financeMonthlyExpenses">0</div>
+                    <div class="monthly-kpi-unit">EGP</div>
+                  </div>
+                </div>
               </div>
               <div class="finance-kpi-card kpi-balance" data-kpi="netBalance">
                 <div class="finance-kpi-label">Net Balance</div>

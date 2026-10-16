@@ -1029,7 +1029,8 @@ const editUpcomingIntervalMonths = document.getElementById("editUpcomingInterval
 const saveUpcomingEditBtn = document.getElementById("saveUpcomingEditBtn");
 
 // KPI elements
-const kpiTotalSpentValue = document.getElementById("kpiTotalSpentValue");
+const homeMonthlyIncomeValue = document.getElementById("homeMonthlyIncomeValue");
+const homeMonthlyExpensesValue = document.getElementById("homeMonthlyExpensesValue");
 const kpiAvgFuelValue = document.getElementById("kpiAvgFuelValue");
 const kpiAvgFuelSub = document.getElementById("kpiAvgFuelSub");
 
@@ -2021,7 +2022,7 @@ function saveSession() {
 function renderAll() {
   renderSessions();
   renderUpcoming();
-  renderTotalCost();
+  updateFinanceKPIs();
 
   if (typeof initializeCharts === 'function') {
     initializeCharts();
@@ -2641,41 +2642,6 @@ function changeUpcomingPage(direction) {
     upcomingCurrentPage = newPage;
     renderUpcomingPage();
   }
-}
-
-// ================================
-// Total Cost (Including Fuel)
-// ================================
-function renderTotalCost() {
-  if (!db) return;
-
-  let maintenanceTotal = 0;
-  let fuelTotal = 0;
-
-  const tx = db.transaction(["items", "fuelRecords"], "readonly");
-  const itemStore = tx.objectStore("items");
-  const fuelStore = tx.objectStore("fuelRecords");
-
-  itemStore.openCursor().onsuccess = e => {
-    const cursor = e.target.result;
-    if (cursor) {
-      maintenanceTotal += cursor.value.price || 0;
-      cursor.continue();
-    } else {
-      // Now get fuel total
-      fuelStore.openCursor().onsuccess = e2 => {
-        const cursor2 = e2.target.result;
-        if (cursor2) {
-          fuelTotal += cursor2.value.totalCost || 0;
-          cursor2.continue();
-        } else {
-          const total = maintenanceTotal + fuelTotal;
-          const formatted = total.toLocaleString();
-          if (kpiTotalSpentValue) kpiTotalSpentValue.textContent = formatted;
-        }
-      };
-    }
-  };
 }
 
 // ================================
@@ -5767,6 +5733,8 @@ function updateFinanceKPIs() {
 
   if (!allFinanceRecords.length) {
     if (financeTotalSavings) financeTotalSavings.textContent = '0';
+    if (homeMonthlyIncomeValue) homeMonthlyIncomeValue.textContent = '0';
+    if (homeMonthlyExpensesValue) homeMonthlyExpensesValue.textContent = '0';
     if (financeMonthlyIncome) financeMonthlyIncome.textContent = '0';
     if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = '0';
     if (financeNetBalance) financeNetBalance.textContent = '0';
@@ -5819,6 +5787,8 @@ function updateFinanceKPIs() {
     financeTotalSavings.textContent = totalSavings.toLocaleString();
     financeTotalSavings.style.color = totalSavings >= 0 ? '#10b981' : '#ef4444';
   }
+  if (homeMonthlyIncomeValue) homeMonthlyIncomeValue.textContent = monthlyIncome.toLocaleString();
+  if (homeMonthlyExpensesValue) homeMonthlyExpensesValue.textContent = monthlyExpenses.toLocaleString();
   if (financeMonthlyIncome) financeMonthlyIncome.textContent = monthlyIncome.toLocaleString();
   if (financeMonthlyExpenses) financeMonthlyExpenses.textContent = monthlyExpenses.toLocaleString();
   if (financeNetBalance) {

@@ -138,9 +138,9 @@ class FuelStateManager {
       // Update main dashboard KPIs
       updateFuelKPIsOnDashboard();
       
-      // Update total spent
-      if (typeof renderTotalCost === 'function') {
-        renderTotalCost();
+      // Refresh savings displayed on the dashboard
+      if (typeof updateFinanceKPIs === 'function') {
+        updateFinanceKPIs();
       }
       
       return newRecord;
@@ -160,9 +160,9 @@ class FuelStateManager {
       // Update main dashboard KPIs
       updateFuelKPIsOnDashboard();
       
-      // Update total spent
-      if (typeof renderTotalCost === 'function') {
-        renderTotalCost();
+      // Refresh savings displayed on the dashboard
+      if (typeof updateFinanceKPIs === 'function') {
+        updateFinanceKPIs();
       }
     } catch (error) {
       this.setError(error.message);
@@ -186,9 +186,9 @@ class FuelStateManager {
       // Update main dashboard KPIs
       updateFuelKPIsOnDashboard();
       
-      // Update total spent
-      if (typeof renderTotalCost === 'function') {
-        renderTotalCost();
+      // Refresh savings displayed on the dashboard
+      if (typeof updateFinanceKPIs === 'function') {
+        updateFinanceKPIs();
       }
     } catch (error) {
       this.setError(error.message);
